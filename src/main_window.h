@@ -1,0 +1,101 @@
+#pragma once
+
+#include <QMainWindow>
+#include <QMenuBar>
+#include <QMenu>
+#include <QAction>
+#include <QToolBar>
+#include <QDockWidget>
+#include <QScrollArea>
+#include <QVBoxLayout>
+#include <QGridLayout>
+#include <QMessageBox>
+#include <QFileDialog>
+#include <QApplication>
+#include <QDesktopServices>
+#include <QScrollBar>
+#include <QUrl>
+#include <QIcon>
+#include <QColor>
+#include <vector>
+#include "core/app_context.h"
+#include "core/mixer.h"
+#include "core/shared.h"
+#include "core/playback_worker.h"
+#include "main_widgets/midi_tact_ruler.h"
+#include "main_widgets/midi_keyboard_ruler.h"
+#include "main_widgets/midi_editor_widget.h"
+#include "main_widgets/track_list_widget.h"
+#include "main_widgets/midi_control_bar_widget.h"
+#include "main_widgets/track_mixer_widget.h"
+#include "utils/space_action.h"
+
+class MainWindow : public QMainWindow {
+    Q_OBJECT
+public:
+    explicit MainWindow(QWidget* parent = nullptr);
+
+protected:
+    void closeEvent(QCloseEvent* event) override;
+
+private slots:
+    void set_auto_follow(bool checked);
+    void toggle_play();
+    void zoom_in_x();
+    void zoom_out_x();
+    void on_playing_state_changed(bool playing);
+    void set_play_position(int tick);
+    void goto_start();
+    void goto_end();
+    void on_tempo_changed(float new_tempo);
+    void open_midi();
+    void export_midi();
+    void play();
+    void playback_worker_on_position_changed(int current_tick);
+    void playback_worker_handle_note_events(const std::vector<MidiNote>& notes_to_play, const std::vector<MidiNote>& notes_to_stop);
+    void reset_all_colors();
+    void randomize_all_colors();
+    void about_dialog();
+    void reset_layout();
+    void show_hide_dock(const QString& name, bool checked);
+
+private:
+    void setup_actions();
+    void setup_menu_bar();
+    void setup_toolbar();
+    void setup_dock_layout();
+    void connect_signals();
+
+    AppContext* ctx;
+    Mixer* mixer;
+    PlaybackWorker* playback_worker;
+    bool auto_follow;
+    QMap<QString, QDockWidget*> docks;
+
+    QAction* action_open;
+    QAction* action_export;
+    QAction* action_quit;
+    QAction* action_zoom_in;
+    QAction* action_zoom_out;
+    QAction* action_auto_follow;
+    QAction* action_reset_colors;
+    QAction* action_randomize_colors;
+    QAction* action_about;
+    QAction* action_homepage;
+    QAction* action_toolbar_to_start;
+    QAction* action_toolbar_play;
+    QAction* action_toolbar_to_end;
+    QAction* action_toggle_editor;
+    QAction* action_toggle_tracklist;
+    QAction* action_toggle_mixer;
+    QAction* action_reset_layout;
+
+    MidiTactRuler* midi_tact_ruler;
+    MidiKeyboardRuler* midi_keyboard_ruler;
+    MidiEditorWidget* midi_editor;
+    QScrollArea* editor_scroll;
+    MidiControlBarWidget* control_bar;
+
+    TrackListWidget* tracklist_widget;
+    TrackMixerWidget* mixer_widget;
+};

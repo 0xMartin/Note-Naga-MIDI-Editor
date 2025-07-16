@@ -1,8 +1,7 @@
 ## Build 
 
-git clone https://github.com/microsoft/vcpkg.git .vcpkg
+cmake -S . -B build
 
-.vcpkg/bootstrap-vcpkg.sh
-.vcpkg/vcpkg install
+cd build 
 
-cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=.vcpkg/scripts/buildsystems/vcpkg.cmake
+make -j4
