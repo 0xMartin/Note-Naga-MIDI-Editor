@@ -1,60 +1,44 @@
 #include "note_naga_engine.h"
 
-
 NoteNagaEngine::NoteNagaEngine(QObject* parent)
     : QObject(parent)
-    , project_data(std::make_shared<NoteNagaProjectData>())
-    , mixer(std::make_unique<Mixer>())
-    , playback_worker(std::make_unique<PlaybackWorker>(this))
 {
+    // set default configuration ...
 }
 
 NoteNagaEngine::~NoteNagaEngine()
 {
-    // Cleanup if necessary
+    if (playback_worker) playback_worker->stop();
+    if (mixer) mixer->close();
 }
 
 bool NoteNagaEngine::init()
 {
-    // (Re)initialize engine state, connections, etc.
-    // Possibly connect playback_worker signals to this engine for relaying
-    // Connect playback note events to signals
-    connect(playback_worker.get(), &PlaybackWorker::playing_note,
-            this, [this](const MidiNote& note, int track_id) {
-                NN_QT_EMIT(playing_note_signal(note, track_id));
-            });
-    connect(playback_worker.get(), &PlaybackWorker::mixer_playing_note,
-            this, [this](const MidiNote& note, const QString& device_name, int channel) {
-                NN_QT_EMIT(mixer_playing_note_signal(note, device_name, channel));
-            });
-
-    // Initialize mixer and playback worker with project data if needed
-    // ...
-
+    this->project_data = std::make_shared<NoteNagaProjectData>();
+    this->mixer = std::make_unique<Mixer>(this->project_data);
+    this->playback_worker = std::make_unique<PlaybackWorker>(this->project_data, this->mixer.get(), 30.0);
+    // configuration loading ...
     return true;
 }
 
 bool NoteNagaEngine::load_project(const QString &midi_file_path)
 {
-    return false;
+    return this->project_data->load_project(midi_file_path);
 }
 
 void NoteNagaEngine::start_playback()
 {
-    if (playback_worker)
-        playback_worker->start();
+    if (playback_worker)playback_worker->play();
 }
 
 void NoteNagaEngine::stop_playback()
 {
-    if (playback_worker)
-        playback_worker->stop();
+    if (playback_worker) playback_worker->stop();
 }
 
 void NoteNagaEngine::set_playback_position(int tick)
 {
-    if (playback_worker)
-        playback_worker->set_position(tick);
+    if (playback_worker) playback_worker->set_(tick);
 }
 
 void NoteNagaEngine::mute_track(int track_id, bool mute)
@@ -69,9 +53,9 @@ void NoteNagaEngine::solo_track(int track_id, bool solo)
         mixer->solo_track(track_id, solo);
 }
 
-NoteNagaProjectData* NoteNagaEngine::get_project_data()
+std::shared_ptr<NoteNagaProjectData> NoteNagaEngine::get_project_data()
 {
-    return project_data.get();
+    return project_data;
 }
 
 void NoteNagaEngine::set_project_data(const std::shared_ptr<NoteNagaProjectData>& data)

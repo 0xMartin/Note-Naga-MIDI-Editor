@@ -88,9 +88,16 @@ void NoteNagaMIDISequence::load_from_midi(const QString& midi_file_path) {
         tracks_tmp = load_type1_tracks(*midiFile);
     }
 
-    active_track_id = !tracks_tmp.empty() ? tracks_tmp[0]->track_id : -1;
-    tracks = tracks_tmp;
+    // Set the tracks
+    this->tracks = tracks_tmp;
     compute_max_tick();
+
+    // Set the active track
+    if (!tracks.empty()) {
+        active_track_id = tracks[0]->track_id;
+    } else {
+        active_track_id.reset();
+    }
 }
 
 // --- Helper: load type 0 MIDI file (split channels) ---
@@ -278,6 +285,8 @@ NoteNagaProjectData::NoteNagaProjectData() {
     // Initialize with empty sequences
     sequences.clear();
     active_sequence_id.reset();
+    current_tick = 0;
+    max_tick = 0;
 }
 
 bool NoteNagaProjectData::load_project(const QString &project_path)
@@ -292,6 +301,13 @@ bool NoteNagaProjectData::load_project(const QString &project_path)
     auto sequence = std::make_shared<NoteNagaMIDISequence>();
     sequence->load_from_midi(project_path);
     add_sequence(sequence);
+
+    // Set the active sequence to the first one
+    if (!sequences.empty()) {
+        active_sequence_id = sequences[0]->get_sequence_id();
+    } else {
+        active_sequence_id.reset();
+    }
 
     return true;
 }

@@ -7,11 +7,12 @@
 #include <optional>
 #include <QVariant>
 
-#include "../midi/midi_file.h"
+#include "../io/midi_file.h"
 #include "types.h"
 
 // ---------- Note Naga MIDI Sequence ----------
-class NoteNagaMIDISequence {
+class NoteNagaMIDISequence : public QObject {
+    Q_OBJECT
 
 public:
     NoteNagaMIDISequence();
@@ -46,6 +47,11 @@ public:
 
     std::shared_ptr<MidiFile> get_midi_file() const { return midi_file; }
 
+Q_SIGNALS:
+    void track_meta_changed_signal(int track_id);
+    void selected_track_changed_signal(int track_id);
+    void playing_note_signal(const MidiNote& note, int track_id);
+
 protected:
     int sequence_id;
     
@@ -61,7 +67,9 @@ protected:
 };
 
 // ---------- Note Naga Project Data ----------
-class NoteNagaProjectData {
+class NoteNagaProjectData : public QObject {
+    Q_OBJECT
+
 public:
     NoteNagaProjectData();
 
@@ -74,7 +82,16 @@ public:
 
     std::vector<std::shared_ptr<NoteNagaMIDISequence>> get_sequences() const { return sequences; }
 
+Q_SIGNALS:
+    void project_file_loaded_signal();
+
+    void sequence_meta_changed_signal(int sequence_id);
+    void selected_sequence_changed_signal(int sequence_id);
+    
 protected:
     std::vector<std::shared_ptr<NoteNagaMIDISequence>> sequences;
     std::optional<int> active_sequence_id;
+
+    int current_tick;
+    int max_tick;
 };

@@ -5,9 +5,9 @@
 #include <QString>
 #include <algorithm>
 
-Mixer::Mixer(AppContext *ctx, const QString &sf2_path)
+Mixer::Mixer(std::shared_ptr<NoteNagaProjectData> projectData, const QString &sf2_path)
     : QObject(nullptr),
-      ctx(ctx),
+      projectData(projectData),
       sf2_path(sf2_path),
       fluidsynth(nullptr),
       audio_driver(nullptr),

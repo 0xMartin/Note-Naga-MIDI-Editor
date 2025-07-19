@@ -8,10 +8,10 @@
 
 // --- PlaybackWorker Implementation ---
 
-PlaybackWorker::PlaybackWorker(AppContext *ctx, Mixer *mixer, double timer_interval_ms,
+PlaybackWorker::PlaybackWorker(std::shared_ptr<NoteNagaProjectData> projectData, Mixer *mixer, double timer_interval_ms,
                                QObject *parent)
     : QObject(parent),
-      ctx(ctx),
+      projectData(projectData),
       mixer(mixer),
       timer_interval(timer_interval_ms / 1000.0),
       playing(false),
@@ -99,9 +99,9 @@ void PlaybackWorker::cleanup_thread()
 
 // --- PlaybackThreadWorker Implementation ---
 
-PlaybackThreadWorker::PlaybackThreadWorker(AppContext *ctx, Mixer *mixer, double timer_interval)
+PlaybackThreadWorker::PlaybackThreadWorker(std::shared_ptr<NoteNagaProjectData> projectData, Mixer *mixer, double timer_interval)
     : QObject(nullptr),
-      ctx(ctx),
+      projectData(projectData),
       mixer(mixer),
       timer_interval(timer_interval),
       ms_per_tick(1.0),

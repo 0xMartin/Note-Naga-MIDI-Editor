@@ -51,14 +51,14 @@ set(HEADER_FILES
     src/gui/widgets/track_list_widget.h
     src/gui/widgets/track_mixer_widget.h
     src/gui/widgets/track_widget.h
-    # midi
-    src/midi/midi_file.h
     # note_naga_engine
     src/note_naga_engine/note_naga_engine.h
     # note_naga_engine/core
     src/note_naga_engine/core/mixer.h
     src/note_naga_engine/core/project_data.h
     src/note_naga_engine/core/types.h
+    # note_naga_engine/io
+    src/note_naga_engine/io/midi_file.h
     # note_naga_engine/worker
     src/note_naga_engine/worker/playback_worker.h
 )
@@ -87,14 +87,14 @@ set(SOURCE_FILES
     src/gui/widgets/track_list_widget.cpp
     src/gui/widgets/track_mixer_widget.cpp
     src/gui/widgets/track_widget.cpp
-    # midi
-    src/midi/midi_file.cpp
     # note_naga_engine
     src/note_naga_engine/note_naga_engine.cpp
     # note_naga_engine/core
     src/note_naga_engine/core/mixer.cpp
     src/note_naga_engine/core/project_data.cpp
     src/note_naga_engine/core/types.cpp
+    # note_naga_engine/io
+    src/note_naga_engine/io/midi_file.cpp
     # note_naga_engine/worker
     src/note_naga_engine/worker/playback_worker.cpp
 )

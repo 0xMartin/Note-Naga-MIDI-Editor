@@ -33,7 +33,7 @@ public:
     void solo_track(int track_id, bool solo = true);
 
     // --- Getters & Setters ---
-    NoteNagaProjectData* get_project_data();
+    std::shared_ptr<NoteNagaProjectData> get_project_data();
     void set_project_data(const std::shared_ptr<NoteNagaProjectData>& data);
 
     Mixer* get_mixer();
@@ -47,17 +47,6 @@ public:
     std::shared_ptr<Track> get_track_by_id(int track_id) const;
 
     // --- Signals ---
-Q_SIGNALS:
-    void project_file_loaded_signal();
-
-    void sequence_meta_changed_signal(int sequence_id);
-    void selected_sequence_changed_signal(int sequence_id);
-
-    void track_meta_changed_signal(int track_id);
-    void selected_track_changed_signal(int track_id);
-
-    void playing_note_signal(const MidiNote& note, int track_id);
-    void mixer_playing_note_signal(const MidiNote& note, const QString& device_name, int channel);
 
 protected:
     std::shared_ptr<NoteNagaProjectData> project_data;

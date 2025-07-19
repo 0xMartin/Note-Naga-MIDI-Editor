@@ -7,8 +7,9 @@
 #include <QString>
 #include <QMap>
 #include <memory>
-#include "app_context.h"
-#include "shared.h"
+
+#include "project_data.h"
+#include "types.h"
 
 // macros for send to anx devices
 #define TRACK_ROUTING_ENTRY_ANY_DEVICE "any"
@@ -28,7 +29,7 @@ struct TrackRountingEntry {
 class Mixer : public QObject {
     Q_OBJECT
 public:
-    explicit Mixer(AppContext* ctx, const QString& sf2_path = "./FluidR3_GM.sf2");
+    explicit Mixer(std::shared_ptr<NoteNagaProjectData> projectData, const QString& sf2_path = "./FluidR3_GM.sf2");
     ~Mixer();
 
     QVector<QString> detect_outputs();
@@ -58,11 +59,13 @@ public:
     int master_note_offset;
     float master_pan;
 
-signals:
+Q_SIGNALS:
     void routing_entry_stack_changed_signal();
+    void note_in_signal(const MidiNote& note, const QString& device_name, int channel);
+    void note_out_signal(const MidiNote& note, const QString& device_name, int channel);
 
 private:
-    AppContext* ctx;
+    std::shared_ptr<NoteNagaProjectData> projectData;
     QString sf2_path;
 
     // --- Output devices and routing ---
