@@ -15,7 +15,8 @@ class NoteNagaMIDISequence {
 
 public:
     NoteNagaMIDISequence();
-    NoteNagaMIDISequence(std::vector<std::shared_ptr<Track>> tracks);
+    NoteNagaMIDISequence(int sequence_id);
+    NoteNagaMIDISequence(int sequence_id, std::vector<std::shared_ptr<Track>> tracks);
 
     void clear();
     std::shared_ptr<Track> get_track_by_id(int track_id);
@@ -24,6 +25,8 @@ public:
     void load_from_midi(const QString& midi_file_path);
     std::vector<std::shared_ptr<Track>> load_type0_tracks(const MidiFile& midiFile);
     std::vector<std::shared_ptr<Track>> load_type1_tracks(const MidiFile& midiFile);
+
+    int get_sequence_id() const { return sequence_id; }
 
     int get_ppq() const { return ppq; }
     void set_ppq(int ppq) { this->ppq = ppq; }
@@ -44,6 +47,8 @@ public:
     std::shared_ptr<MidiFile> get_midi_file() const { return midi_file; }
 
 protected:
+    int sequence_id;
+    
     std::vector<std::shared_ptr<Track>> tracks;
     std::optional<int> active_track_id;
     std::optional<int> solo_track_id;
@@ -57,11 +62,19 @@ protected:
 
 // ---------- Note Naga Project Data ----------
 class NoteNagaProjectData {
-    std::vector<std::shared_ptr<NoteNagaMIDISequence>> sequences;
-    std::optional<int> active_sequence_id;
-
+public:
     NoteNagaProjectData();
+
+    bool load_project(const QString& project_path);
 
     void add_sequence(const std::shared_ptr<NoteNagaMIDISequence>& sequence);
     void remove_sequence(const std::shared_ptr<NoteNagaMIDISequence>& sequence);
+
+    std::optional<int> get_active_sequence_id() const { return active_sequence_id; }
+
+    std::vector<std::shared_ptr<NoteNagaMIDISequence>> get_sequences() const { return sequences; }
+
+protected:
+    std::vector<std::shared_ptr<NoteNagaMIDISequence>> sequences;
+    std::optional<int> active_sequence_id;
 };

@@ -8,14 +8,21 @@
 #include <QDebug>
 
 // ---------- Note Naga MIDI Sequence ----------
-
 NoteNagaMIDISequence::NoteNagaMIDISequence()
 {
+    this->sequence_id = rand();
     this->clear();
 }
 
-NoteNagaMIDISequence::NoteNagaMIDISequence(std::vector<std::shared_ptr<Track>> tracks)
+NoteNagaMIDISequence::NoteNagaMIDISequence(int sequence_id)
 {
+    this->sequence_id = sequence_id;
+    this->clear();
+}
+
+NoteNagaMIDISequence::NoteNagaMIDISequence(int sequence_id, std::vector<std::shared_ptr<Track>> tracks)
+{
+    this->sequence_id = sequence_id;
     this->clear();
     this->tracks = std::move(tracks);
 }
@@ -84,7 +91,6 @@ void NoteNagaMIDISequence::load_from_midi(const QString& midi_file_path) {
     active_track_id = !tracks_tmp.empty() ? tracks_tmp[0]->track_id : -1;
     tracks = tracks_tmp;
     compute_max_tick();
-    emit midi_file_loaded_signal();
 }
 
 // --- Helper: load type 0 MIDI file (split channels) ---
@@ -274,11 +280,27 @@ NoteNagaProjectData::NoteNagaProjectData() {
     active_sequence_id.reset();
 }
 
+bool NoteNagaProjectData::load_project(const QString &project_path)
+{
+    // Check for empty path
+    if (project_path.isEmpty()) 
+    {
+        return false;
+    }
+
+    // Create a new MIDI sequence
+    auto sequence = std::make_shared<NoteNagaMIDISequence>();
+    sequence->load_from_midi(project_path);
+    add_sequence(sequence);
+
+    return true;
+}
+
 void NoteNagaProjectData::add_sequence(const std::shared_ptr<NoteNagaMIDISequence>& sequence) {
     if (sequence) {
         sequences.push_back(sequence);
         if (!active_sequence_id.has_value()) {
-            active_sequence_id = sequence->get_track_by_id(0)->track_id; // Set first track as active
+            active_sequence_id = sequence->get_track_by_id(0)->track_id; 
         }
     }
 }

@@ -5,6 +5,16 @@
 #include <vector>
 #include <optional>
 
+// comment to disable Qt support
+#define NN_QT_ENABLED
+
+// --- Macro for emitting signals depending on NN_QT_EMIT_ENABLED ---
+#ifdef NN_QT_ENABLED
+#define NN_QT_EMIT(X) emit X
+#else
+#define NN_QT_EMIT(X)
+#endif
+
 // ---------- Channel colors ----------
 extern const std::vector<QColor> DEFAULT_CHANNEL_COLORS;
 
