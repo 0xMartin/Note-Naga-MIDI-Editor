@@ -30,66 +30,73 @@ pkg_check_modules(FLUIDSYNTH REQUIRED IMPORTED_TARGET fluidsynth)
 pkg_check_modules(RTMIDI REQUIRED IMPORTED_TARGET rtmidi)
 
 set(HEADER_FILES
-    src/main_window.h
-
-    src/core/midi_file.h
-    src/core/shared.h
-    src/core/app_context.h
-    src/core/icons.h
-    src/core/playback_worker.h
-    src/core/mixer.h
-
-    src/dialogs/instrument_selector_dialog.h   
-    
-    src/utils/space_action.h
-
-    src/widgets/volume_bar.h
-    src/widgets/multi_channel_volume_bar.h
-    src/widgets/audio_dial.h
-    src/widgets/audio_dial_centered.h
-    src/widgets/animated_time_label.h
-    src/widgets/indicator_led_widget.h
-
-    src/main_widgets/midi_control_bar_widget.h
-    src/main_widgets/track_widget.h
-    src/main_widgets/track_list_widget.h
-    src/main_widgets/midi_tact_ruler.h
-    src/main_widgets/midi_keyboard_ruler.h
-    src/main_widgets/midi_editor_widget.h
-    src/main_widgets/routing_entry_widget.h
-    src/main_widgets/track_mixer_widget.h
+    # gui
+    src/gui/icons.h
+    src/gui/main_window.h
+    # gui/components
+    src/gui/components/animated_time_label.h
+    src/gui/components/audio_dial.h
+    src/gui/components/audio_dial_centered.h
+    src/gui/components/indicator_led_widget.h
+    src/gui/components/multi_channel_volume_bar.h
+    src/gui/components/volume_bar.h
+    # gui/dialogs
+    src/gui/dialogs/instrument_selector_dialog.h
+    # gui/widgets
+    src/gui/widgets/midi_control_bar_widget.h
+    src/gui/widgets/midi_editor_widget.h
+    src/gui/widgets/midi_keyboard_ruler.h
+    src/gui/widgets/midi_tact_ruler.h
+    src/gui/widgets/routing_entry_widget.h
+    src/gui/widgets/track_list_widget.h
+    src/gui/widgets/track_mixer_widget.h
+    src/gui/widgets/track_widget.h
+    # midi
+    src/midi/midi_file.h
+    # note_naga_engine
+    src/note_naga_engine/note_naga_engine.h
+    # note_naga_engine/core
+    src/note_naga_engine/core/mixer.h
+    src/note_naga_engine/core/project_data.h
+    src/note_naga_engine/core/types.h
+    # note_naga_engine/worker
+    src/note_naga_engine/worker/playback_worker.h
 )
 
 set(SOURCE_FILES
+    # src
     src/main.cpp
-    src/main_window.cpp
-    
-    src/core/midi_file.cpp
-    src/core/shared.cpp
-    src/core/app_context.cpp
-    src/core/icons.cpp
-    src/core/playback_worker.cpp
-    src/core/mixer.cpp
-
-    src/dialogs/instrument_selector_dialog.cpp
-
-    src/utils/space_action.cpp
-
-    src/widgets/volume_bar.cpp
-    src/widgets/multi_channel_volume_bar.cpp
-    src/widgets/audio_dial.cpp
-    src/widgets/audio_dial_centered.cpp
-    src/widgets/animated_time_label.cpp
-    src/widgets/indicator_led_widget.cpp
-
-    src/main_widgets/midi_control_bar_widget.cpp
-    src/main_widgets/track_widget.cpp
-    src/main_widgets/track_list_widget.cpp
-    src/main_widgets/midi_tact_ruler.cpp
-    src/main_widgets/midi_keyboard_ruler.cpp
-    src/main_widgets/midi_editor_widget.cpp
-    src/main_widgets/routing_entry_widget.cpp
-    src/main_widgets/track_mixer_widget.cpp
+    # gui
+    src/gui/icons.cpp
+    src/gui/main_window.cpp
+    # gui/components
+    src/gui/components/animated_time_label.cpp
+    src/gui/components/audio_dial.cpp
+    src/gui/components/audio_dial_centered.cpp
+    src/gui/components/indicator_led_widget.cpp
+    src/gui/components/multi_channel_volume_bar.cpp
+    src/gui/components/volume_bar.cpp
+    # gui/dialogs
+    src/gui/dialogs/instrument_selector_dialog.cpp
+    # gui/widgets
+    src/gui/widgets/midi_control_bar_widget.cpp
+    src/gui/widgets/midi_editor_widget.cpp
+    src/gui/widgets/midi_keyboard_ruler.cpp
+    src/gui/widgets/midi_tact_ruler.cpp
+    src/gui/widgets/routing_entry_widget.cpp
+    src/gui/widgets/track_list_widget.cpp
+    src/gui/widgets/track_mixer_widget.cpp
+    src/gui/widgets/track_widget.cpp
+    # midi
+    src/midi/midi_file.cpp
+    # note_naga_engine
+    src/note_naga_engine/note_naga_engine.cpp
+    # note_naga_engine/core
+    src/note_naga_engine/core/mixer.cpp
+    src/note_naga_engine/core/project_data.cpp
+    src/note_naga_engine/core/types.cpp
+    # note_naga_engine/worker
+    src/note_naga_engine/worker/playback_worker.cpp
 )
 
 if(WIN32)

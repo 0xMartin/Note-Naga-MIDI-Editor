@@ -16,7 +16,6 @@
 #include "main_widgets/track_list_widget.h"
 #include "main_widgets/midi_control_bar_widget.h"
 #include "main_widgets/track_mixer_widget.h"
-#include "utils/space_action.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT

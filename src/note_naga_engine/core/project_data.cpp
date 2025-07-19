@@ -1,4 +1,4 @@
-#include "app_context.h"
+#include "project_data.h"
 
 #include <QFileInfo>
 #include <QString>
@@ -7,21 +7,20 @@
 #include <algorithm>
 #include <QDebug>
 
-AppContext* AppContext::instance() {
-    static AppContext* _instance = nullptr;
-    if (!_instance) {
-        _instance = new AppContext();
-    }
-    return _instance;
-}
+// ---------- Note Naga MIDI Sequence ----------
 
-AppContext::AppContext(QObject* parent)
-    : QObject(parent), ppq(480), tempo(500000), midi_file(nullptr), current_tick(0), max_tick(0)
+NoteNagaMIDISequence::NoteNagaMIDISequence()
 {
-    qDebug() << "AppContext: Initialized with default PPQ and tempo.";
+    this->clear();
 }
 
-void AppContext::clear() {
+NoteNagaMIDISequence::NoteNagaMIDISequence(std::vector<std::shared_ptr<Track>> tracks)
+{
+    this->clear();
+    this->tracks = std::move(tracks);
+}
+
+void NoteNagaMIDISequence::clear() {
     std::cout << "AppContext: Clearing context" << std::endl;
     tracks.clear();
     ppq = 480;
@@ -32,7 +31,7 @@ void AppContext::clear() {
     max_tick = 0;
 }
 
-std::shared_ptr<Track> AppContext::get_track_by_id(int track_id) {
+std::shared_ptr<Track> NoteNagaMIDISequence::get_track_by_id(int track_id) {
     auto it = std::find_if(tracks.begin(), tracks.end(), [track_id](const std::shared_ptr<Track>& tr) {
         return tr->track_id == track_id;
     });
@@ -40,7 +39,7 @@ std::shared_ptr<Track> AppContext::get_track_by_id(int track_id) {
     return nullptr;
 }
 
-int AppContext::compute_max_tick() {
+int NoteNagaMIDISequence::compute_max_tick() {
     max_tick = 0;
     for (const auto& track : tracks) {
         for (const auto& note : track->midi_notes) {
@@ -51,7 +50,7 @@ int AppContext::compute_max_tick() {
     return max_tick;
 }
 
-void AppContext::load_from_midi(const QString& midi_file_path) {
+void NoteNagaMIDISequence::load_from_midi(const QString& midi_file_path) {
     // Check for empty path
     if (midi_file_path.isEmpty()) {
         std::cout << "AppContext: No MIDI file path provided." << std::endl;
@@ -89,8 +88,8 @@ void AppContext::load_from_midi(const QString& midi_file_path) {
 }
 
 // --- Helper: load type 0 MIDI file (split channels) ---
-std::vector<std::shared_ptr<Track>> AppContext::load_type0_tracks(const MidiFile& midiFile) {
-    qDebug() << "AppContext: Loading type 0 MIDI file with " << midiFile.getNumTracks() << " tracks.";
+std::vector<std::shared_ptr<Track>> NoteNagaMIDISequence::load_type0_tracks(const MidiFile& midiFile) {
+    qDebug() << "NoteNagaMIDISequence: Loading type 0 MIDI file with " << midiFile.getNumTracks() << " tracks.";
     std::vector<std::shared_ptr<Track>> tracks_tmp;
 
     // Only one track - need to split by MIDI channel
@@ -183,8 +182,8 @@ std::vector<std::shared_ptr<Track>> AppContext::load_type0_tracks(const MidiFile
 }
 
 // --- Helper: load type 1 MIDI file (one track per chunk) ---
-std::vector<std::shared_ptr<Track>> AppContext::load_type1_tracks(const MidiFile& midiFile) {
-    qDebug() << "AppContext: Loading type 1 MIDI file with " << midiFile.getNumTracks() << " tracks.";
+std::vector<std::shared_ptr<Track>> NoteNagaMIDISequence::load_type1_tracks(const MidiFile& midiFile) {
+    qDebug() << "NoteNagaMIDISequence: Loading type 1 MIDI file with " << midiFile.getNumTracks() << " tracks.";
     std::vector<std::shared_ptr<Track>> tracks_tmp;
 
     int tempo = 500000;
@@ -265,4 +264,34 @@ std::vector<std::shared_ptr<Track>> AppContext::load_type1_tracks(const MidiFile
     }
     this->tempo = tempo;
     return tracks_tmp;
+}
+
+// ---------- Note Naga Project Data ----------
+
+NoteNagaProjectData::NoteNagaProjectData() {
+    // Initialize with empty sequences
+    sequences.clear();
+    active_sequence_id.reset();
+}
+
+void NoteNagaProjectData::add_sequence(const std::shared_ptr<NoteNagaMIDISequence>& sequence) {
+    if (sequence) {
+        sequences.push_back(sequence);
+        if (!active_sequence_id.has_value()) {
+            active_sequence_id = sequence->get_track_by_id(0)->track_id; // Set first track as active
+        }
+    }
+}
+
+void NoteNagaProjectData::remove_sequence(const std::shared_ptr<NoteNagaMIDISequence>& sequence) {
+    if (sequence) {
+        auto it = std::remove(sequences.begin(), sequences.end(), sequence);
+        if (it != sequences.end()) {
+            sequences.erase(it, sequences.end());
+            // Reset active sequence if it was removed
+            if (active_sequence_id.has_value() && *active_sequence_id == sequence->get_track_by_id(0)->track_id) {
+                active_sequence_id.reset();
+            }
+        }
+    }
 }
