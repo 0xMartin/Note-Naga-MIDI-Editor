@@ -7,15 +7,13 @@
 #include <QTimer>
 #include <QEvent>
 #include <random>
-#include "../core/shared.h"
 
 #define NOTE_MIN 0
 #define NOTE_MAX 127
 
-MidiKeyboardRuler::MidiKeyboardRuler(AppContext *ctx, Mixer *mixer, int viewer_row_height_, QWidget *parent)
+MidiKeyboardRuler::MidiKeyboardRuler(NoteNagaEngine* engine_, int viewer_row_height_, QWidget *parent)
     : QWidget(parent),
-      ctx(ctx),
-      mixer(mixer),
+      engine(engine_),
       viewer_row_height(viewer_row_height_),
       verticalScroll(0),
       hovered_note(-1),
@@ -28,10 +26,10 @@ MidiKeyboardRuler::MidiKeyboardRuler(AppContext *ctx, Mixer *mixer, int viewer_r
       black_key_line_color("#242a30"),
       hover_color("#7e93be"),
       press_color("#4f76c4"),
-      c_key_label_color("#1c305e")
+      c_key_label_color("rgba(28, 48, 94, 1)")
 {
     this->pressed_note.note = -1;
-    connect(ctx, &AppContext::playing_note_signal, this, &MidiKeyboardRuler::on_play_note);
+    connect(engine->get_mixer(), &NoteNagaMixer::note_in_signal, this, &MidiKeyboardRuler::on_play_note);
     setObjectName("MidiKeyboardRuler");
     setMinimumWidth(60);
     setMouseTracking(true);
@@ -268,24 +266,31 @@ void MidiKeyboardRuler::leaveEvent(QEvent *event)
 
 void MidiKeyboardRuler::mousePressEvent(QMouseEvent *event)
 {
-    if (ctx->active_track_id.has_value())
+    std::shared_ptr<NoteNagaMIDISeq> sequence = engine->get_project()->get_active_sequence();
+    if (!sequence)
     {
-        auto note = note_at_pos(event->pos());
-        int nval = note.has_value() ? note.value() : -1;
-        if (nval != -1)
-        {
-            pressed_note.note_id = rand();
-            pressed_note.note = nval;
-            pressed_note.velocity = 44 + rand() % 41; // random velocity 44 - 84
-            this->mixer->note_play(pressed_note, ctx->active_track_id.value());
-            emit play_note_signal(pressed_note, ctx->active_track_id.value());
-            update();
-        }
+        qDebug() << "No active sequence to play note on.";
+        return;
     }
-    else
+    std::optional<int> track_id = sequence->get_active_track_id();
+    if (!track_id.has_value())
     {
         qDebug() << "No active track to play note on.";
+        return;
     }
+
+    auto note = note_at_pos(event->pos());
+    int nval = note.has_value() ? note.value() : -1;
+    if (nval != -1)
+    {
+        pressed_note.note_id = rand();
+        pressed_note.note = nval;
+        pressed_note.velocity = 44 + rand() % 41; // random velocity 44 - 84
+        this->engine->get_mixer()->note_play(pressed_note, track_id.value());
+        emit play_note_signal(pressed_note, track_id.value());
+        update();
+    }
+
     QWidget::mousePressEvent(event);
 }
 
@@ -294,11 +299,8 @@ void MidiKeyboardRuler::mouseReleaseEvent(QMouseEvent *event)
     if (pressed_note.note != -1)
     {
         int velocity = 44 + rand() % 41;
-        if (ctx->active_track_id.has_value())
-        {
-            this->mixer->note_play(pressed_note, ctx->active_track_id.value());
-            emit stop_note_signal(pressed_note, ctx->active_track_id.value());
-        }
+        this->engine->get_mixer()->note_stop(pressed_note);
+        emit stop_note_signal(pressed_note);
         pressed_note.note = -1;
         update();
     }
@@ -312,12 +314,11 @@ void MidiKeyboardRuler::set_vertical_scroll_slot(float v, float row_height)
     update();
 }
 
-void MidiKeyboardRuler::on_play_note(const MidiNote &note, int track_id)
+void MidiKeyboardRuler::on_play_note(const NoteNagaNote& note, const NoteNagaMIDISeq *sequence, const NoteNagaTrack *track)
 {
-    int timeout = note_time_ms(note, this->ctx->ppq, this->ctx->tempo);
-    std::shared_ptr<Track> track = this->ctx->get_track_by_id(track_id);
+    int timeout = note_time_ms(note, sequence->get_ppq(), sequence->get_tempo());
     if (!track) return;
-    highlight_key(note.note, track->color, timeout);
+    highlight_key(note.note, track->get_color(), timeout);
 }
 
 void MidiKeyboardRuler::highlight_key(int note, const QColor &color, int timeout)

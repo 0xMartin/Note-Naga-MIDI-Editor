@@ -58,7 +58,7 @@ void TrackListWidget::_init_ui()
     setLayout(main_layout);
 
     // Signals
-    connect(engine->get_project_data().get(), NoteNagaProjectData::project_file_loaded_signal, this, &TrackListWidget::_reload_tracks);
+    connect(engine->get_project().get(), NoteNagaProject::project_file_loaded_signal, this, &TrackListWidget::_reload_tracks);
     connect(engine->get_mixer(), &NoteNagaMixer::note_in_signal, this, &TrackListWidget::_handle_playing_note);
 }
 
@@ -75,45 +75,46 @@ void TrackListWidget::_reload_tracks()
     }
     track_widgets.clear();
 
-    for (size_t idx = 0; idx < ctx->tracks.size(); ++idx) {
-        auto& tr = ctx->tracks[idx];
-        TrackWidget* widget = new TrackWidget(tr->track_id, ctx, mixer, container);
+    std::shared_ptr<NoteNagaMIDISeq> sequence = this->engine->get_project()->get_active_sequence();
+    if (!sequence) return;
+
+    for (size_t idx = 0; idx < sequence->get_tracks().size(); ++idx) {
+        int track_id = sequence->get_tracks()[idx]->track_id;
+        TrackWidget* widget = new TrackWidget(this->engine, sequence, track_id, container);
 
         // Selection handling via event filter
         widget->installEventFilter(this);
         widget->setMouseTracking(true);
 
         // Custom mousePressEvent via subclass or signal (see below)
-        connect(widget, &TrackWidget::clicked, this, [this, idx](int /*track_index*/) {
-            _update_selection(static_cast<int>(idx));
-            emit track_selected_signal(static_cast<int>(idx));
+        connect(widget, &TrackWidget::clicked, this, [this, sequence, idx, track_id]() {
+            _update_selection(sequence, static_cast<int>(idx));
+            emit sequence->active_track_changed_signal(track_id);
         });
 
         track_widgets.push_back(widget);
         vbox->addWidget(widget);
     }
     vbox->addStretch();
-    _update_selection(track_widgets.empty() ? -1 : 0);
+    _update_selection(sequence, track_widgets.empty() ? -1 : 0);
 }
 
-void TrackListWidget::_update_selection(int idx)
+void TrackListWidget::_update_selection(std::shared_ptr<NoteNagaMIDISeq> sequence, int widget_idx)
 {
-    selected_row = idx;
+    selected_row = widget_idx;
     for (size_t i = 0; i < track_widgets.size(); ++i) {
-        track_widgets[i]->refresh_style(static_cast<int>(i) == idx);
-        if (static_cast<int>(i) == idx) {
-            ctx->active_track_id = track_widgets[i]->get_track_id();
-            if (ctx->active_track_id.has_value())
-                emit ctx->selected_track_changed_signal(ctx->active_track_id.value());
+        track_widgets[i]->refresh_style(static_cast<int>(i) == widget_idx);
+        if (static_cast<int>(i) == widget_idx) {
+            sequence->set_active_track_id(track_widgets[i]->get_track_id());
         }
     }
 }
 
-void TrackListWidget::_handle_playing_note(const MidiNote& note, int track_id)
+void TrackListWidget::_handle_playing_note(const NoteNagaNote& note, const NoteNagaMIDISeq *sequence, const NoteNagaTrack *track)
 {
-    double time_ms = note_time_ms(note, ctx->ppq, ctx->tempo);
+    double time_ms = note_time_ms(note, sequence->get_ppq(), sequence->get_tempo());
     for (auto* w : track_widgets) {
-        if (w->get_track_id() == track_id && note.velocity.has_value() && note.velocity.value() > 0) {
+        if (w->get_track_id() == track->track_id && note.velocity.has_value() && note.velocity.value() > 0) {
             w->get_volume_bar()->setValue(static_cast<double>(note.velocity.value()) / 127.0, time_ms);
             break;
         }

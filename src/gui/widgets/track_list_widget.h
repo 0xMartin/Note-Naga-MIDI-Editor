@@ -10,7 +10,6 @@
 
 #include "track_widget.h"
 #include "../../note_naga_engine/note_naga_engine.h"
-#include "../../note_naga_engine/core/types.h"
 
 // Moderní list widget s TrackWidgety ve scrollovací oblasti.
 class TrackListWidget : public QWidget {
@@ -21,10 +20,10 @@ public:
 private slots:
     void _init_ui();
     void _reload_tracks();
-    void _handle_playing_note(const MidiNote& note, int track_id);
+    void _handle_playing_note(const NoteNagaNote& note, const NoteNagaMIDISeq *sequence, const NoteNagaTrack *track);
 
 private:
-    void _update_selection(int idx);
+    void _update_selection(std::shared_ptr<NoteNagaMIDISeq> sequence, int widget_idx);
 
     NoteNagaEngine* engine;
 

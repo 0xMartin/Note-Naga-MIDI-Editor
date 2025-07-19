@@ -8,7 +8,6 @@
 #include <QMap>
 
 #include "../../note_naga_engine/note_naga_engine.h"
-#include "../../note_naga_engine/core/types.h"
 
 class MidiEditorWidget : public QGraphicsView {
     Q_OBJECT
@@ -44,7 +43,7 @@ private:
     void update_grid();
     void update_bar_grid();
     void update_notes();
-    void draw_note(const MidiNote& note, const Track& track, bool is_selected, bool is_drum, int x, int y, int w, int h);
+    void draw_note(const NoteNagaNote& note, const NoteNagaTrack& track, bool is_selected, bool is_drum, int x, int y, int w, int h);
     void update_marker();
     void clear_scene();
 

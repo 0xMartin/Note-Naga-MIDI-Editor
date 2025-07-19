@@ -5,7 +5,7 @@
 #include <QString>
 #include <algorithm>
 
-NoteNagaMixer::NoteNagaMixer(std::shared_ptr<NoteNagaProjectData> projectData, const QString &sf2_path)
+NoteNagaMixer::NoteNagaMixer(std::shared_ptr<NoteNagaProject> projectData, const QString &sf2_path)
     : QObject(nullptr),
       projectData(projectData),
       sf2_path(sf2_path),
@@ -18,7 +18,7 @@ NoteNagaMixer::NoteNagaMixer(std::shared_ptr<NoteNagaProjectData> projectData, c
       master_note_offset(0),
       master_pan(0.0f)
 {
-    connect(projectData.get(), &NoteNagaProjectData::project_file_loaded_signal, this, &NoteNagaMixer::create_default_routing);
+    connect(projectData.get(), &NoteNagaProject::project_file_loaded_signal, this, &NoteNagaMixer::create_default_routing);
     ensure_fluidsynth();
     available_outputs = detect_outputs();
     default_output = available_outputs.contains("fluidsynth")
@@ -61,7 +61,7 @@ void NoteNagaMixer::create_default_routing()
     routing_entries.clear();
 
     // get active sequence from project data
-    std::shared_ptr<NoteNagaMIDISequence> active_sequence = this->projectData->get_active_sequence();
+    std::shared_ptr<NoteNagaMIDISeq> active_sequence = this->projectData->get_active_sequence();
     if (!active_sequence)
     {
         qDebug() << "No active sequence found, cannot create default routing.";
@@ -107,7 +107,7 @@ void NoteNagaMixer::set_routing(const QVector<TrackRountingEntry> &entries)
 void NoteNagaMixer::add_routing_entry(const TrackRountingEntry &entry)
 {
     // get active sequence from project data
-    std::shared_ptr<NoteNagaMIDISequence> active_sequence = this->projectData->get_active_sequence();
+    std::shared_ptr<NoteNagaMIDISeq> active_sequence = this->projectData->get_active_sequence();
     if (!active_sequence)
     {
         qDebug() << "No active sequence found, cannot add routing entry.";
@@ -148,13 +148,10 @@ void NoteNagaMixer::clear_routing_table()
     NN_QT_EMIT(routing_entry_stack_changed_signal());
 }
 
-void NoteNagaMixer::note_play(const MidiNote &midi_note, int track_id)
+void NoteNagaMixer::note_play(const NoteNagaNote &midi_note, int track_id)
 {
-    // emit signal (note playing on track. note go to NoteNagaMixer)
-    NN_QT_EMIT(note_in_signal(midi_note, track_id));
-
     // get active sequence from project data
-    std::shared_ptr<NoteNagaMIDISequence> active_sequence = this->projectData->get_active_sequence();
+    std::shared_ptr<NoteNagaMIDISeq> active_sequence = this->projectData->get_active_sequence();
     if (!active_sequence)
     {
         qDebug() << "No active sequence found, cannot play note.";
@@ -163,9 +160,12 @@ void NoteNagaMixer::note_play(const MidiNote &midi_note, int track_id)
     
     // get track of note and retrieve its program (instrument)
     int prog = 0;
-    std::shared_ptr<Track> track = active_sequence->get_active_track();
+    std::shared_ptr<NoteNagaTrack> track = active_sequence->get_active_track();
     if (track)
         prog = track->instrument.value_or(0);
+
+    // emit signal (note playing on track. note go to NoteNagaMixer)
+    NN_QT_EMIT(note_in_signal(midi_note, active_sequence.get(), track.get()));
 
     // process each routing entry for the track 
     for (const TrackRountingEntry &entry : this->routing_entries)
@@ -212,7 +212,7 @@ void NoteNagaMixer::note_play(const MidiNote &midi_note, int track_id)
     }
 }
 
-void NoteNagaMixer::note_stop(const MidiNote &midi_note)
+void NoteNagaMixer::note_stop(const NoteNagaNote &midi_note)
 {
     int note_id = midi_note.note_id;
     for (auto dev_it = playing_notes.begin(); dev_it != playing_notes.end(); ++dev_it)
@@ -312,7 +312,7 @@ void NoteNagaMixer::stop_all_notes(std::optional<int> track_id)
 void NoteNagaMixer::mute_track(int track_id, bool mute)
 {
     // get active sequence from project data
-    std::shared_ptr<NoteNagaMIDISequence> active_sequence = this->projectData->get_active_sequence();
+    std::shared_ptr<NoteNagaMIDISeq> active_sequence = this->projectData->get_active_sequence();
     if (!active_sequence)
     {
         qDebug() << "No active sequence found, cannot mute track.";
@@ -332,7 +332,7 @@ void NoteNagaMixer::mute_track(int track_id, bool mute)
 void NoteNagaMixer::solo_track(int track_id, bool solo)
 {
     // get active sequence from project data
-    std::shared_ptr<NoteNagaMIDISequence> active_sequence = this->projectData->get_active_sequence();
+    std::shared_ptr<NoteNagaMIDISeq> active_sequence = this->projectData->get_active_sequence();
     if (!active_sequence)
     {
         qDebug() << "No active sequence found, cannot solo track.";
@@ -365,7 +365,7 @@ void NoteNagaMixer::solo_track(int track_id, bool solo)
     }
 }
 
-void NoteNagaMixer::play_note_on_output(const QString &output, int ch, int note_num, int velocity, int prog, int pan_cc, const MidiNote &midi_note)
+void NoteNagaMixer::play_note_on_output(const QString &output, int ch, int note_num, int velocity, int prog, int pan_cc, const NoteNagaNote &midi_note)
 {
     // skip if note is already playing on this output device
     if (playing_notes.value(output).value(ch).contains(note_num))
@@ -428,7 +428,7 @@ void NoteNagaMixer::play_note_on_output(const QString &output, int ch, int note_
     playing_notes[output][ch][note_num] = note_id;
 
     // emit signal (NoteNagaMixer playing note)
-    MidiNote note_clone = midi_note;
+    NoteNagaNote note_clone = midi_note;
     note_clone.velocity = velocity;
     NN_QT_EMIT(note_out_signal(note_clone, output, ch));
 }

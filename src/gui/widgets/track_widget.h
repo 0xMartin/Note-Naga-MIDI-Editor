@@ -14,15 +14,14 @@
 #include <QString>
 
 #include "../../note_naga_engine/note_naga_engine.h"
-#include "../../note_naga_engine/core/types.h"
 #include "../components/volume_bar.h"
 
 class TrackWidget : public QFrame {
     Q_OBJECT
 public:
-    explicit TrackWidget(NoteNagaEngine* engine, std::shared_ptr<NoteNagaMIDISequence> sequence, int track_id, QWidget* parent = nullptr);
+    explicit TrackWidget(NoteNagaEngine* engine, std::shared_ptr<NoteNagaMIDISeq> sequence, int track_id, QWidget* parent = nullptr);
 
-    std::shared_ptr<NoteNagaMIDISequence> getSequence() const { return this->sequence; }
+    std::shared_ptr<NoteNagaMIDISeq> getSequence() const { return this->sequence; }
     int get_track_id() const { return this->track_id; }
     VolumeBar* get_volume_bar() const { return volume_bar; }
 
@@ -35,7 +34,7 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
 
 private slots:
-    void _update_track_info(int track_id);
+    void _update_track_info(int track_id, const QString& param);
     void _toggle_visibility();
     void _toggle_solo();
     void _toggle_mute();
@@ -44,7 +43,7 @@ private slots:
     void _on_instrument_btn_clicked();
 
 private:
-    std::shared_ptr<NoteNagaMIDISequence> sequence;
+    std::shared_ptr<NoteNagaMIDISeq> sequence;
     int track_id;
     NoteNagaEngine* engine;
 

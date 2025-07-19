@@ -29,7 +29,7 @@ struct TrackRountingEntry {
 class NoteNagaMixer : public QObject {
     Q_OBJECT
 public:
-    explicit NoteNagaMixer(std::shared_ptr<NoteNagaProjectData> projectData, const QString& sf2_path = "./FluidR3_GM.sf2");
+    explicit NoteNagaMixer(std::shared_ptr<NoteNagaProject> projectData, const QString& sf2_path = "./FluidR3_GM.sf2");
     ~NoteNagaMixer();
 
     QVector<QString> detect_outputs();
@@ -41,8 +41,8 @@ public:
     void remove_routing_entry(int index);
     void clear_routing_table();
 
-    void note_play(const MidiNote& midi_note, int track_id);
-    void note_stop(const MidiNote& midi_note);
+    void note_play(const NoteNagaNote& midi_note, int track_id);
+    void note_stop(const NoteNagaNote& midi_note);
     void stop_all_notes(std::optional<int> track_id = std::nullopt);
 
     void mute_track(int track_id, bool mute);
@@ -61,11 +61,11 @@ public:
 
 Q_SIGNALS:
     void routing_entry_stack_changed_signal();
-    void note_in_signal(const MidiNote& note, int channel);
-    void note_out_signal(const MidiNote& note, const QString& device_name, int channel);
+    void note_in_signal(const NoteNagaNote& note, const NoteNagaMIDISeq *sequence, const NoteNagaTrack *track);
+    void note_out_signal(const NoteNagaNote& note, const QString& device_name, int channel);
 
 private:
-    std::shared_ptr<NoteNagaProjectData> projectData;
+    std::shared_ptr<NoteNagaProject> projectData;
     QString sf2_path;
 
     // --- Output devices and routing ---
@@ -97,7 +97,7 @@ private:
         int velocity, 
         int prog, 
         int pan_cc, 
-        const MidiNote &midi_note);
+        const NoteNagaNote &midi_note);
     void ensure_fluidsynth();
     RtMidiOut* ensure_midi_output(const QString& device);
 };

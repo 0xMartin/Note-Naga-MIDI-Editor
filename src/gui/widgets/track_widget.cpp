@@ -8,10 +8,10 @@
 #include "../icons.h"
 #include "../dialogs/instrument_selector_dialog.h"
 
-TrackWidget::TrackWidget(NoteNagaEngine *engine_, std::shared_ptr<NoteNagaMIDISequence> sequence_, int track_id_, QWidget *parent)
+TrackWidget::TrackWidget(NoteNagaEngine *engine_, std::shared_ptr<NoteNagaMIDISeq> sequence_, int track_id_, QWidget *parent)
     : QFrame(parent), engine(engine_), sequence(sequence_), track_id(track_id_)
 {
-    connect(sequence.get(), &NoteNagaMIDISequence::track_meta_changed_signal, this, &TrackWidget::_update_track_info);
+    connect(sequence.get(), &NoteNagaMIDISeq::track_meta_changed_signal, this, &TrackWidget::_update_track_info);
     setObjectName("TrackWidget");
 
     QHBoxLayout *main_hbox = new QHBoxLayout(this);
@@ -100,25 +100,25 @@ TrackWidget::TrackWidget(NoteNagaEngine *engine_, std::shared_ptr<NoteNagaMIDISe
     right_layout->addWidget(volume_bar);
 
     setLayout(main_hbox);
-    _update_track_info(track_id);
+    _update_track_info(track_id, "");
     refresh_style(false);
     setFocusPolicy(Qt::StrongFocus);
 }
 
-void TrackWidget::_update_track_info(int track_id)
+void TrackWidget::_update_track_info(int track_id, const QString& param)
 {
     if (this->track_id != track_id)
         return;
 
-    std::shared_ptr<Track> track = this->sequence->get_track_by_id(this->track_id);
+    std::shared_ptr<NoteNagaTrack> track = this->sequence->get_track_by_id(this->track_id);
     if (!track) return;
 
-    name_edit->setText(track->name);
-    name_edit->setToolTip(track->name);
+    name_edit->setText(track->get_name());
+    name_edit->setToolTip(track->get_name());
 
     index_lbl->setText(QString::number(track_id + 1));
 
-    auto instrument = find_instrument_by_index(track->instrument.value_or(0));
+    auto instrument = find_instrument_by_index(track->get_instrument().value_or(0));
     if (instrument)
     {
         instrument_btn->setIcon(instrument_icon(instrument->icon));
@@ -130,81 +130,73 @@ void TrackWidget::_update_track_info(int track_id)
         instrument_btn->setToolTip("Unknown instrument");
     }
 
-    solo_btn->setChecked(track->solo);
-    mute_btn->setChecked(track->muted);
-    invisible_btn->setChecked(!track->visible);
+    solo_btn->setChecked(track->is_solo());
+    mute_btn->setChecked(track->is_muted());
+    invisible_btn->setChecked(!track->is_visible());
 
     invisible_btn->setIcon(QIcon(invisible_btn->isChecked() ? ":/icons/eye-not-visible.svg" : ":/icons/eye-visible.svg"));
     mute_btn->setIcon(QIcon(mute_btn->isChecked() ? ":/icons/sound-off.svg" : ":/icons/sound-on.svg"));
 
     volume_bar->setValue(0.0);
-    color_btn->setIcon(svg_str_icon(COLOR_SVG_ICON, track->color, 16));
+    color_btn->setIcon(svg_str_icon(COLOR_SVG_ICON, track->get_color(), 16));
 }
 
 void TrackWidget::_toggle_visibility()
 {
-    std::shared_ptr<Track> track = this->sequence->get_track_by_id(this->track_id);
+    std::shared_ptr<NoteNagaTrack> track = this->sequence->get_track_by_id(this->track_id);
     if (!track) return;
-
-    track->visible = !invisible_btn->isChecked();
-    emit this->sequence->track_meta_changed_signal(track->track_id);
+    track->set_visible(!invisible_btn->isChecked());
 }
 
 void TrackWidget::_toggle_solo()
 {
-    std::shared_ptr<Track> track = this->sequence->get_track_by_id(this->track_id);
+    std::shared_ptr<NoteNagaTrack> track = this->sequence->get_track_by_id(this->track_id);
     if (!track) return;
-    engine->solo_track(track->track_id, solo_btn->isChecked());
+    engine->solo_track(track->get_id(), solo_btn->isChecked());
 }
 
 void TrackWidget::_toggle_mute()
 {
-    std::shared_ptr<Track> track = this->sequence->get_track_by_id(this->track_id);
+    std::shared_ptr<NoteNagaTrack> track = this->sequence->get_track_by_id(this->track_id);
     if (!track) return;
-    engine->mute_track(track->track_id, mute_btn->isChecked());
+    engine->mute_track(track->get_id(), mute_btn->isChecked());
 }
 
 void TrackWidget::_choose_color()
 {
-    std::shared_ptr<Track> track = this->sequence->get_track_by_id(this->track_id);
+    std::shared_ptr<NoteNagaTrack> track = this->sequence->get_track_by_id(this->track_id);
     if (!track) return;
     
-    QColor col = QColorDialog::getColor(track->color, this, "Select Track Color");
+    QColor col = QColorDialog::getColor(track->get_color(), this, "Select Track Color");
     if (col.isValid())
     {
-        track->color = col;
-        emit this->sequence->track_meta_changed_signal(track_id);
+        track->set_color(col);
     }
 }
 
 void TrackWidget::_name_edited()
 {
-    std::shared_ptr<Track> track = this->sequence->get_track_by_id(this->track_id);
+    std::shared_ptr<NoteNagaTrack> track = this->sequence->get_track_by_id(this->track_id);
     if (!track) return;
 
     QString new_name = name_edit->text();
     name_edit->setToolTip(new_name);
-    if (new_name != track->name)
-    {
-        track->name = new_name;
-        emit this->sequence->track_meta_changed_signal(track_id);
-    }
+    track->set_name(new_name);
 }
 
 void TrackWidget::_on_instrument_btn_clicked()
 {
-    std::shared_ptr<Track> track = this->sequence->get_track_by_id(this->track_id);
+    std::shared_ptr<NoteNagaTrack> track = this->sequence->get_track_by_id(this->track_id);
     if (!track) return;
 
-    InstrumentSelectorDialog dlg(this, GM_INSTRUMENTS, instrument_icon, track->instrument);
+    InstrumentSelectorDialog dlg(this, GM_INSTRUMENTS, instrument_icon, track->get_instrument());
     if (dlg.exec() == QDialog::Accepted)
     {
         int gm_index = dlg.get_selected_gm_index();
         auto instrument = find_instrument_by_index(gm_index);
         if (instrument)
         {
-            track->instrument = gm_index;
-            emit this->sequence->track_meta_changed_signal(track->track_id);
+            track->set_instrument(gm_index);
         }
     }
 }

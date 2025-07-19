@@ -15,7 +15,7 @@ class PlaybackWorker : public QObject
 {
     Q_OBJECT
 public:
-    explicit PlaybackWorker(std::shared_ptr<NoteNagaProjectData> projectData, Mixer * mixer, double timer_interval_ms, QObject* parent = nullptr);
+    explicit PlaybackWorker(std::shared_ptr<NoteNagaProject> projectData, Mixer * mixer, double timer_interval_ms, QObject* parent = nullptr);
 
     bool is_playing() const { return playing; }
     void recalculate_worker_tempo();
@@ -31,7 +31,7 @@ private slots:
     void cleanup_thread();
 
 private:
-    std::shared_ptr<NoteNagaProjectData> projectData;
+    std::shared_ptr<NoteNagaProject> projectData;
     Mixer *mixer;
 
     double timer_interval;
@@ -45,7 +45,7 @@ class PlaybackThreadWorker : public QObject
 {
     Q_OBJECT
 public:
-    PlaybackThreadWorker(std::shared_ptr<NoteNagaProjectData> projectData, Mixer *mixer, double timer_interval);
+    PlaybackThreadWorker(std::shared_ptr<NoteNagaProject> projectData, Mixer *mixer, double timer_interval);
     void recalculate_tempo();
     void stop();
 
@@ -57,7 +57,7 @@ signals:
     void on_position_changed_signal(int current_tick);
 
 private:
-    std::shared_ptr<NoteNagaProjectData> projectData;
+    std::shared_ptr<NoteNagaProject> projectData;
     Mixer *mixer;
     
     double timer_interval;

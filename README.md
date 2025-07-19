@@ -2,8 +2,9 @@
 
 0. predelavka struktury na gui a engine
    1. zprovoznit vsechno
-   2. zprovoznit direktivu enginu na komplet deaktivaci Qt
-   3. zdrojovy kod enginu presunout do samostatne slozky + samostatny cmake
+   2. MIXERU se musi predavat: Note, MIDISeq a track id !!!!!!!!!!!!!!!!!!!
+   3. zprovoznit direktivu enginu na komplet deaktivaci Qt
+   4. zdrojovy kod enginu presunout do samostatne slozky + samostatny cmake
 
 1. refactoring celeho kodu.. 
    1. std::stared_ptr + not null kontrola

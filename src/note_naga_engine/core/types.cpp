@@ -1,4 +1,5 @@
-#include "shared.h"
+#include "types.h"
+
 #include <algorithm>
 
 // ---------- Channel colors ----------
@@ -141,7 +142,7 @@ const std::vector<GMInstrument> GM_INSTRUMENTS = {
 
 // ---------- Track ----------
 
-Track::Track()
+NoteNagaTrack::NoteNagaTrack()
 {
     this->track_id = 0;
     this->name = name.isEmpty() ? QString("Track %1").arg(track_id + 1) : name;
@@ -154,7 +155,7 @@ Track::Track()
     this->volume = 1.0f;
 }
 
-Track::Track(int track_id,
+NoteNagaTrack::NoteNagaTrack(int track_id,
           const QString &name,
           std::optional<int> instrument = std::nullopt,
           std::optional<int> channel = std::nullopt)
@@ -168,6 +169,83 @@ Track::Track(int track_id,
     this->muted = false;
     this->solo = false;
     this->volume = 1.0f;
+}
+
+void NoteNagaTrack::set_notes(const std::vector<NoteNagaNote>& notes)
+{
+    this->midi_notes = notes;
+}
+
+void NoteNagaTrack::set_instrument(std::optional<int> instrument)
+{
+    if (this->instrument == instrument)
+        return; 
+    this->instrument = instrument;
+    NN_QT_EMIT(meta_changed_signal(this->track_id, "instrument"));
+}
+
+void NoteNagaTrack::set_channel(std::optional<int> channel)
+{
+    if (this->channel == channel)
+        return;
+    this->channel = channel;
+    NN_QT_EMIT(meta_changed_signal(this->track_id, "channel"));
+}
+
+void NoteNagaTrack::set_id(int new_id)
+{
+    if (this->track_id == new_id)
+        return;
+    this->track_id = new_id;
+    NN_QT_EMIT(meta_changed_signal(this->track_id, "id"));
+}
+
+void NoteNagaTrack::set_name(const QString &new_name)
+{
+    if (this->name == new_name)
+        return;
+    this->name = new_name;
+    NN_QT_EMIT(meta_changed_signal(this->track_id, "name"));
+}
+
+void NoteNagaTrack::set_color(const QColor &new_color)
+{
+    if (this->color == new_color)
+        return;
+    this->color = new_color;
+    NN_QT_EMIT(meta_changed_signal(this->track_id, "color"));
+}
+
+void NoteNagaTrack::set_visible(bool is_visible)
+{
+    if (this->visible == is_visible)
+        return;
+    this->visible = is_visible;
+    NN_QT_EMIT(meta_changed_signal(this->track_id, "visible"));
+}
+
+void NoteNagaTrack::set_muted(bool is_muted)
+{
+    if (this->muted == is_muted)
+        return;
+    this->muted = is_muted;
+    NN_QT_EMIT(meta_changed_signal(this->track_id, "muted"));
+}
+
+void NoteNagaTrack::set_solo(bool is_solo)
+{
+    if (this->solo == is_solo)
+        return;
+    this->solo = is_solo;
+    NN_QT_EMIT(meta_changed_signal(this->track_id, "solo"));
+}
+
+void NoteNagaTrack::set_volume(float new_volume)
+{
+    if (this->volume == new_volume)
+        return;
+    this->volume = new_volume;
+    NN_QT_EMIT(meta_changed_signal(this->track_id, "volume"));
 }
 
 // ---------- Note names ----------
@@ -195,7 +273,7 @@ int index_in_octave(int n)
     return n % 12;
 }
 
-double note_time_ms(const MidiNote &note, int ppq, int tempo)
+double note_time_ms(const NoteNagaNote &note, int ppq, int tempo)
 {
     if (!note.length.has_value() || note.length.value() <= 0)
         return 0.0;

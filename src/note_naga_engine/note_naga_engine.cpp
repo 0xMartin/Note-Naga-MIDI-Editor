@@ -14,10 +14,9 @@ NoteNagaEngine::~NoteNagaEngine()
 
 bool NoteNagaEngine::init()
 {
-    this->project_data = std::make_shared<NoteNagaProjectData>();
-    this->mixer = std::make_unique<Mixer>(this->project_data);
+    this->project_data = std::make_shared<NoteNagaProject>();
+    this->mixer = std::make_unique<NoteNagaMixer>(this->project_data);
     this->playback_worker = std::make_unique<PlaybackWorker>(this->project_data, this->mixer.get(), 30.0);
-    // configuration loading ...
     return true;
 }
 
@@ -39,7 +38,7 @@ void NoteNagaEngine::stop_playback()
 void NoteNagaEngine::set_playback_position(int tick)
 {
     // get active sequence from project data
-    std::shared_ptr<NoteNagaMIDISequence> active_sequence = this->project_data->get_active_sequence();
+    std::shared_ptr<NoteNagaMIDISeq> active_sequence = this->project_data->get_active_sequence();
     if (!active_sequence)
     {
         qDebug() << "No active sequence found, cannot set playback position.";
@@ -60,10 +59,4 @@ void NoteNagaEngine::solo_track(int track_id, bool solo)
 {
     if (mixer)
         mixer->solo_track(track_id, solo);
-}
-
-void NoteNagaEngine::set_project_data(const std::shared_ptr<NoteNagaProjectData>& data)
-{
-    project_data = data;
-    // Reinitialize mixer and playback worker with new project data if needed
 }

@@ -10,7 +10,6 @@
 #include <optional>
 #include <QMouseEvent>
 
-#include "../../note_naga_engine/core/types.h"
 #include "../../note_naga_engine/note_naga_engine.h"
 
 class MidiKeyboardRuler : public QWidget {
@@ -22,11 +21,11 @@ public:
     QSize minimumSizeHint() const override;
 
 signals:
-    void play_note_signal(MidiNote note, int track_id);
-    void stop_note_signal(MidiNote note, int track_id);
+    void play_note_signal(NoteNagaNote note, int track_id);
+    void stop_note_signal(NoteNagaNote note);
 
 public slots:
-    void on_play_note(const MidiNote &note, int track_id);
+    void on_play_note(const NoteNagaNote& note, const NoteNagaMIDISeq *sequence, const NoteNagaTrack *track);
     void set_vertical_scroll_slot(float v, float row_height);
     void clear_highlights_slot();
 
@@ -43,7 +42,7 @@ private:
     int viewer_row_height;
     int verticalScroll;
 
-    MidiNote pressed_note;
+    NoteNagaNote pressed_note;
     int hovered_note;
 
     QFont font;
