@@ -266,14 +266,14 @@ void MidiKeyboardRuler::leaveEvent(QEvent *event)
 
 void MidiKeyboardRuler::mousePressEvent(QMouseEvent *event)
 {
-    std::shared_ptr<NoteNagaMIDISeq> sequence = engine->get_project()->get_active_sequence();
-    if (!sequence)
+    NoteNagaMIDISeq *seq = engine->get_project()->get_active_sequence();
+    if (!seq)
     {
         qDebug() << "No active sequence to play note on.";
         return;
     }
-    std::optional<int> track_id = sequence->get_active_track_id();
-    if (!track_id.has_value())
+    NoteNagaTrack *track = seq->get_active_track();
+    if (!track)
     {
         qDebug() << "No active track to play note on.";
         return;
@@ -283,11 +283,12 @@ void MidiKeyboardRuler::mousePressEvent(QMouseEvent *event)
     int nval = note.has_value() ? note.value() : -1;
     if (nval != -1)
     {
-        pressed_note.note_id = rand();
+        pressed_note.id = generate_random_note_id();
+        pressed_note.parent = track;
         pressed_note.note = nval;
         pressed_note.velocity = 44 + rand() % 41; // random velocity 44 - 84
-        this->engine->get_mixer()->note_play(pressed_note, track_id.value());
-        emit play_note_signal(pressed_note, track_id.value());
+        this->engine->get_mixer()->note_play(pressed_note);
+        emit play_note_signal(pressed_note);
         update();
     }
 

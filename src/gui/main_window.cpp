@@ -243,7 +243,7 @@ void MainWindow::connect_signals() {
 
     auto* hbar = midi_editor->horizontalScrollBar();
     auto* vbar = midi_editor->verticalScrollBar();
-    connect(hbar, &QScrollBar::valueChanged, midi_tact_ruler, &MidiTactRuler::set_horizontal_scroll);
+    connect(hbar, &QScrollBar::valueChanged, midi_tact_ruler, &MidiTactRuler::set_position);
     connect(vbar, &QScrollBar::valueChanged,
             [this](int v){ midi_keyboard_ruler->set_vertical_scroll_slot(v, midi_editor->get_key_height()); });
 }
@@ -314,7 +314,7 @@ void MainWindow::open_midi() {
     int center_pos = (vertical_bar->maximum() + vertical_bar->minimum()) / 2;
     vertical_bar->setSliderPosition(center_pos);
     midi_tact_ruler->set_params(ctx->ppq, midi_editor->get_time_scale(), ctx->max_tick);
-    midi_tact_ruler->set_horizontal_scroll(0);
+    midi_tact_ruler->set_position(0);
     control_bar->update_times(ctx->current_tick, ctx->max_tick, ctx->tempo, ctx->ppq);
 }
 

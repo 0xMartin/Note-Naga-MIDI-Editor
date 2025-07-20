@@ -25,7 +25,7 @@ class NOTE_NAGA_ENGINE_API NoteNagaMIDISeq;
 struct NOTE_NAGA_ENGINE_API NoteNagaNote
 {
     // Required for unique identification
-    int note_id;
+    unsigned long id;
 
     // Note id (0-127)
     int note;
@@ -38,21 +38,21 @@ struct NOTE_NAGA_ENGINE_API NoteNagaNote
     // parent
     NoteNagaTrack *parent;
 
-    NoteNagaNote() : note(0), start(std::nullopt), length(std::nullopt),
-                     velocity(std::nullopt), note_id(generate_random_id()), parent(nullptr) {}
+    NoteNagaNote() : id(generate_random_note_id()), note(0), start(std::nullopt),
+                     length(std::nullopt), velocity(std::nullopt), parent(nullptr) {}
 
-    NoteNagaNote(int note_,
+    NoteNagaNote(unsigned long note_,
                  NoteNagaTrack *parent_,
                  const std::optional<int> &start_ = std::nullopt,
                  const std::optional<int> &length_ = std::nullopt,
                  const std::optional<int> &velocity_ = std::nullopt,
                  const std::optional<int> &track_ = std::nullopt)
-        : note(note_), start(start_), length(length_),
-          velocity(velocity_), note_id(generate_random_id()), parent(parent_) {}
+        : id(generate_random_note_id()), note(note_), start(start_),
+          length(length_), velocity(velocity_), parent(parent_) {}
 };
 
 NOTE_NAGA_ENGINE_API double note_time_ms(const NoteNagaNote &note, int ppq, int tempo);
-NOTE_NAGA_ENGINE_API int generate_random_id();
+NOTE_NAGA_ENGINE_API unsigned long generate_random_note_id();
 
 // ---------- NoteNagaTrack ----------
 class NOTE_NAGA_ENGINE_API NoteNagaTrack : public QObject

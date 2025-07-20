@@ -148,7 +148,7 @@ void NoteNagaMixer::note_stop(const NoteNagaNote &midi_note) {
 
     auto &notes = playing_notes[seq][track];
     for (auto it = notes.begin(); it != notes.end();) {
-        if (it->note_id == midi_note.note_id) {
+        if (it->note_id == midi_note.id) {
             if (it->device == "fluidsynth" && fluidsynth) {
                 fluid_synth_noteoff(fluidsynth, it->channel, it->note_num);
             } else {
@@ -294,7 +294,7 @@ void NoteNagaMixer::play_note_on_output(const QString &output, int ch, int note_
             out->sendMessage(&msg);
         }
     }
-    notes.append(PlayedNote{note_num, midi_note.note_id, output, ch});
+    notes.append(PlayedNote{note_num, midi_note.id, output, ch});
     NoteNagaNote note_clone = midi_note;
     note_clone.velocity = velocity;
     NN_QT_EMIT(note_out_signal(note_clone, output, ch));

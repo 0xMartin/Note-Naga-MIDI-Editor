@@ -5,7 +5,7 @@
 #include <QFileInfo>
 #include <atomic>
 
-static std::atomic<int> next_id = 1;
+static std::atomic<unsigned long> next_id = 1;
 
 // ---------- Note Naga Note ----------
 
@@ -18,8 +18,8 @@ double note_time_ms(const NoteNagaNote &note, int ppq, int tempo)
     return total_us / 1000.0;
 }
 
-int generate_random_id() {
-    int id = next_id;
+unsigned long generate_random_note_id() {
+    unsigned long id = next_id;
     next_id++;
     return id;
 }

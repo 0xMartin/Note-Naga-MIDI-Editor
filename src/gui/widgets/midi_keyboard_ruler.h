@@ -21,8 +21,8 @@ public:
     QSize minimumSizeHint() const override;
 
 signals:
-    void play_note_signal(NoteNagaNote note, int track_id);
-    void stop_note_signal(NoteNagaNote note);
+    void play_note_signal(const NoteNagaNote &note);
+    void stop_note_signal(const NoteNagaNote &note);
 
 public slots:
     void on_play_note(const NoteNagaNote& note, const NoteNagaMIDISeq *sequence, const NoteNagaTrack *track);

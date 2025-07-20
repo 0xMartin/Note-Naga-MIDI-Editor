@@ -6,16 +6,17 @@
 #include <QRect>
 #include <QPen>
 
+#include "../../note_naga_engine/note_naga_engine.h"
+
 class MidiTactRuler : public QWidget {
     Q_OBJECT
 public:
-    explicit MidiTactRuler(int ticks_per_beat, double time_scale, int max_tick, QWidget* parent = nullptr);
+    explicit MidiTactRuler(NoteNagaEngine *engine, QWidget* parent = nullptr);
 
-    void set_params(int ticks_per_beat, double time_scale, int max_tick);
-    void set_horizontal_scroll(int val);
+    void set_time_scale(double time_scale);
 
 signals:
-    void play_position_set_signal(int tick);
+    void position_set_signal(int tick);
 
 public slots:
     void set_horizontal_scroll_slot(int val);
@@ -25,9 +26,9 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
 
 private:
-    int ticks_per_beat;
+    NoteNagaEngine *engine;
+
     double time_scale;
-    int max_tick;
     int horizontalScroll;
     QFont font;
 
@@ -37,4 +38,6 @@ private:
     QColor subline_color;
     QColor tact_bg_color;
     QColor tact_line_color;
+
+    void set_tick_position(int val);
 };
