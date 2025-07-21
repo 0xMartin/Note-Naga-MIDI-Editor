@@ -1,11 +1,12 @@
 ## Build 
 
 1. refactoring celeho kodu.. 
-   1. std::stared_ptr + not null kontrola
-   2. vstupde pouzivat optional kde to je mozne
-   3. nazvy netridnitch metod: snake_case, tridnich: camelCase
-   4. odstranit nadbitence pradne sloty volajici 1 metodu
-   5. vsechny signaly zapis timto stylem: visibilityChangedSignal(int, bool);
+   1. not null kontrola
+   2. vsude pouzivat optional kde to je mozne
+   3. okomentovat cely engine
+   4. nazvy netridnitch metod: snake_case, tridnich: camelCase
+   5. odstranit nadbitence pradne sloty volajici 1 metodu
+   6. vsechny signaly zapis timto stylem: visibilityChanged(int, bool);
 
 2. opravit chyb v UI (aby to vypadalo stejne jak predtim)
    1. custom tile bar pro QDock widgety..

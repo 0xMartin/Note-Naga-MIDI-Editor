@@ -33,7 +33,7 @@ private slots:
     void on_tempo_changed(float new_tempo);
     void open_midi();
     void export_midi();
-    void playback_worker_on_position_changed(int current_tick);
+    void current_tick_position_changed(int current_tick);
     void reset_all_colors();
     void randomize_all_colors();
     void about_dialog();

@@ -1,21 +1,19 @@
 #include "main_window.h"
 
-#include <QMenuBar>
-#include <QToolBar>
 #include <QApplication>
-#include <QDesktopServices>
-#include <QUrl>
-#include <QIcon>
 #include <QColor>
-#include <QScrollBar>
-#include <QVBoxLayout>
-#include <QGridLayout>
-#include <QMessageBox>
+#include <QDesktopServices>
 #include <QFileDialog>
+#include <QGridLayout>
+#include <QIcon>
+#include <QMenuBar>
+#include <QMessageBox>
+#include <QScrollBar>
+#include <QToolBar>
+#include <QUrl>
+#include <QVBoxLayout>
 
-MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent), auto_follow(true)
-{
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), auto_follow(true) {
     setWindowTitle("Note Naga");
     resize(1200, 800);
     QRect qr = frameGeometry();
@@ -59,9 +57,8 @@ void MainWindow::setup_actions() {
     action_about = new QAction("About", this);
     connect(action_about, &QAction::triggered, this, &MainWindow::about_dialog);
     action_homepage = new QAction("Open Homepage", this);
-    connect(action_homepage, &QAction::triggered, []() {
-        QDesktopServices::openUrl(QUrl("https://github.com/0xMartin/MIDI-TC-Interrupter"));
-    });
+    connect(action_homepage, &QAction::triggered,
+            []() { QDesktopServices::openUrl(QUrl("https://github.com/0xMartin/MIDI-TC-Interrupter")); });
     action_toolbar_to_start = new QAction(QIcon(":/icons/media-backward-end.svg"), "Go to Start", this);
     connect(action_toolbar_to_start, &QAction::triggered, this, &MainWindow::goto_start);
     action_toolbar_play = new QAction(QIcon(":/icons/play.svg"), "Play/Pause", this);
@@ -73,28 +70,29 @@ void MainWindow::setup_actions() {
     action_toggle_editor = new QAction("Show/Hide MIDI Editor", this);
     action_toggle_editor->setCheckable(true);
     action_toggle_editor->setChecked(true);
-    connect(action_toggle_editor, &QAction::toggled, this, [this](bool checked){ show_hide_dock("editor", checked); });
+    connect(action_toggle_editor, &QAction::toggled, this, [this](bool checked) { show_hide_dock("editor", checked); });
     action_toggle_tracklist = new QAction("Show/Hide Track List", this);
     action_toggle_tracklist->setCheckable(true);
     action_toggle_tracklist->setChecked(true);
-    connect(action_toggle_tracklist, &QAction::toggled, this, [this](bool checked){ show_hide_dock("tracklist", checked); });
+    connect(action_toggle_tracklist, &QAction::toggled, this,
+            [this](bool checked) { show_hide_dock("tracklist", checked); });
     action_toggle_mixer = new QAction("Show/Hide Track Mixer", this);
     action_toggle_mixer->setCheckable(true);
     action_toggle_mixer->setChecked(true);
-    connect(action_toggle_mixer, &QAction::toggled, this, [this](bool checked){ show_hide_dock("mixer", checked); });
+    connect(action_toggle_mixer, &QAction::toggled, this, [this](bool checked) { show_hide_dock("mixer", checked); });
     action_reset_layout = new QAction("Reset Layout", this);
     connect(action_reset_layout, &QAction::triggered, this, &MainWindow::reset_layout);
 }
 
 void MainWindow::setup_menu_bar() {
-    QMenuBar* menubar = menuBar();
-    QMenu* file_menu = menubar->addMenu("File");
+    QMenuBar *menubar = menuBar();
+    QMenu *file_menu = menubar->addMenu("File");
     file_menu->addAction(action_open);
     file_menu->addAction(action_export);
     file_menu->addSeparator();
     file_menu->addAction(action_quit);
 
-    QMenu* view_menu = menubar->addMenu("View");
+    QMenu *view_menu = menubar->addMenu("View");
     view_menu->addAction(action_zoom_in);
     view_menu->addAction(action_zoom_out);
     view_menu->addSeparator();
@@ -106,17 +104,17 @@ void MainWindow::setup_menu_bar() {
     view_menu->addSeparator();
     view_menu->addAction(action_reset_layout);
 
-    QMenu* tools_menu = menubar->addMenu("Tools");
+    QMenu *tools_menu = menubar->addMenu("Tools");
     tools_menu->addAction(action_reset_colors);
     tools_menu->addAction(action_randomize_colors);
 
-    QMenu* help_menu = menubar->addMenu("Help");
+    QMenu *help_menu = menubar->addMenu("Help");
     help_menu->addAction(action_about);
     help_menu->addAction(action_homepage);
 }
 
 void MainWindow::setup_toolbar() {
-    QToolBar* toolbar = new QToolBar("Playback");
+    QToolBar *toolbar = new QToolBar("Playback");
     toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
     toolbar->setIconSize(QSize(21, 21));
     toolbar->setMovable(false);
@@ -131,8 +129,8 @@ void MainWindow::setup_toolbar() {
 
 void MainWindow::setup_dock_layout() {
     // Editor dock
-    QWidget* editor_main = new QWidget();
-    QGridLayout* grid = new QGridLayout(editor_main);
+    QWidget *editor_main = new QWidget();
+    QGridLayout *grid = new QGridLayout(editor_main);
     grid->setContentsMargins(0, 0, 0, 0);
     grid->setSpacing(0);
 
@@ -153,43 +151,49 @@ void MainWindow::setup_dock_layout() {
     grid->addWidget(midi_keyboard_ruler, 1, 0);
     grid->addWidget(midi_editor, 1, 1);
 
-    QVBoxLayout* editor_layout = new QVBoxLayout();
+    QVBoxLayout *editor_layout = new QVBoxLayout();
     editor_layout->setContentsMargins(0, 0, 0, 0);
     editor_layout->setSpacing(0);
     editor_layout->addWidget(editor_main, 1);
     control_bar = new MidiControlBarWidget(this->engine, this);
     editor_layout->addWidget(control_bar);
-    QWidget* editor_container = new QWidget();
+    QWidget *editor_container = new QWidget();
     editor_container->setLayout(editor_layout);
 
-    QDockWidget* editor_dock = new QDockWidget("MIDI Editor", this);
+    QDockWidget *editor_dock = new QDockWidget("MIDI Editor", this);
     editor_dock->setWidget(editor_container);
     editor_dock->setObjectName("editor");
     editor_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-    editor_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetFloatable);
-    connect(editor_dock, &QDockWidget::visibilityChanged, this, [this](bool visible){ action_toggle_editor->setChecked(visible); });
+    editor_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable |
+                             QDockWidget::DockWidgetFloatable);
+    connect(editor_dock, &QDockWidget::visibilityChanged, this,
+            [this](bool visible) { action_toggle_editor->setChecked(visible); });
     addDockWidget(Qt::RightDockWidgetArea, editor_dock);
     docks["editor"] = editor_dock;
 
     // Track list dock
     tracklist_widget = new TrackListWidget(this->engine, this);
-    QDockWidget* tracklist_dock = new QDockWidget("Track List", this);
+    QDockWidget *tracklist_dock = new QDockWidget("Track List", this);
     tracklist_dock->setWidget(tracklist_widget);
     tracklist_dock->setObjectName("tracklist");
     tracklist_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-    tracklist_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetFloatable);
-    connect(tracklist_dock, &QDockWidget::visibilityChanged, this, [this](bool visible){ action_toggle_tracklist->setChecked(visible); });
+    tracklist_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable |
+                                QDockWidget::DockWidgetFloatable);
+    connect(tracklist_dock, &QDockWidget::visibilityChanged, this,
+            [this](bool visible) { action_toggle_tracklist->setChecked(visible); });
     addDockWidget(Qt::LeftDockWidgetArea, tracklist_dock);
     docks["tracklist"] = tracklist_dock;
 
     // Mixer dock
     mixer_widget = new TrackMixerWidget(this->engine, this);
-    QDockWidget* mixer_dock = new QDockWidget("Track Mixer", this);
+    QDockWidget *mixer_dock = new QDockWidget("Track Mixer", this);
     mixer_dock->setWidget(mixer_widget);
     mixer_dock->setObjectName("mixer");
     mixer_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-    mixer_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetFloatable);
-    connect(mixer_dock, &QDockWidget::visibilityChanged, this, [this](bool visible){ action_toggle_mixer->setChecked(visible); });
+    mixer_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable |
+                            QDockWidget::DockWidgetFloatable);
+    connect(mixer_dock, &QDockWidget::visibilityChanged, this,
+            [this](bool visible) { action_toggle_mixer->setChecked(visible); });
     addDockWidget(Qt::RightDockWidgetArea, mixer_dock);
     docks["mixer"] = mixer_dock;
 
@@ -205,13 +209,14 @@ void MainWindow::setup_dock_layout() {
     resizeDocks({docks["tracklist"], docks["editor"], docks["mixer"]}, {300, 800, 250}, Qt::Horizontal);
 }
 
-void MainWindow::show_hide_dock(const QString& name, bool checked) {
-    QDockWidget* dock = docks.value(name, nullptr);
+void MainWindow::show_hide_dock(const QString &name, bool checked) {
+    QDockWidget *dock = docks.value(name, nullptr);
     if (dock) dock->setVisible(checked);
 }
 
 void MainWindow::reset_layout() {
-    for (auto& dock : docks) dock->setVisible(true);
+    for (auto &dock : docks)
+        dock->setVisible(true);
     action_toggle_editor->setChecked(true);
     action_toggle_tracklist->setChecked(true);
     action_toggle_mixer->setChecked(true);
@@ -229,19 +234,21 @@ void MainWindow::reset_layout() {
 }
 
 void MainWindow::connect_signals() {
-    connect(engine->get_playback_worker(), &PlaybackWorker::playing_state_changed_signal, this, &MainWindow::on_playing_state_changed);
-    connect(engine->get_project(), &NoteNagaProject::current_tick_changed_signal, this, &MainWindow::playback_worker_on_position_changed);
-    
+    connect(engine->get_playback_worker(), &PlaybackWorker::playing_state_changed_signal, this,
+            &MainWindow::on_playing_state_changed);
+    connect(engine->get_project(), &NoteNagaProject::current_tick_changed_signal, this,
+            &MainWindow::current_tick_position_changed);
+
     connect(control_bar, &MidiControlBarWidget::toggle_play_signal, this, &MainWindow::toggle_play);
     connect(control_bar, &MidiControlBarWidget::goto_start_signal, this, &MainWindow::goto_start);
     connect(control_bar, &MidiControlBarWidget::goto_end_signal, this, &MainWindow::goto_end);
     connect(control_bar, &MidiControlBarWidget::tempo_changed_signal, this, &MainWindow::on_tempo_changed);
 
-    auto* hbar = midi_editor->horizontalScrollBar();
-    auto* vbar = midi_editor->verticalScrollBar();
+    auto *hbar = midi_editor->horizontalScrollBar();
+    auto *vbar = midi_editor->verticalScrollBar();
     connect(hbar, &QScrollBar::valueChanged, midi_tact_ruler, &MidiTactRuler::set_tick_position);
     connect(vbar, &QScrollBar::valueChanged,
-            [this](int v){ midi_keyboard_ruler->set_vertical_scroll_slot(v, midi_editor->get_key_height()); });
+            [this](int v) { midi_keyboard_ruler->set_vertical_scroll_slot(v, midi_editor->get_key_height()); });
 }
 
 void MainWindow::set_auto_follow(bool checked) { auto_follow = checked; }
@@ -268,9 +275,7 @@ void MainWindow::zoom_out_x() {
 
 void MainWindow::on_playing_state_changed(bool playing) {
     action_toolbar_play->setIcon(QIcon(playing ? ":/icons/stop.svg" : ":/icons/play.svg"));
-    if (!playing) {
-        midi_keyboard_ruler->clear_highlights_slot();
-    }
+    if (!playing) { midi_keyboard_ruler->clear_highlights_slot(); }
     control_bar->set_playing(playing);
 }
 
@@ -284,9 +289,7 @@ void MainWindow::goto_end() {
     midi_editor->horizontalScrollBar()->setValue(midi_editor->horizontalScrollBar()->maximum());
 }
 
-void MainWindow::on_tempo_changed(float new_tempo) {
-    engine->change_tempo(new_tempo);
-}
+void MainWindow::on_tempo_changed(float new_tempo) { engine->change_tempo(new_tempo); }
 
 void MainWindow::open_midi() {
     QString fname = QFileDialog::getOpenFileName(this, "Open MIDI file", "", "MIDI Files (*.mid *.midi)");
@@ -297,7 +300,7 @@ void MainWindow::open_midi() {
         return;
     }
 
-    QScrollBar* vertical_bar = midi_editor->verticalScrollBar();
+    QScrollBar *vertical_bar = midi_editor->verticalScrollBar();
     int center_pos = (vertical_bar->maximum() + vertical_bar->minimum()) / 2;
     vertical_bar->setSliderPosition(center_pos);
     midi_tact_ruler->set_tick_position(0);
@@ -307,8 +310,8 @@ void MainWindow::export_midi() {
     QString fname = QFileDialog::getSaveFileName(this, "Export as MIDI", "", "MIDI Files (*.mid *.midi)");
 }
 
-void MainWindow::playback_worker_on_position_changed(int current_tick) {
-    if (auto_follow) {
+void MainWindow::current_tick_position_changed(int current_tick) {
+    if (auto_follow && engine->is_playing()) {
         int marker_x = int(this->engine->get_project()->get_current_tick() * midi_editor->get_time_scale());
         int width = midi_editor->viewport()->width();
         int margin = width / 2;
@@ -351,8 +354,8 @@ void MainWindow::about_dialog() {
     QMessageBox::about(this, "About", "Note Naga\n\nAuthor: 0xMartin\nGitHub: https://github.com/0xMartin/note-naga");
 }
 
-void MainWindow::closeEvent(QCloseEvent* event) {
-    if(this->engine) {
+void MainWindow::closeEvent(QCloseEvent *event) {
+    if (this->engine) {
         delete this->engine;
         this->engine = nullptr;
     }
