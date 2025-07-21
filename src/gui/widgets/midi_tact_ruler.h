@@ -16,10 +16,10 @@ public:
     void set_time_scale(double time_scale);
 
 signals:
-    void position_set_signal(int tick);
+    void set_horizontal_scroll(int tick);
 
 public slots:
-    void set_horizontal_scroll_slot(int val);
+    void set_tick_position(int val);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -38,6 +38,4 @@ private:
     QColor subline_color;
     QColor tact_bg_color;
     QColor tact_line_color;
-
-    void set_tick_position(int val);
 };

@@ -58,15 +58,7 @@ implementace editor modu:
 
 
 ---------------------
-GUI
+projet on pos changeg:
 
-
-2:
-midi editor (sequence):
-   -> pri zmene aktivni midi sekvence (je automaticky volano i pri nacteni projektu)
-
-
--> routing stack bude pak vazany primo na midi sequcence ** 
-
-4:
-vyuzivat zmenu current tict primo jako singal z projektu -> editor, tick ruler (primo interne uz resit)
+   midi editor = poze nastavovani vykrelovani aktualni pozice (ne primo fyzicky posun)
+   track ruler = nepouzivat signal vubec (maximalne pak pouze pro zvyrazneni aktualni pozice)

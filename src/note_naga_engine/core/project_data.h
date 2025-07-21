@@ -24,11 +24,10 @@ public:
     void add_sequence(NoteNagaMIDISeq* sequence);
     void remove_sequence(NoteNagaMIDISeq* sequence);
 
-    int compute_max_tick();
-
     int get_ppq() const;
     int get_tempo() const;
     int get_current_tick() const { return current_tick; }
+    int get_max_tick() const;
     std::optional<int> get_active_sequence_id() const { return active_sequence_id; }
     NoteNagaMIDISeq* get_active_sequence() const;
     NoteNagaMIDISeq* get_sequence_by_id(int sequence_id);

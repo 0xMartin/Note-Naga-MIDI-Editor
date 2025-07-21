@@ -269,6 +269,7 @@ void MidiEditorWidget::mousePressEvent(QMouseEvent* event) {
         if (seq) {
             int x = int(mapToScene(event->pos()).x());
             int tick = int(x / time_scale);
+            this->engine->get_project()->set_current_tick(tick);
             emit set_position_signal(tick);
         }
     }

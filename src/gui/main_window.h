@@ -28,13 +28,11 @@ private slots:
     void zoom_in_x();
     void zoom_out_x();
     void on_playing_state_changed(bool playing);
-    void set_play_position(int tick);
     void goto_start();
     void goto_end();
     void on_tempo_changed(float new_tempo);
     void open_midi();
     void export_midi();
-    void play();
     void playback_worker_on_position_changed(int current_tick);
     void reset_all_colors();
     void randomize_all_colors();

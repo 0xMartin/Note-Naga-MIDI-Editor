@@ -143,6 +143,7 @@ void PlaybackThreadWorker::run()
         int tick_advance = std::max(1, target_tick - current_tick);
         int last_tick = current_tick;
         current_tick += tick_advance;
+        this->project->set_current_tick(current_tick);
 
         // Stop playback on reaching max tick
         if (current_tick >= active_sequence->get_max_tick())

@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget* parent)
     move(qr.topLeft());
 
     this->engine = new NoteNagaEngine(this);
+    this->engine->init();
 
     setup_actions();
     setup_menu_bar();
@@ -225,12 +226,9 @@ void MainWindow::reset_layout() {
 }
 
 void MainWindow::connect_signals() {
-    connect(playback_worker, &PlaybackWorker::playing_state_changed_signal, this, &MainWindow::on_playing_state_changed);
-    connect(playback_worker, &PlaybackWorker::on_position_changed_signal, this, &MainWindow::playback_worker_on_position_changed);
-    connect(midi_editor, &MidiEditorWidget::set_play_position_signal, this, &MainWindow::set_play_position);
-    connect(midi_keyboard_ruler, &MidiKeyboardRuler::play_note_signal, mixer, &Mixer::note_play);
-    connect(midi_keyboard_ruler, &MidiKeyboardRuler::stop_note_signal, mixer, &Mixer::note_stop);
-    connect(midi_tact_ruler, &MidiTactRuler::play_position_set_signal, this, &MainWindow::set_play_position);
+    connect(engine->get_playback_worker(), &PlaybackWorker::playing_state_changed_signal, this, &MainWindow::on_playing_state_changed);
+    connect(engine->get_project(), &NoteNagaProject::current_tick_changed_signal, this, &MainWindow::playback_worker_on_position_changed);
+    
     connect(control_bar, &MidiControlBarWidget::toggle_play_signal, this, &MainWindow::toggle_play);
     connect(control_bar, &MidiControlBarWidget::goto_start_signal, this, &MainWindow::goto_start);
     connect(control_bar, &MidiControlBarWidget::goto_end_signal, this, &MainWindow::goto_end);
@@ -238,7 +236,7 @@ void MainWindow::connect_signals() {
 
     auto* hbar = midi_editor->horizontalScrollBar();
     auto* vbar = midi_editor->verticalScrollBar();
-    connect(hbar, &QScrollBar::valueChanged, midi_tact_ruler, &MidiTactRuler::set_position);
+    connect(hbar, &QScrollBar::valueChanged, midi_tact_ruler, &MidiTactRuler::set_tick_position);
     connect(vbar, &QScrollBar::valueChanged,
             [this](int v){ midi_keyboard_ruler->set_vertical_scroll_slot(v, midi_editor->get_key_height()); });
 }
@@ -246,110 +244,100 @@ void MainWindow::connect_signals() {
 void MainWindow::set_auto_follow(bool checked) { auto_follow = checked; }
 
 void MainWindow::toggle_play() {
-    if (playback_worker->is_playing()) {
-        playback_worker->stop();
+    if (engine->is_playing()) {
+        engine->stop_playback();
     } else {
-        playback_worker->play();
+        engine->start_playback();
     }
 }
 
 void MainWindow::zoom_in_x() {
     double scale = std::min(2.0, midi_editor->get_time_scale() * 1.3);
     midi_editor->set_time_scale_slot(scale);
-    midi_tact_ruler->set_params(ctx->ppq, midi_editor->get_time_scale(), ctx->max_tick);
 }
 
 void MainWindow::zoom_out_x() {
     double scale = std::max(0.02, midi_editor->get_time_scale() / 1.3);
     midi_editor->set_time_scale_slot(scale);
-    midi_tact_ruler->set_params(ctx->ppq, midi_editor->get_time_scale(), ctx->max_tick);
 }
 
 void MainWindow::on_playing_state_changed(bool playing) {
     action_toolbar_play->setIcon(QIcon(playing ? ":/icons/stop.svg" : ":/icons/play.svg"));
     if (!playing) {
         midi_keyboard_ruler->clear_highlights_slot();
-        mixer->stop_all_notes();
     }
     control_bar->set_playing(playing);
 }
 
-void MainWindow::set_play_position(int tick) {
-    playback_worker->stop();
-    ctx->current_tick = tick;
-    midi_editor->update_marker_slot(); // <-- přidej toto!
-    midi_editor->update(); // volitelné, pokud chceš refresh celé scény, lze i vynechat
-    midi_tact_ruler->set_horizontal_scroll_slot(midi_editor->horizontalScrollBar()->value());
-    midi_keyboard_ruler->set_vertical_scroll_slot(midi_editor->verticalScrollBar()->value(), midi_editor->get_key_height());
-    control_bar->update_times(ctx->current_tick, ctx->max_tick, ctx->tempo, ctx->ppq);
-    update();
-}
-
 void MainWindow::goto_start() {
-    set_play_position(0);
+    this->engine->set_playback_position(0);
     midi_editor->horizontalScrollBar()->setValue(0);
 }
 
 void MainWindow::goto_end() {
-    set_play_position(ctx->max_tick);
+    this->engine->set_playback_position(this->engine->get_project()->get_max_tick());
     midi_editor->horizontalScrollBar()->setValue(midi_editor->horizontalScrollBar()->maximum());
 }
 
 void MainWindow::on_tempo_changed(float new_tempo) {
-    if (playback_worker) playback_worker->recalculate_worker_tempo();
+    engine->change_tempo(new_tempo);
 }
 
 void MainWindow::open_midi() {
     QString fname = QFileDialog::getOpenFileName(this, "Open MIDI file", "", "MIDI Files (*.mid *.midi)");
     if (fname.isEmpty()) return;
-    playback_worker->stop();
-    ctx->load_from_midi(fname);
-    midi_editor->update();
+
+    if (!engine->load_project(fname)) {
+        QMessageBox::critical(this, "Error", "Failed to load MIDI file.");
+        return;
+    }
+
     QScrollBar* vertical_bar = midi_editor->verticalScrollBar();
     int center_pos = (vertical_bar->maximum() + vertical_bar->minimum()) / 2;
     vertical_bar->setSliderPosition(center_pos);
-    midi_tact_ruler->set_params(ctx->ppq, midi_editor->get_time_scale(), ctx->max_tick);
-    midi_tact_ruler->set_position(0);
-    control_bar->update_times(ctx->current_tick, ctx->max_tick, ctx->tempo, ctx->ppq);
+    midi_tact_ruler->set_tick_position(0);
 }
 
 void MainWindow::export_midi() {
     QString fname = QFileDialog::getSaveFileName(this, "Export as MIDI", "", "MIDI Files (*.mid *.midi)");
-    if (fname.isEmpty() || !ctx->midi_file) return;
-}
-
-void MainWindow::play() {
-    if (playback_worker->is_playing()) return;
-    playback_worker->play();
 }
 
 void MainWindow::playback_worker_on_position_changed(int current_tick) {
-    ctx->current_tick = current_tick;
-    control_bar->update_times(ctx->current_tick, ctx->max_tick, ctx->tempo, ctx->ppq);
     if (auto_follow) {
-        int marker_x = int(ctx->current_tick * midi_editor->get_time_scale());
+        int marker_x = int(this->engine->get_project()->get_current_tick() * midi_editor->get_time_scale());
         int width = midi_editor->viewport()->width();
         int margin = width / 2;
         int value = std::max(0, marker_x - margin);
         midi_editor->horizontalScrollBar()->setValue(value);
     }
-    midi_tact_ruler->set_horizontal_scroll_slot(midi_editor->horizontalScrollBar()->value());
-    midi_keyboard_ruler->set_vertical_scroll_slot(midi_editor->verticalScrollBar()->value(), midi_editor->get_key_height());
-    midi_editor->repaint_slot();
+    midi_tact_ruler->set_tick_position(midi_editor->horizontalScrollBar()->value());
+    // midi_editor->repaint_slot();
 }
 
 void MainWindow::reset_all_colors() {
-    for (auto& tr : ctx->tracks) {
-        tr->color = QColor(DEFAULT_CHANNEL_COLORS[tr->track_id % 16]);
+    NoteNagaMIDISeq *active_sequence = this->engine->get_project()->get_active_sequence();
+    if (!active_sequence) {
+        QMessageBox::warning(this, "No Sequence", "No active MIDI sequence found.");
+        return;
+    }
+
+    for (NoteNagaTrack *tr : active_sequence->get_tracks()) {
+        tr->set_color(QColor(DEFAULT_CHANNEL_COLORS[tr->get_id() % 16]));
     }
     midi_editor->update();
     QMessageBox::information(this, "Colors", "All track colors have been reset.");
 }
 
 void MainWindow::randomize_all_colors() {
-    for (auto& tr : ctx->tracks) {
+    NoteNagaMIDISeq *active_sequence = this->engine->get_project()->get_active_sequence();
+    if (!active_sequence) {
+        QMessageBox::warning(this, "No Sequence", "No active MIDI sequence found.");
+        return;
+    }
+
+    for (NoteNagaTrack *tr : active_sequence->get_tracks()) {
         QColor c(rand() % 206 + 50, rand() % 206 + 50, rand() % 206 + 50, 200);
-        tr->color = c;
+        tr->set_color(c);
     }
     midi_editor->update();
     QMessageBox::information(this, "Colors", "Track colors have been randomized.");
@@ -360,7 +348,9 @@ void MainWindow::about_dialog() {
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
-    playback_worker->stop();
-    mixer->close();
+    if(this->engine) {
+        delete this->engine;
+        this->engine = nullptr;
+    }
     event->accept();
 }

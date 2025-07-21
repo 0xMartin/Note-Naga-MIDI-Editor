@@ -31,6 +31,8 @@ bool NoteNagaProject::load_project(const QString &project_path)
     for (NoteNagaMIDISeq* seq : sequences) {
         if (seq) delete seq;
     }
+    current_tick = 0;
+    max_tick = 0;
     sequences.clear();
     active_sequence_id.reset();
 
@@ -67,16 +69,6 @@ void NoteNagaProject::remove_sequence(NoteNagaMIDISeq* sequence) {
             }
         }
     }
-}
-
-int NoteNagaProject::compute_max_tick()
-{
-    NoteNagaMIDISeq* active_sequence = get_active_sequence();
-    if (!active_sequence)
-    {
-        return 0;
-    }
-    return active_sequence->get_max_tick();
 }
 
 int NoteNagaProject::get_ppq() const
@@ -119,6 +111,16 @@ void NoteNagaProject::set_current_tick(int tick)
         return;
     this->current_tick = tick;
     NN_QT_EMIT(current_tick_changed_signal(this->current_tick));
+}
+
+int NoteNagaProject::get_max_tick() const
+{
+    NoteNagaMIDISeq* active_sequence = get_active_sequence();
+    if (!active_sequence)
+    {
+        return 0;
+    }
+    return active_sequence->get_max_tick();
 }
 
 NoteNagaMIDISeq* NoteNagaProject::get_active_sequence() const

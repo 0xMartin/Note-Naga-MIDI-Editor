@@ -22,12 +22,16 @@ public:
 
     // --- Initialization ---
     bool init();
-    bool load_project(const QString& midi_file_path);
 
     // --- Playback Control ---
     void start_playback();
     void stop_playback();
     void set_playback_position(int tick);
+    bool is_playing() const { return playback_worker ? playback_worker->is_playing() : false; }
+
+    // --- Project Control ---
+    bool load_project(const QString& midi_file_path);
+    void change_tempo(int new_tempo);
 
     // --- Mixer Control ---
     void mute_track(NoteNagaTrack* track, bool mute = true);
