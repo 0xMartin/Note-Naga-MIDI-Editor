@@ -7,8 +7,12 @@ TrackListWidget::TrackListWidget(NoteNagaEngine* engine_, QWidget* parent)
 {
     _init_ui();
 
-    NoteNagaMIDISeq *seq = engine->get_project()->get_active_sequence();
+    NoteNagaMidiSeq *seq = engine->getProject()->getActiveSequence();
     _reload_tracks(seq);
+
+    // Signals
+    connect(engine->getProject(), &NoteNagaProject::activeSequenceChanged, this, &TrackListWidget::_reload_tracks);
+    connect(engine->getMixer(), &NoteNagaMixer::noteInSignal, this, &TrackListWidget::_handle_playing_note);
 }
 
 void TrackListWidget::_init_ui()
@@ -58,13 +62,9 @@ void TrackListWidget::_init_ui()
     main_layout->addWidget(header_frame);
     main_layout->addWidget(scroll_area, 1);
     setLayout(main_layout);
-
-    // Signals
-    connect(engine->get_project(), &NoteNagaProject::active_sequence_changed_signal, this, &TrackListWidget::_reload_tracks);
-    connect(engine->get_mixer(), &NoteNagaMixer::note_in_signal, this, &TrackListWidget::_handle_playing_note);
 }
 
-void TrackListWidget::_reload_tracks(NoteNagaMIDISeq *seq)
+void TrackListWidget::_reload_tracks(NoteNagaMidiSeq *seq)
 {
     // Remove all widgets and any existing stretch from the layout
     while (vbox->count() > 0) {
@@ -82,8 +82,8 @@ void TrackListWidget::_reload_tracks(NoteNagaMIDISeq *seq)
         return;
     }
 
-    for (size_t idx = 0; idx < seq->get_tracks().size(); ++idx) {
-        NoteNagaTrack *track = seq->get_tracks()[idx];
+    for (size_t idx = 0; idx < seq->getTracks().size(); ++idx) {
+        NoteNagaTrack *track = seq->getTracks()[idx];
         if (!track) continue;
         TrackWidget* widget = new TrackWidget(this->engine, track, container);
 
@@ -103,13 +103,13 @@ void TrackListWidget::_reload_tracks(NoteNagaMIDISeq *seq)
     _update_selection(seq, track_widgets.empty() ? -1 : 0);
 }
 
-void TrackListWidget::_update_selection(NoteNagaMIDISeq *sequence, int widget_idx)
+void TrackListWidget::_update_selection(NoteNagaMidiSeq *sequence, int widget_idx)
 {
     selected_row = widget_idx;
     for (size_t i = 0; i < track_widgets.size(); ++i) {
         track_widgets[i]->refresh_style(static_cast<int>(i) == widget_idx);
         if (static_cast<int>(i) == widget_idx) {
-            sequence->set_active_track(track_widgets[i]->get_track());
+            sequence->setActiveTrack(track_widgets[i]->get_track());
         }
     }
 }
@@ -118,9 +118,9 @@ void TrackListWidget::_handle_playing_note(const NoteNagaNote& note)
 {
     NoteNagaTrack *track = note.parent;
     if (!track) return;
-    NoteNagaProject *project = engine->get_project();
+    NoteNagaProject *project = engine->getProject();
 
-    double time_ms = note_time_ms(note, project->get_ppq(), project->get_tempo());
+    double time_ms = note_time_ms(note, project->getPPQ(), project->getTempo());
     for (auto* w : track_widgets) {
         if (w->get_track() == track && note.velocity.has_value() && note.velocity.value() > 0) {
             w->get_volume_bar()->setValue(static_cast<double>(note.velocity.value()), time_ms);

@@ -11,7 +11,7 @@
 TrackWidget::TrackWidget(NoteNagaEngine *engine_, NoteNagaTrack* track_, QWidget *parent)
     : QFrame(parent), engine(engine_), track(track_)
 {
-    connect(track, &NoteNagaTrack::meta_changed_signal, this, &TrackWidget::_update_track_info);
+    connect(track, &NoteNagaTrack::metadataChanged, this, &TrackWidget::_update_track_info);
     setObjectName("TrackWidget");
 
     QHBoxLayout *main_hbox = new QHBoxLayout(this);
@@ -39,7 +39,7 @@ TrackWidget::TrackWidget(NoteNagaEngine *engine_, NoteNagaTrack* track_, QWidget
     header_hbox->setContentsMargins(0, 0, 0, 0);
     header_hbox->setSpacing(3);
 
-    index_lbl = new QLabel(QString::number(this->track->get_id() + 1));
+    index_lbl = new QLabel(QString::number(this->track->getId() + 1));
     index_lbl->setObjectName("TrackWidgetIndex");
     index_lbl->setAlignment(Qt::AlignCenter);
     index_lbl->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
@@ -111,12 +111,12 @@ void TrackWidget::_update_track_info(NoteNagaTrack* track, const std::string &pa
     if (this->track != track)
         return;
 
-    name_edit->setText(QString::fromStdString(track->get_name()));
-    name_edit->setToolTip(QString::fromStdString(track->get_name()));
+    name_edit->setText(QString::fromStdString(track->getName()));
+    name_edit->setToolTip(QString::fromStdString(track->getName()));
 
-    index_lbl->setText(QString::number(track->get_id() + 1));
+    index_lbl->setText(QString::number(track->getId() + 1));
 
-    auto instrument = find_instrument_by_index(track->get_instrument().value_or(0));
+    auto instrument = nn_find_instrument_by_index(track->getInstrument().value_or(0));
     if (instrument)
     {
         instrument_btn->setIcon(instrument_icon(QString::fromStdString(instrument->icon)));
@@ -128,64 +128,64 @@ void TrackWidget::_update_track_info(NoteNagaTrack* track, const std::string &pa
         instrument_btn->setToolTip("Unknown instrument");
     }
 
-    solo_btn->setChecked(track->is_solo());
-    mute_btn->setChecked(track->is_muted());
-    invisible_btn->setChecked(!track->is_visible());
+    solo_btn->setChecked(track->isSolo());
+    mute_btn->setChecked(track->isMuted());
+    invisible_btn->setChecked(!track->isVisible());
 
     invisible_btn->setIcon(QIcon(invisible_btn->isChecked() ? ":/icons/eye-not-visible.svg" : ":/icons/eye-visible.svg"));
     mute_btn->setIcon(QIcon(mute_btn->isChecked() ? ":/icons/sound-off.svg" : ":/icons/sound-on.svg"));
 
     volume_bar->setValue(0.0);
-    color_btn->setIcon(svg_str_icon(COLOR_SVG_ICON, track->get_color().toQColor(), 16));
+    color_btn->setIcon(svg_str_icon(COLOR_SVG_ICON, track->getColor().toQColor(), 16));
 }
 
 void TrackWidget::_toggle_visibility()
 {
-    track->set_visible(!invisible_btn->isChecked());
+    track->setVisible(!invisible_btn->isChecked());
 }
 
 void TrackWidget::_toggle_solo()
 {
-    engine->solo_track(track, solo_btn->isChecked());
+    engine->soloTrack(track, solo_btn->isChecked());
 }
 
 void TrackWidget::_toggle_mute()
 {
-    engine->mute_track(track, mute_btn->isChecked());
+    engine->muteTrack(track, mute_btn->isChecked());
 }
 
 void TrackWidget::_choose_color()
 {
-    QColor col = QColorDialog::getColor(track->get_color().toQColor(), this, "Select Track Color");
+    QColor col = QColorDialog::getColor(track->getColor().toQColor(), this, "Select Track Color");
     if (col.isValid())
     {
-        track->set_color(NNColor::fromQColor(col));
+        track->setColor(NNColor::fromQColor(col));
     }
 }
 
 void TrackWidget::_name_edited()
 {
     QString new_name = name_edit->text();
-    track->set_name(new_name.toStdString());
+    track->setName(new_name.toStdString());
 }
 
 void TrackWidget::_on_instrument_btn_clicked()
 {
-    InstrumentSelectorDialog dlg(this, GM_INSTRUMENTS, instrument_icon, track->get_instrument());
+    InstrumentSelectorDialog dlg(this, GM_INSTRUMENTS, instrument_icon, track->getInstrument());
     if (dlg.exec() == QDialog::Accepted)
     {
         int gm_index = dlg.get_selected_gm_index();
-        auto instrument = find_instrument_by_index(gm_index);
+        auto instrument = nn_find_instrument_by_index(gm_index);
         if (instrument)
         {
-            track->set_instrument(gm_index);
+            track->setInstrument(gm_index);
         }
     }
 }
 
 void TrackWidget::mousePressEvent(QMouseEvent *event)
 {
-    emit clicked(this->track->get_id());
+    emit clicked(this->track->getId());
     QFrame::mousePressEvent(event);
 }
 

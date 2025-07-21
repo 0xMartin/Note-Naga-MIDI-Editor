@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), auto_follow(true)
     move(qr.topLeft());
 
     this->engine = new NoteNagaEngine();
-    this->engine->init();
+    this->engine->initialize();
 
     setup_actions();
     setup_menu_bar();
@@ -234,9 +234,9 @@ void MainWindow::reset_layout() {
 }
 
 void MainWindow::connect_signals() {
-    connect(engine->get_playback_worker(), &PlaybackWorker::playing_state_changed_signal, this,
+    connect(engine->getPlaybackWorker(), &PlaybackWorker::playingStateChanged, this,
             &MainWindow::on_playing_state_changed);
-    connect(engine->get_project(), &NoteNagaProject::current_tick_changed_signal, this,
+    connect(engine->getProject(), &NoteNagaProject::currentTickChanged, this,
             &MainWindow::current_tick_position_changed);
 
     connect(control_bar, &MidiControlBarWidget::toggle_play_signal, this, &MainWindow::toggle_play);
@@ -254,10 +254,10 @@ void MainWindow::connect_signals() {
 void MainWindow::set_auto_follow(bool checked) { auto_follow = checked; }
 
 void MainWindow::toggle_play() {
-    if (engine->is_playing()) {
-        engine->stop_playback();
+    if (engine->isPlaying()) {
+        engine->stopPlayback();
     } else {
-        engine->start_playback();
+        engine->startPlayback();
     }
 }
 
@@ -280,22 +280,22 @@ void MainWindow::on_playing_state_changed(bool playing) {
 }
 
 void MainWindow::goto_start() {
-    this->engine->set_playback_position(0);
+    this->engine->setPlaybackPosition(0);
     midi_editor->horizontalScrollBar()->setValue(0);
 }
 
 void MainWindow::goto_end() {
-    this->engine->set_playback_position(this->engine->get_project()->get_max_tick());
+    this->engine->setPlaybackPosition(this->engine->getProject()->getMaxTick());
     midi_editor->horizontalScrollBar()->setValue(midi_editor->horizontalScrollBar()->maximum());
 }
 
-void MainWindow::on_tempo_changed(float new_tempo) { engine->change_tempo(new_tempo); }
+void MainWindow::on_tempo_changed(float new_tempo) { engine->changeTempo(new_tempo); }
 
 void MainWindow::open_midi() {
     QString fname = QFileDialog::getOpenFileName(this, "Open MIDI file", "", "MIDI Files (*.mid *.midi)");
     if (fname.isEmpty()) return;
 
-    if (!engine->load_project(fname.toStdString())) {
+    if (!engine->loadProject(fname.toStdString())) {
         QMessageBox::critical(this, "Error", "Failed to load MIDI file.");
         return;
     }
@@ -311,8 +311,8 @@ void MainWindow::export_midi() {
 }
 
 void MainWindow::current_tick_position_changed(int current_tick) {
-    if (auto_follow && engine->is_playing()) {
-        int marker_x = int(this->engine->get_project()->get_current_tick() * midi_editor->get_time_scale());
+    if (auto_follow && engine->isPlaying()) {
+        int marker_x = int(this->engine->getProject()->getCurrentTick() * midi_editor->get_time_scale());
         int width = midi_editor->viewport()->width();
         int margin = width / 2;
         int value = std::max(0, marker_x - margin);
@@ -322,29 +322,29 @@ void MainWindow::current_tick_position_changed(int current_tick) {
 }
 
 void MainWindow::reset_all_colors() {
-    NoteNagaMIDISeq *active_sequence = this->engine->get_project()->get_active_sequence();
+    NoteNagaMidiSeq *active_sequence = this->engine->getProject()->getActiveSequence();
     if (!active_sequence) {
         QMessageBox::warning(this, "No Sequence", "No active MIDI sequence found.");
         return;
     }
 
-    for (NoteNagaTrack *tr : active_sequence->get_tracks()) {
-        tr->set_color(DEFAULT_CHANNEL_COLORS[tr->get_id() % 16]);
+    for (NoteNagaTrack *tr : active_sequence->getTracks()) {
+        tr->setColor(DEFAULT_CHANNEL_COLORS[tr->getId() % 16]);
     }
     midi_editor->update();
     QMessageBox::information(this, "Colors", "All track colors have been reset.");
 }
 
 void MainWindow::randomize_all_colors() {
-    NoteNagaMIDISeq *active_sequence = this->engine->get_project()->get_active_sequence();
+    NoteNagaMidiSeq *active_sequence = this->engine->getProject()->getActiveSequence();
     if (!active_sequence) {
         QMessageBox::warning(this, "No Sequence", "No active MIDI sequence found.");
         return;
     }
 
-    for (NoteNagaTrack *tr : active_sequence->get_tracks()) {
+    for (NoteNagaTrack *tr : active_sequence->getTracks()) {
         QColor c(rand() % 206 + 50, rand() % 206 + 50, rand() % 206 + 50, 200);
-        tr->set_color(NNColor::fromQColor(c));
+        tr->setColor(NNColor::fromQColor(c));
     }
     midi_editor->update();
     QMessageBox::information(this, "Colors", "Track colors have been randomized.");

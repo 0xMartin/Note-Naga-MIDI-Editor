@@ -17,15 +17,15 @@ NoteNagaProject::NoteNagaProject() {
 }
 
 NoteNagaProject::~NoteNagaProject() {
-    for (NoteNagaMIDISeq *seq : sequences) {
+    for (NoteNagaMidiSeq *seq : sequences) {
         if (seq) delete seq;
     }
     sequences.clear();
 }
 
-bool NoteNagaProject::load_project(const std::string &project_path) {
+bool NoteNagaProject::loadProject(const std::string &project_path) {
     if (project_path.empty()) { return false; }
-    for (NoteNagaMIDISeq *seq : sequences) {
+    for (NoteNagaMidiSeq *seq : sequences) {
         if (seq) delete seq;
     }
     this->current_tick = 0;
@@ -33,29 +33,31 @@ bool NoteNagaProject::load_project(const std::string &project_path) {
     this->sequences.clear();
     this->active_sequence = nullptr;
 
-    NoteNagaMIDISeq *sequence = new NoteNagaMIDISeq();
-    sequence->load_from_midi(project_path);
-    add_sequence(sequence);
+    NoteNagaMidiSeq *sequence = new NoteNagaMidiSeq();
+    sequence->loadFromMidi(project_path);
+    addSequence(sequence);
 
-#ifndef QT_DEACTIVATED    
-    connect(sequence, &NoteNagaMIDISeq::meta_changed_signal, this, &NoteNagaProject::sequence_meta_changed_signal);
-    connect(sequence, &NoteNagaMIDISeq::track_meta_changed_signal, this, &NoteNagaProject::track_meta_changed_signal);
+#ifndef QT_DEACTIVATED
+    connect(sequence, &NoteNagaMidiSeq::metadataChanged, this,
+            &NoteNagaProject::sequenceMetadataChanged);
+    connect(sequence, &NoteNagaMidiSeq::trackMetadataChanged, this,
+            &NoteNagaProject::trackMetaChanged);
 #endif
-    NN_QT_EMIT(this->project_file_loaded_signal());
+    NN_QT_EMIT(this->projectFileLoaded());
     return true;
 }
 
-void NoteNagaProject::add_sequence(NoteNagaMIDISeq *sequence) {
+void NoteNagaProject::addSequence(NoteNagaMidiSeq *sequence) {
     if (sequence) {
         sequences.push_back(sequence);
         if (!this->active_sequence) {
             this->active_sequence = sequence;
-            NN_QT_EMIT(active_sequence_changed_signal(sequence));
+            NN_QT_EMIT(activeSequenceChanged(sequence));
         }
     }
 }
 
-void NoteNagaProject::remove_sequence(NoteNagaMIDISeq *sequence) {
+void NoteNagaProject::removeSequence(NoteNagaMidiSeq *sequence) {
     if (sequence) {
         auto it = std::remove(sequences.begin(), sequences.end(), sequence);
         if (it != sequences.end()) {
@@ -63,55 +65,55 @@ void NoteNagaProject::remove_sequence(NoteNagaMIDISeq *sequence) {
             // Reset active sequence if it was removed
             if (active_sequence == sequence) {
                 active_sequence = nullptr;
-                NN_QT_EMIT(active_sequence_changed_signal(nullptr));
+                NN_QT_EMIT(activeSequenceChanged(nullptr));
             }
         }
     }
 }
 
-int NoteNagaProject::get_ppq() const {
-    NoteNagaMIDISeq *active_sequence = get_active_sequence();
-    if (active_sequence) { return active_sequence->get_ppq(); }
+int NoteNagaProject::getPPQ() const {
+    NoteNagaMidiSeq *active_sequence = getActiveSequence();
+    if (active_sequence) { return active_sequence->getPPQ(); }
     return ppq;
 }
 
-int NoteNagaProject::get_tempo() const {
-    NoteNagaMIDISeq *active_sequence = get_active_sequence();
-    if (active_sequence) { return active_sequence->get_tempo(); }
+int NoteNagaProject::getTempo() const {
+    NoteNagaMidiSeq *active_sequence = getActiveSequence();
+    if (active_sequence) { return active_sequence->getTempo(); }
     return tempo;
 }
 
-void NoteNagaProject::set_current_tick(int tick) {
+void NoteNagaProject::setCurrentTick(int tick) {
     if (this->current_tick == tick) return;
     this->current_tick = tick;
-    NN_QT_EMIT(current_tick_changed_signal(this->current_tick));
+    NN_QT_EMIT(currentTickChanged(this->current_tick));
 }
 
-bool NoteNagaProject::set_active_sequence(NoteNagaMIDISeq *sequence) {
+bool NoteNagaProject::setActiveSequence(NoteNagaMidiSeq *sequence) {
     if (!sequence) {
         this->active_sequence = nullptr;
         return false;
     }
-    for (NoteNagaMIDISeq *seq : this->sequences) {
-        if (seq->get_id() == sequence->get_id()) {
+    for (NoteNagaMidiSeq *seq : this->sequences) {
+        if (seq->getId() == sequence->getId()) {
             this->active_sequence = seq;
-            NN_QT_EMIT(active_sequence_changed_signal(seq));
+            NN_QT_EMIT(activeSequenceChanged(seq));
             return true;
         }
     }
-    NN_QT_EMIT(active_sequence_changed_signal(sequence));
+    NN_QT_EMIT(activeSequenceChanged(sequence));
     return true;
 }
 
-int NoteNagaProject::get_max_tick() const {
-    NoteNagaMIDISeq *active_sequence = get_active_sequence();
+int NoteNagaProject::getMaxTick() const {
+    NoteNagaMidiSeq *active_sequence = getActiveSequence();
     if (!active_sequence) { return 0; }
-    return active_sequence->get_max_tick();
+    return active_sequence->getMaxTick();
 }
 
-NoteNagaMIDISeq *NoteNagaProject::get_sequence_by_id(int sequence_id) {
-    for (NoteNagaMIDISeq *seq : this->sequences) {
-        if (seq && seq->get_id() == sequence_id) { return seq; }
+NoteNagaMidiSeq *NoteNagaProject::getSequenceById(int sequence_id) {
+    for (NoteNagaMidiSeq *seq : this->sequences) {
+        if (seq && seq->getId() == sequence_id) { return seq; }
     }
     return nullptr;
 }

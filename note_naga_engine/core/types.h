@@ -1,21 +1,26 @@
 #pragma once
 
 #ifndef QT_DEACTIVATED
-#include <QObject>
 #include <QColor>
+#include <QObject>
 #endif
 
+#include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
-#include <optional>
-#include <cstdint>
 
-#include "../note_naga_api.h"
 #include "../io/midi_file.h"
+#include "../note_naga_api.h"
 
 /*******************************************************************************************************/
 // Macros for emitting signals depending on NN_QT_EMIT_ENABLED
 /*******************************************************************************************************/
+/**
+ * @brief Macro for emitting Qt signals depending on NN_QT_EMIT_ENABLED.
+ *        When QT_DEACTIVATED is defined, does nothing.
+ *        Otherwise, emits the specified signal.
+ */
 // #define QT_DEACTIVATED
 
 #ifdef QT_DEACTIVATED
@@ -28,84 +33,150 @@
 // Channel Colors
 /*******************************************************************************************************/
 
+/**
+ * @brief Represents an RGB color for channel coloring.
+ */
 struct NOTE_NAGA_ENGINE_API NNColor {
-    uint8_t red, green, blue;
+    uint8_t red, green, blue; ///< Red, green, and blue color channels
 
+    /**
+     * @brief Default constructor (black color).
+     */
     NNColor() : red(0), green(0), blue(0) {}
-    NNColor(uint8_t rr, uint8_t gg, uint8_t bb)
-        : red(rr), green(gg), blue(bb) {}
 
+    /**
+     * @brief Parameterized constructor.
+     * @param rr Red value.
+     * @param gg Green value.
+     * @param bb Blue value.
+     */
+    NNColor(uint8_t rr, uint8_t gg, uint8_t bb) : red(rr), green(gg), blue(bb) {}
+
+    /**
+     * @brief Equality operator for comparing two NNColor objects.
+     */
     bool operator==(const NNColor &other) const {
         return red == other.red && green == other.green && blue == other.blue;
     }
 
 #ifndef QT_DEACTIVATED
-    QColor toQColor() const {
-        return QColor(red, green, blue);
-    }
+    /**
+     * @brief Converts NNColor to QColor (Qt).
+     * @return QColor representation.
+     */
+    QColor toQColor() const { return QColor(red, green, blue); }
 
+    /**
+     * @brief Creates NNColor from QColor (Qt).
+     * @param color QColor to convert.
+     * @return NNColor representation.
+     */
     static NNColor fromQColor(const QColor &color) {
         return NNColor(color.red(), color.green(), color.blue());
     }
 #endif
 };
 
+/**
+ * @brief Default channel colors used for tracks/channels.
+ */
 NOTE_NAGA_ENGINE_API extern const std::vector<NNColor> DEFAULT_CHANNEL_COLORS;
 
-NOTE_NAGA_ENGINE_API NNColor color_blend(const NNColor &fg, const NNColor &bg, double opacity);
+/**
+ * @brief Blends two colors with the given opacity for the foreground color.
+ * @param fg Foreground color.
+ * @param bg Background color.
+ * @param opacity Opacity of the foreground color (0.0-1.0).
+ * @return Blended NNColor.
+ */
+NOTE_NAGA_ENGINE_API extern NNColor nn_color_blend(const NNColor &fg, const NNColor &bg,
+                                                   double opacity);
 
 /*******************************************************************************************************/
 // Forwards declarations
 /*******************************************************************************************************/
+
+/**
+ * @brief Forward declaration of NoteNagaTrack.
+ */
 class NOTE_NAGA_ENGINE_API NoteNagaTrack;
-class NOTE_NAGA_ENGINE_API NoteNagaMIDISeq;
+/**
+ * @brief Forward declaration of NoteNagaMIDISeq.
+ */
+class NOTE_NAGA_ENGINE_API NoteNagaMidiSeq;
 
 /*******************************************************************************************************/
 // Unique ID generation
 /*******************************************************************************************************/
 
-NOTE_NAGA_ENGINE_API unsigned long generate_unique_note_id();
-NOTE_NAGA_ENGINE_API int generate_unique_seq_id();
+/**
+ * @brief Generates a unique identifier for a note.
+ * @return Unique note ID.
+ */
+NOTE_NAGA_ENGINE_API unsigned long nn_generate_unique_note_id();
+
+/**
+ * @brief Generates a unique identifier for a MIDI sequence.
+ * @return Unique sequence ID.
+ */
+NOTE_NAGA_ENGINE_API int nn_generate_unique_seq_id();
 
 /*******************************************************************************************************/
 // Note Naga Note
 /*******************************************************************************************************/
 
-struct NOTE_NAGA_ENGINE_API NoteNagaNote
-{
-    // Required for unique identification
-    unsigned long id;
+/**
+ * @brief Structure representing a single MIDI note in Note Naga.
+ */
+struct NOTE_NAGA_ENGINE_API NoteNagaNote {
+    unsigned long id;            ///< Unique note ID (required for identification)
+    int note;                    ///< MIDI note number (0-127)
+    std::optional<int> start;    ///< Optional: note start tick
+    std::optional<int> length;   ///< Optional: note length in ticks
+    std::optional<int> velocity; ///< Optional: note velocity (0-127)
+    NoteNagaTrack *parent;       ///< Pointer to parent track
 
-    // Note id (0-127)
-    int note;
+    /**
+     * @brief Default constructor. Initializes note with a unique ID and zero values.
+     */
+    NoteNagaNote()
+        : id(nn_generate_unique_note_id()), note(0), start(std::nullopt),
+          length(std::nullopt), velocity(std::nullopt), parent(nullptr) {}
 
-    // Optional properties
-    std::optional<int> start;
-    std::optional<int> length;
-    std::optional<int> velocity;
-
-    // parent
-    NoteNagaTrack *parent;
-
-    NoteNagaNote() : id(generate_unique_note_id()), note(0), start(std::nullopt),
-                     length(std::nullopt), velocity(std::nullopt), parent(nullptr) {}
-
-    NoteNagaNote(unsigned long note_,
-                 NoteNagaTrack *parent_,
+    /**
+     * @brief Parameterized constructor for NoteNagaNote.
+     * @param note_ MIDI note number.
+     * @param parent_ Pointer to parent track.
+     * @param start_ Optional start tick.
+     * @param length_ Optional length.
+     * @param velocity_ Optional velocity.
+     * @param track_ (Unused) Optional track index.
+     */
+    NoteNagaNote(unsigned long note_, NoteNagaTrack *parent_,
                  const std::optional<int> &start_ = std::nullopt,
                  const std::optional<int> &length_ = std::nullopt,
                  const std::optional<int> &velocity_ = std::nullopt,
                  const std::optional<int> &track_ = std::nullopt)
-        : id(generate_unique_note_id()), note(note_), start(start_),
-          length(length_), velocity(velocity_), parent(parent_) {}
+        : id(nn_generate_unique_note_id()), note(note_), start(start_), length(length_),
+          velocity(velocity_), parent(parent_) {}
 };
 
+/**
+ * @brief Calculates the time (in milliseconds) for a note given ppq and tempo.
+ * @param note NoteNagaNote structure.
+ * @param ppq Pulses per quarter note.
+ * @param tempo Tempo in BPM.
+ * @return Duration in milliseconds.
+ */
 NOTE_NAGA_ENGINE_API double note_time_ms(const NoteNagaNote &note, int ppq, int tempo);
 
 /*******************************************************************************************************/
 // Note Naga Track
 /*******************************************************************************************************/
 
+/**
+ * @brief Represents a single MIDI track in Note Naga. Contains notes and track metadata.
+ */
 #ifndef QT_DEACTIVATED
 class NOTE_NAGA_ENGINE_API NoteNagaTrack : public QObject {
     Q_OBJECT
@@ -113,144 +184,442 @@ class NOTE_NAGA_ENGINE_API NoteNagaTrack : public QObject {
 class NOTE_NAGA_ENGINE_API NoteNagaTrack {
 #endif
 
-public:
+  public:
+    /**
+     * @brief Default constructor for NoteNagaTrack.
+     */
     NoteNagaTrack();
 
-    NoteNagaTrack(int track_id,
-                  NoteNagaMIDISeq *parent,
+    /**
+     * @brief Parameterized constructor for NoteNagaTrack.
+     * @param track_id Unique track ID.
+     * @param parent Pointer to parent MIDI sequence.
+     * @param name Track name.
+     * @param instrument Optional instrument index.
+     * @param channel Optional MIDI channel.
+     */
+    NoteNagaTrack(int track_id, NoteNagaMidiSeq *parent,
                   const std::string &name = "Track",
                   const std::optional<int> &instrument = std::nullopt,
                   const std::optional<int> &channel = std::nullopt);
+
+    /**
+     * @brief Destructor for NoteNagaTrack.
+     */
     virtual ~NoteNagaTrack() = default;
 
-    int get_id() const { return track_id; }
-    NoteNagaMIDISeq *get_parent() const { return parent; }
-    std::vector<NoteNagaNote> get_notes() const { return midi_notes; }
-    std::optional<int> get_instrument() const { return instrument; }
-    std::optional<int> get_channel() const { return channel; }
-    const std::string &get_name() const { return name; }
-    const NNColor &get_color() const { return color; }
-    bool is_visible() const { return visible; }
-    bool is_muted() const { return muted; }
-    bool is_solo() const { return solo; }
-    float get_volume() const { return volume; }
+    // GETTERS
+    // ///////////////////////////////////////////////////////////////////////////////
 
-    void set_id(int new_id);
-    void set_parent(NoteNagaMIDISeq *parent) { this->parent = parent; }
-    void set_notes(const std::vector<NoteNagaNote> &notes);
-    void set_instrument(std::optional<int> instrument);
-    void set_channel(std::optional<int> channel);
-    void set_name(const std::string &new_name);
-    void set_color(const NNColor &new_color);
-    void set_visible(bool is_visible);
-    void set_muted(bool is_muted);
-    void set_solo(bool is_solo);
-    void set_volume(float new_volume);
+    /**
+     * @brief Gets the track's unique ID.
+     * @return Track ID.
+     */
+    int getId() const { return track_id; }
+
+    /**
+     * @brief Gets the parent MIDI sequence.
+     * @return Pointer to parent sequence.
+     */
+    NoteNagaMidiSeq *getParent() const { return parent; }
+
+    /**
+     * @brief Gets all MIDI notes in the track.
+     * @return Vector of notes.
+     */
+    std::vector<NoteNagaNote> getNotes() const { return midi_notes; }
+
+    /**
+     * @brief Gets the track's instrument index.
+     * @return Optional instrument index.
+     */
+    std::optional<int> getInstrument() const { return instrument; }
+
+    /**
+     * @brief Gets the assigned MIDI channel.
+     * @return Optional channel number.
+     */
+    std::optional<int> getChannel() const { return channel; }
+
+    /**
+     * @brief Gets the track name.
+     * @return Reference to the name string.
+     */
+    const std::string &getName() const { return name; }
+
+    /**
+     * @brief Gets the assigned color for this track.
+     * @return Reference to color.
+     */
+    const NNColor &getColor() const { return color; }
+
+    /**
+     * @brief Returns whether the track is visible. Can be used to toggle visibility in
+     * UI.
+     * @return True if visible.
+     */
+    bool isVisible() const { return visible; }
+
+    /**
+     * @brief Returns whether the track is muted.
+     * @return True if muted.
+     */
+    bool isMuted() const { return muted; }
+
+    /**
+     * @brief Returns whether the track is soloed.
+     * @return True if solo.
+     */
+    bool isSolo() const { return solo; }
+
+    /**
+     * @brief Gets the volume for this track.
+     * @return Volume (0.0 - 1.0).
+     */
+    float getVolume() const { return volume; }
+
+    // SETTERS
+    // ///////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief Sets the track's unique ID. Method not prevent setting the same ID for
+     * multiple tracks.
+     * @param new_id New track ID.
+     */
+    void setId(int new_id);
+
+    /**
+     * @brief Sets the parent MIDI sequence.
+     * @param parent Pointer to parent MIDI sequence.
+     */
+    void setParent(NoteNagaMidiSeq *parent) { this->parent = parent; }
+
+    /**
+     * @brief Sets the notes for this track.
+     * @param notes Vector of notes.
+     */
+    void setNotes(const std::vector<NoteNagaNote> &notes) { this->midi_notes = notes; }
+
+    /**
+     * @brief Sets the instrument index.
+     * @param instrument Optional instrument index.
+     */
+    void setInstrument(std::optional<int> instrument);
+
+    /**
+     * @brief Sets the MIDI channel.
+     * @param channel Optional channel number.
+     */
+    void setChannel(std::optional<int> channel);
+
+    /**
+     * @brief Sets the track name.
+     * @param new_name New track name.
+     */
+    void setName(const std::string &new_name);
+
+    /**
+     * @brief Sets the track color.
+     * @param new_color New color.
+     */
+    void setColor(const NNColor &new_color);
+
+    /**
+     * @brief Sets the track visibility. Can be used to toggle visibility in UI.
+     * @param is_visible True to make visible.
+     */
+    void setVisible(bool is_visible);
+
+    /**
+     * @brief Sets the mute state.
+     * @param is_muted True to mute.
+     */
+    void setMuted(bool is_muted);
+
+    /**
+     * @brief Sets the solo state.
+     * @param is_solo True to solo.
+     */
+    void setSolo(bool is_solo);
+
+    /**
+     * @brief Sets the track's volume.
+     * @param new_volume New volume value.
+     */
+    void setVolume(float new_volume);
 
 #ifndef QT_DEACTIVATED
-Q_SIGNALS:
-    void meta_changed_signal(NoteNagaTrack *track, const std::string &param);
+  Q_SIGNALS:
+    /**
+     * @brief Signal emitted when track metadata changes (name, id, volume, ...) not
+     * including notes vector.
+     * @param track Pointer to the track.
+     * @param param Name of the changed parameter.
+     */
+    void metadataChanged(NoteNagaTrack *track, const std::string &param);
 #endif
 
-protected:
-    // META data
-    int track_id;
-    std::optional<int> instrument;
-    std::optional<int> channel;
-    std::string name;
-    NNColor color;
-    bool visible;
-    bool muted;
-    bool solo;
-    float volume;
-
-    // DATA
-    std::vector<NoteNagaNote> midi_notes;
-
-    // parent
-    NoteNagaMIDISeq *parent;
+  protected:
+    int track_id;                         ///< Unique track ID
+    std::optional<int> instrument;        ///< Instrument index (optional)
+    std::optional<int> channel;           ///< MIDI channel (optional)
+    std::string name;                     ///< Track name
+    NNColor color;                        ///< Track color
+    bool visible;                         ///< Track visibility
+    bool muted;                           ///< Track muted state
+    bool solo;                            ///< Track solo state
+    float volume;                         ///< Track volume (0.0 - 1.0)
+    std::vector<NoteNagaNote> midi_notes; ///< MIDI notes in this track
+    NoteNagaMidiSeq *parent;              ///< Pointer to parent MIDI sequence
 };
 
 /*******************************************************************************************************/
 // Note Naga MIDI Sequence
 /*******************************************************************************************************/
 
+/**
+ * @brief Represents a MIDI sequence in Note Naga, containing tracks and related metadata.
+ */
 #ifndef QT_DEACTIVATED
-class NOTE_NAGA_ENGINE_API NoteNagaMIDISeq : public QObject {
+class NOTE_NAGA_ENGINE_API NoteNagaMidiSeq : public QObject {
     Q_OBJECT
 #else
-class NOTE_NAGA_ENGINE_API NoteNagaMIDISeq {
+class NOTE_NAGA_ENGINE_API NoteNagaMidiSeq {
 #endif
 
-public:
-    NoteNagaMIDISeq();
-    NoteNagaMIDISeq(int sequence_id);
-    NoteNagaMIDISeq(int sequence_id, std::vector<NoteNagaTrack*> tracks);
-    virtual ~NoteNagaMIDISeq();
+  public:
+    /**
+     * @brief Default constructor.
+     */
+    NoteNagaMidiSeq();
 
+    /**
+     * @brief Constructor with sequence ID.
+     * @param sequence_id Unique sequence ID.
+     */
+    NoteNagaMidiSeq(int sequence_id);
+
+    /**
+     * @brief Constructor with sequence ID and tracks.
+     * @param sequence_id Unique sequence ID.
+     * @param tracks Vector of track pointers.
+     */
+    NoteNagaMidiSeq(int sequence_id, std::vector<NoteNagaTrack *> tracks);
+
+    /**
+     * @brief Destructor.
+     */
+    virtual ~NoteNagaMidiSeq();
+
+    /**
+     * @brief Clears all tracks and data from this sequence.
+     */
     void clear();
-    int compute_max_tick();
 
-    void load_from_midi(const std::string &midi_file_path);
-    std::vector<NoteNagaTrack*> load_type0_tracks(const MidiFile *midiFile);
-    std::vector<NoteNagaTrack*> load_type1_tracks(const MidiFile *midiFile);
+    /**
+     * @brief Computes the maximum tick value across all tracks.
+     * @return Maximum tick.
+     */
+    int computeMaxTick();
 
-    int get_id() const { return sequence_id; }
-    int get_ppq() const { return ppq; }
-    int get_tempo() const { return tempo; }
-    int get_max_tick() const { return max_tick; }
-    NoteNagaTrack* get_active_track() const { return active_track; } 
-    NoteNagaTrack* get_solo_track() const { return solo_track; }
-    std::vector<NoteNagaTrack*> get_tracks() const { return tracks; }
-    NoteNagaTrack* get_track_by_id(int track_id);
-    MidiFile* get_midi_file() const { return midi_file; }
+    /**
+     * @brief Loads a MIDI file into the sequence from the specified path.
+     * @param midi_file_path Path to the MIDI file.
+     */
+    void loadFromMidi(const std::string &midi_file_path);
 
-    void set_id(int new_id);
-    void set_ppq(int ppq);
-    void set_tempo(int tempo);
-    void set_active_track(NoteNagaTrack *track);
-    void set_solo_track(NoteNagaTrack *track);
+    /**
+     * @brief Loads tracks for type 0 MIDI files.
+     * @param midiFile Pointer to the MIDI file.
+     * @return Vector of track pointers.
+     */
+    std::vector<NoteNagaTrack *> loadType0Tracks(const MidiFile *midiFile);
+
+    /**
+     * @brief Loads tracks for type 1 MIDI files.
+     * @param midiFile Pointer to the MIDI file.
+     * @return Vector of track pointers.
+     */
+    std::vector<NoteNagaTrack *> loadType1Tracks(const MidiFile *midiFile);
+
+    // GETTERS
+    // ///////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief Gets the sequence's unique ID.
+     * @return Sequence ID.
+     */
+    int getId() const { return sequence_id; }
+
+    /**
+     * @brief Gets the pulses per quarter note (PPQ) value.
+     * @return PPQ.
+     */
+    int getPPQ() const { return ppq; }
+
+    /**
+     * @brief Gets the tempo (BPM).
+     * @return Tempo.
+     */
+    int getTempo() const { return tempo; }
+
+    /**
+     * @brief Gets the maximum tick value for this sequence.
+     * @return Maximum tick.
+     */
+    int getMaxTick() const { return max_tick; }
+
+    /**
+     * @brief Gets the currently active track.
+     * @return Pointer to the active track.
+     */
+    NoteNagaTrack *getActiveTrack() const { return active_track; }
+
+    /**
+     * @brief Gets the currently soloed track.
+     * @return Pointer to the soloed track.
+     */
+    NoteNagaTrack *getSoloTrack() const { return solo_track; }
+
+    /**
+     * @brief Gets all tracks in the sequence.
+     * @return Vector of track pointers.
+     */
+    std::vector<NoteNagaTrack *> getTracks() const { return tracks; }
+
+    /**
+     * @brief Gets a track by its ID.
+     * @param track_id Track ID.
+     * @return Pointer to the track.
+     */
+    NoteNagaTrack *getTrackById(int track_id);
+
+    /**
+     * @brief Gets the MIDI file associated with this sequence.
+     * @return Pointer to the MIDI file.
+     */
+    MidiFile *getMidiFile() const { return midi_file; }
+
+    // SETTERS
+    // ///////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief Sets the sequence's unique ID.
+     * @param new_id New sequence ID.
+     */
+    void setId(int new_id);
+
+    /**
+     * @brief Sets the pulses per quarter note (PPQ) value.
+     * @param ppq PPQ value.
+     */
+    void setPPQ(int ppq);
+
+    /**
+     * @brief Sets the tempo (BPM).
+     * @param tempo Tempo value.
+     */
+    void setTempo(int tempo);
+
+    /**
+     * @brief Sets the currently active track.
+     * @param track Pointer to the active track.
+     */
+    void setActiveTrack(NoteNagaTrack *track);
+
+    /**
+     * @brief Sets the currently soloed track.
+     * @param track Pointer to the soloed track.
+     */
+    void setSoloTrack(NoteNagaTrack *track);
 
 #ifndef QT_DEACTIVATED
-Q_SIGNALS:
-    void meta_changed_signal(NoteNagaMIDISeq *seq, const std::string &param);
-    void track_meta_changed_signal(NoteNagaTrack *track, const std::string &param);
-    void active_track_changed_signal(NoteNagaTrack *track);
+  Q_SIGNALS:
+    /**
+     * @brief Signal emitted when sequence metadata changes.
+     * @param seq Pointer to the sequence.
+     * @param param Name of the changed parameter.
+     */
+    void metadataChanged(NoteNagaMidiSeq *seq, const std::string &param);
+
+    /**
+     * @brief Signal emitted when track metadata changes.
+     * @param track Pointer to the track.
+     * @param param Name of the changed parameter.
+     */
+    void trackMetadataChanged(NoteNagaTrack *track, const std::string &param);
+
+    /**
+     * @brief Signal emitted when the active track changes.
+     * @param track Pointer to the active track.
+     */
+    void activeTrackChanged(NoteNagaTrack *track);
 #endif
 
-protected:
-    int sequence_id;
-
-    std::vector<NoteNagaTrack*> tracks;
-    NoteNagaTrack *active_track;
-    NoteNagaTrack *solo_track;
-    MidiFile* midi_file;
-
-    int ppq;
-    int tempo;
-    int max_tick;
+  protected:
+    int sequence_id;                     ///< Unique sequence ID
+    std::vector<NoteNagaTrack *> tracks; ///< All tracks in the sequence
+    NoteNagaTrack *active_track;         ///< Pointer to the currently active track
+    NoteNagaTrack *solo_track;           ///< Pointer to the currently soloed track
+    MidiFile *midi_file;                 ///< Pointer to the MIDI file object
+    int ppq;                             ///< Pulses per quarter note (PPQ)
+    int tempo;                           ///< Tempo (BPM)
+    int max_tick;                        ///< Maximum tick in the sequence
 };
 
 /*******************************************************************************************************/
 // General MIDI Instruments Utils
 /*******************************************************************************************************/
 
-struct NOTE_NAGA_ENGINE_API GMInstrument
-{
-    int index;
-    std::string name;
-    std::string icon;
+/**
+ * @brief Structure describing a General MIDI instrument.
+ */
+struct NOTE_NAGA_ENGINE_API GMInstrument {
+    int index;        ///< Instrument index
+    std::string name; ///< Human-readable name
+    std::string icon; ///< Icon filename or resource ID
 };
+
+/**
+ * @brief List of all General MIDI instruments.
+ */
 NOTE_NAGA_ENGINE_API extern const std::vector<GMInstrument> GM_INSTRUMENTS;
 
-NOTE_NAGA_ENGINE_API std::optional<GMInstrument> find_instrument_by_name(const std::string &name);
-NOTE_NAGA_ENGINE_API std::optional<GMInstrument> find_instrument_by_index(int index);
+/**
+ * @brief Finds a General MIDI instrument by name.
+ * @param name Instrument name.
+ * @return Optional GMInstrument if found.
+ */
+NOTE_NAGA_ENGINE_API extern std::optional<GMInstrument>
+nn_find_instrument_by_name(const std::string &name);
+
+/**
+ * @brief Finds a General MIDI instrument by index.
+ * @param index Instrument index.
+ * @return Optional GMInstrument if found.
+ */
+NOTE_NAGA_ENGINE_API std::optional<GMInstrument> nn_find_instrument_by_index(int index);
 
 /*******************************************************************************************************/
 // Note Names Utils
 /*******************************************************************************************************/
 
+/**
+ * @brief List of note names (C, C#, D, ...).
+ */
 NOTE_NAGA_ENGINE_API extern const std::vector<std::string> NOTE_NAMES;
 
-NOTE_NAGA_ENGINE_API std::string note_name(int n);
-NOTE_NAGA_ENGINE_API int index_in_octave(int n);
+/**
+ * @brief Gets the note name (e.g., "C4") for a given MIDI note number.
+ * @param n MIDI note number.
+ * @return Note name as string.
+ */
+NOTE_NAGA_ENGINE_API extern std::string nn_note_name(int n);
+
+/**
+ * @brief Gets the index inside the octave (0 = C, 1 = C#, ..., 11 = B) for a MIDI note
+ * number.
+ * @param n MIDI note number.
+ * @return Index in octave (0-11).
+ */
+NOTE_NAGA_ENGINE_API extern int nn_index_in_octave(int n);

@@ -119,7 +119,7 @@ RoutingEntryWidget::RoutingEntryWidget(NoteNagaEngine *engine_, NoteNagaRoutingE
     _set_combo_selections();
 
     // Connect to track info changed (refresh combos)
-    connect(entry->track, &NoteNagaTrack::meta_changed_signal, this, &RoutingEntryWidget::on_track_info_changed);
+    connect(entry->track, &NoteNagaTrack::metadataChanged, this, &RoutingEntryWidget::on_track_info_changed);
 
     // Style
     refresh_style(false);
@@ -130,21 +130,21 @@ void RoutingEntryWidget::_populate_track_combo(NoteNagaTrack *track) {
     track_combo->clear();
 
     if (!track) return;
-    NoteNagaMIDISeq *seq = track->get_parent();
+    NoteNagaMidiSeq *seq = track->getParent();
     if (!seq) return;
 
     // populate track combo with all tracks from the sequence
-    const std::vector<NoteNagaTrack *> &tracks = seq->get_tracks();
+    const std::vector<NoteNagaTrack *> &tracks = seq->getTracks();
     for (size_t idx = 0; idx < tracks.size(); ++idx) {
         auto &tr = tracks[idx];
-        QString name = QString("%1: %2").arg(idx + 1).arg(tr->get_name());
-        track_combo->addItem(name, tr->get_id());
+        QString name = QString("%1: %2").arg(idx + 1).arg(tr->getName());
+        track_combo->addItem(name, tr->getId());
     }
 
     // selecte current track of entry
     NoteNagaTrack *entry_track = entry->track;
     if (entry_track) {
-        int current_track_index = track_combo->findData(entry_track->get_id());
+        int current_track_index = track_combo->findData(entry_track->getId());
         if (current_track_index >= 0) track_combo->setCurrentIndex(current_track_index);
         track_combo->blockSignals(false);
     }
@@ -153,7 +153,7 @@ void RoutingEntryWidget::_populate_track_combo(NoteNagaTrack *track) {
 void RoutingEntryWidget::_populate_output_combo() {
     output_combo->blockSignals(true);
     output_combo->clear();
-    for (const std::string &out : engine->get_mixer()->get_available_outputs()) {
+    for (const std::string &out : engine->getMixer()->getAvailableOutputs()) {
         output_combo->addItem(QString::fromStdString(out));
     }
     output_combo->addItem(TRACK_ROUTING_ENTRY_ANY_DEVICE);
@@ -164,7 +164,7 @@ void RoutingEntryWidget::_populate_output_combo() {
 
 void RoutingEntryWidget::_set_combo_selections() {
     if (entry->track) {
-        int track_idx = track_combo->findData(entry->track->get_id());
+        int track_idx = track_combo->findData(entry->track->getId());
         if (track_idx >= 0) track_combo->setCurrentIndex(track_idx);
     }
 
@@ -182,10 +182,10 @@ void RoutingEntryWidget::_on_track_changed(int idx) {
 
     NoteNagaTrack *track = entry->track;
     if (!track) return;
-    NoteNagaMIDISeq *seq = track->get_parent();
+    NoteNagaMidiSeq *seq = track->getParent();
     if (!seq) return;
 
-    NoteNagaTrack *new_track = seq->get_track_by_id(new_track_id);
+    NoteNagaTrack *new_track = seq->getTrackById(new_track_id);
     if (!new_track) return;
 
     entry->track = new_track;

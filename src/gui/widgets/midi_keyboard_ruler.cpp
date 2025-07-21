@@ -29,7 +29,7 @@ MidiKeyboardRuler::MidiKeyboardRuler(NoteNagaEngine* engine_, int viewer_row_hei
       c_key_label_color("rgba(28, 48, 94, 1)")
 {
     this->pressed_note.note = -1;
-    connect(engine->get_mixer(), &NoteNagaMixer::note_in_signal, this, &MidiKeyboardRuler::on_play_note);
+    connect(engine->getMixer(), &NoteNagaMixer::noteInSignal, this, &MidiKeyboardRuler::on_play_note);
     setObjectName("MidiKeyboardRuler");
     setMinimumWidth(60);
     setMouseTracking(true);
@@ -92,7 +92,7 @@ std::optional<int> MidiKeyboardRuler::note_at_pos(const QPoint &pos) const
     for (size_t i = 0; i < white_keys_vec.size(); ++i)
     {
         int n = white_keys_vec[i];
-        double size_factor = (i == 0) ? 1.5 : WHITE_HEIGHT[index_in_octave(n)];
+        double size_factor = (i == 0) ? 1.5 : WHITE_HEIGHT[nn_index_in_octave(n)];
         double white_key_height = size_factor * viewer_row_height;
         double y = y_cursor + verticalScroll;
         key_positions.emplace_back(n, y, y + white_key_height, size_factor);
@@ -156,7 +156,7 @@ void MidiKeyboardRuler::paintEvent(QPaintEvent *event)
     for (size_t i = 0; i < white_keys_vec.size(); ++i)
     {
         int n = white_keys_vec[i];
-        double size_factor = (i == 0) ? 1.5 : WHITE_HEIGHT[index_in_octave(n)];
+        double size_factor = (i == 0) ? 1.5 : WHITE_HEIGHT[nn_index_in_octave(n)];
         double white_key_height = size_factor * viewer_row_height;
         double y = y_cursor + verticalScroll;
         if (y + white_key_height < visible_y0 - white_key_height * 2 || y > visible_y1 + white_key_height * 2)
@@ -180,7 +180,7 @@ void MidiKeyboardRuler::paintEvent(QPaintEvent *event)
         painter.drawRect(rect);
         if (n % 12 == 0)
         {
-            QString note_name_str = QString::fromStdString(note_name(n));
+            QString note_name_str = QString::fromStdString(nn_note_name(n));
             painter.setPen(c_key_label_color);
             painter.setFont(c_key_font);
             QRect text_rect(0, int(y - 2), key_w - 2, int(white_key_height));
@@ -266,13 +266,13 @@ void MidiKeyboardRuler::leaveEvent(QEvent *event)
 
 void MidiKeyboardRuler::mousePressEvent(QMouseEvent *event)
 {
-    NoteNagaMIDISeq *seq = engine->get_project()->get_active_sequence();
+    NoteNagaMidiSeq *seq = engine->getProject()->getActiveSequence();
     if (!seq)
     {
         qDebug() << "No active sequence to play note on.";
         return;
     }
-    NoteNagaTrack *track = seq->get_active_track();
+    NoteNagaTrack *track = seq->getActiveTrack();
     if (!track)
     {
         qDebug() << "No active track to play note on.";
@@ -283,11 +283,11 @@ void MidiKeyboardRuler::mousePressEvent(QMouseEvent *event)
     int nval = note.has_value() ? note.value() : -1;
     if (nval != -1)
     {
-        pressed_note.id = generate_unique_note_id();
+        pressed_note.id = nn_generate_unique_note_id();
         pressed_note.parent = track;
         pressed_note.note = nval;
         pressed_note.velocity = 44 + rand() % 41; // random velocity 44 - 84
-        this->engine->get_mixer()->note_play(pressed_note);
+        this->engine->getMixer()->playNote(pressed_note);
         emit play_note_signal(pressed_note);
         update();
     }
@@ -300,7 +300,7 @@ void MidiKeyboardRuler::mouseReleaseEvent(QMouseEvent *event)
     if (pressed_note.note != -1)
     {
         int velocity = 44 + rand() % 41;
-        this->engine->get_mixer()->note_stop(pressed_note);
+        this->engine->getMixer()->stopNote(pressed_note);
         emit stop_note_signal(pressed_note);
         pressed_note.note = -1;
         update();
@@ -319,11 +319,11 @@ void MidiKeyboardRuler::on_play_note(const NoteNagaNote& note)
 {
     NoteNagaTrack *track = note.parent;
     if (!track) return;
-    NoteNagaMIDISeq *sequence = track->get_parent();
+    NoteNagaMidiSeq *sequence = track->getParent();
     if (!sequence) return;
 
-    int timeout = note_time_ms(note, sequence->get_ppq(), sequence->get_tempo());
-    highlight_key(note.note, track->get_color().toQColor(), timeout);
+    int timeout = note_time_ms(note, sequence->getPPQ(), sequence->getTempo());
+    highlight_key(note.note, track->getColor().toQColor(), timeout);
 }
 
 void MidiKeyboardRuler::highlight_key(int note, const QColor &color, int timeout)

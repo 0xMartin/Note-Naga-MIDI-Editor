@@ -8,10 +8,12 @@
 #define MAX_NOTE 127
 
 MidiEditorWidget::MidiEditorWidget(NoteNagaEngine *engine_, QWidget *parent)
-    : QGraphicsView(parent), engine(engine_), time_scale(0.2), key_height(16), content_width(640),
-      content_height((MAX_NOTE - MIN_NOTE + 1) * 16), tact_subdiv(4), bg_color("#32353c"), fg_color("#e0e6ef"),
-      line_color("#232731"), subline_color("#464a56"), grid_bar_color("#5e7fff"), grid_row_color1("#35363b"),
-      grid_row_color2("#292a2e"), grid_bar_label_color("#6fa5ff"), grid_subdiv_color("#44464b") {
+    : QGraphicsView(parent), engine(engine_), time_scale(0.2), key_height(16),
+      content_width(640), content_height((MAX_NOTE - MIN_NOTE + 1) * 16), tact_subdiv(4),
+      bg_color("#32353c"), fg_color("#e0e6ef"), line_color("#232731"),
+      subline_color("#464a56"), grid_bar_color("#6177d1"), grid_row_color1("#35363b"),
+      grid_row_color2("#292a2e"), grid_bar_label_color("#6fa5ff"),
+      grid_subdiv_color("#44464b") {
     setObjectName("MidiViewerWidget");
     setFrameStyle(QFrame::NoFrame);
     setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -26,32 +28,35 @@ MidiEditorWidget::MidiEditorWidget(NoteNagaEngine *engine_, QWidget *parent)
     setBackgroundBrush(bg_color);
     setMouseTracking(true);
 
-    recalculate_content_size(engine->get_project()->get_active_sequence());
+    recalculate_content_size(engine->getProject()->getActiveSequence());
 }
 
 void MidiEditorWidget::setup_connections() {
     // reload whole sequence when active sequence changes
-    connect(engine->get_project(), &NoteNagaProject::active_sequence_changed_signal, this,
-            [this](NoteNagaMIDISeq *seq) { this->reload_all(); });
+    connect(engine->getProject(), &NoteNagaProject::activeSequenceChanged, this,
+            [this](NoteNagaMidiSeq *seq) { this->reload_all(); });
 
     // track meta update
-    connect(engine->get_project(), &NoteNagaProject::sequence_meta_changed_signal, this,
-            [this](NoteNagaMIDISeq *seq, const std::string &param) { this->reload_all(); });
+    connect(
+        engine->getProject(), &NoteNagaProject::sequenceMetadataChanged, this,
+        [this](NoteNagaMidiSeq *seq, const std::string &param) { this->reload_all(); });
 
     // Current tick changed, update marker
-    connect(engine->get_project(), &NoteNagaProject::current_tick_changed_signal, this,
+    connect(engine->getProject(), &NoteNagaProject::currentTickChanged, this,
             [this](int tick) { update_marker_slot(); });
 
-    connect(horizontalScrollBar(), &QScrollBar::valueChanged, this, &MidiEditorWidget::on_viewport_changed);
-    connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &MidiEditorWidget::on_viewport_changed);
+    connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
+            &MidiEditorWidget::on_viewport_changed);
+    connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
+            &MidiEditorWidget::on_viewport_changed);
 }
 
 QSize MidiEditorWidget::sizeHint() const { return QSize(content_width, content_height); }
 QSize MidiEditorWidget::minimumSizeHint() const { return QSize(320, 100); }
 
-void MidiEditorWidget::recalculate_content_size(NoteNagaMIDISeq *seq) {
+void MidiEditorWidget::recalculate_content_size(NoteNagaMidiSeq *seq) {
     if (seq) {
-        content_width = int((seq->get_max_tick() + 1) * time_scale) + 16;
+        content_width = int((seq->getMaxTick() + 1) * time_scale) + 16;
         content_height = (MAX_NOTE - MIN_NOTE + 1) * key_height;
     } else {
         content_width = 640;
@@ -61,17 +66,21 @@ void MidiEditorWidget::recalculate_content_size(NoteNagaMIDISeq *seq) {
     update_scene_items(seq);
 }
 
-void MidiEditorWidget::repaint_slot() { recalculate_content_size(engine->get_project()->get_active_sequence()); }
+void MidiEditorWidget::repaint_slot() {
+    recalculate_content_size(engine->getProject()->getActiveSequence());
+}
 
-void MidiEditorWidget::reload_all() { recalculate_content_size(engine->get_project()->get_active_sequence()); }
+void MidiEditorWidget::reload_all() {
+    recalculate_content_size(engine->getProject()->getActiveSequence());
+}
 
 void MidiEditorWidget::reload_track(NoteNagaTrack *track, const std::string &param) {
     // Pokud není aktivní sekvence nebo track je nullptr, ignoruj
-    NoteNagaMIDISeq *seq = engine->get_project()->get_active_sequence();
+    NoteNagaMidiSeq *seq = engine->getProject()->getActiveSequence();
     if (!seq || !track) return;
 
     // Smaž pouze noty daného tracku a vykresli znovu
-    clear_track_notes(track->get_id());
+    clear_track_notes(track->getId());
     update_one_track_notes(track, seq);
 }
 
@@ -81,25 +90,27 @@ void MidiEditorWidget::update_marker_slot() {
         delete marker_line;
         marker_line = nullptr;
     }
-    update_marker(engine->get_project()->get_active_sequence());
+    update_marker(engine->getProject()->getActiveSequence());
 }
 
-void MidiEditorWidget::on_viewport_changed() { update_scene_items(engine->get_project()->get_active_sequence()); }
+void MidiEditorWidget::on_viewport_changed() {
+    update_scene_items(engine->getProject()->getActiveSequence());
+}
 
 void MidiEditorWidget::set_time_scale(double scale) {
     time_scale = std::max(0.02, scale);
-    recalculate_content_size(engine->get_project()->get_active_sequence());
+    recalculate_content_size(engine->getProject()->getActiveSequence());
 }
 void MidiEditorWidget::set_key_height(int h) {
     key_height = std::max(4, std::min(48, h));
-    recalculate_content_size(engine->get_project()->get_active_sequence());
+    recalculate_content_size(engine->getProject()->getActiveSequence());
 }
 void MidiEditorWidget::set_time_scale_slot(double scale) { set_time_scale(scale); }
 void MidiEditorWidget::set_key_height_slot(int h) { set_key_height(h); }
 
 void MidiEditorWidget::resizeEvent(QResizeEvent *event) {
     QGraphicsView::resizeEvent(event);
-    update_scene_items(engine->get_project()->get_active_sequence());
+    update_scene_items(engine->getProject()->getActiveSequence());
 }
 
 void MidiEditorWidget::clear_scene() {
@@ -130,7 +141,7 @@ void MidiEditorWidget::clear_track_notes(int track_id) {
     }
 }
 
-void MidiEditorWidget::update_scene_items(NoteNagaMIDISeq *seq) {
+void MidiEditorWidget::update_scene_items(NoteNagaMidiSeq *seq) {
     clear_scene();
     scene->setBackgroundBrush(bg_color);
 
@@ -148,7 +159,7 @@ void MidiEditorWidget::update_scene_items(NoteNagaMIDISeq *seq) {
     update_marker_slot();
 }
 
-void MidiEditorWidget::update_grid(const NoteNagaMIDISeq *seq) {
+void MidiEditorWidget::update_grid(const NoteNagaMidiSeq *seq) {
     Q_UNUSED(seq);
     int visible_y0 = verticalScrollBar()->value();
     int visible_y1 = visible_y0 + viewport()->height();
@@ -157,7 +168,8 @@ void MidiEditorWidget::update_grid(const NoteNagaMIDISeq *seq) {
         int y = content_height - (idx + 1) * key_height;
         if (y + key_height < visible_y0 || y > visible_y1) continue;
         QColor row_bg = (note_val % 2 == 0) ? grid_row_color1 : grid_row_color2;
-        auto row_bg_rect = scene->addRect(0, y, content_width, key_height, QPen(Qt::NoPen), QBrush(row_bg));
+        auto row_bg_rect = scene->addRect(0, y, content_width, key_height,
+                                          QPen(Qt::NoPen), QBrush(row_bg));
         row_bg_rect->setZValue(-100);
 
         auto l = scene->addLine(0, y, content_width, y, QPen(line_color, 1));
@@ -165,11 +177,11 @@ void MidiEditorWidget::update_grid(const NoteNagaMIDISeq *seq) {
     }
 }
 
-void MidiEditorWidget::update_bar_grid(const NoteNagaMIDISeq *seq) {
-    int ppq = seq->get_ppq();
+void MidiEditorWidget::update_bar_grid(const NoteNagaMidiSeq *seq) {
+    int ppq = seq->getPPQ();
     int bar_length = ppq * 4;
     int first_bar = 0;
-    int last_bar = (seq->get_max_tick() / bar_length) + 2;
+    int last_bar = (seq->getMaxTick() / bar_length) + 2;
     int visible_x0 = horizontalScrollBar()->value();
     int visible_x1 = visible_x0 + viewport()->width();
     int visible_y0 = verticalScrollBar()->value();
@@ -186,7 +198,7 @@ void MidiEditorWidget::update_bar_grid(const NoteNagaMIDISeq *seq) {
         int tick = bar * bar_length;
         int x = tick * time_scale;
         if (x < visible_x0 - 200 || x > visible_x1 + 200) continue;
-        auto l = scene->addLine(x, 0, x, content_height, QPen(grid_bar_color, 2));
+        auto l = scene->addLine(x, 0, x, content_height, QPen(grid_bar_color, 1.5));
         l->setZValue(2);
         bar_grid_lines.push_back(l);
 
@@ -208,18 +220,25 @@ void MidiEditorWidget::update_bar_grid(const NoteNagaMIDISeq *seq) {
             int sub_tick = tick + (bar_length * sub) / tact_subdiv;
             int sub_x = sub_tick * time_scale;
             if (sub_x < visible_x0 - 200 || sub_x > visible_x1 + 200) continue;
-            auto lsub = scene->addLine(sub_x, 0, sub_x, content_height, QPen(grid_subdiv_color, 1));
+            auto lsub = scene->addLine(sub_x, 0, sub_x, content_height,
+                                       QPen(grid_subdiv_color, 1));
             lsub->setZValue(1);
         }
     }
 }
 
-void MidiEditorWidget::draw_note(const NoteNagaNote &note, const NoteNagaTrack *track, bool is_selected, bool is_drum,
-                                 int x, int y, int w, int h) {
+void MidiEditorWidget::draw_note(const NoteNagaNote &note, const NoteNagaTrack *track,
+                                 bool is_selected, bool is_drum, int x, int y, int w,
+                                 int h) {
     QGraphicsItem *shape = nullptr;
-    QColor t_color = (is_selected ? track->get_color() : color_blend(track->get_color(), NNColor::fromQColor(bg_color), 0.3)).toQColor();
-    QPen outline = is_selected ? QPen(t_color.lightness() < 128 ? Qt::white : Qt::black, 2)
-                               : QPen(t_color.lightness() < 128 ? t_color.lighter(150) : t_color.darker(150));
+    QColor t_color = (is_selected ? track->getColor()
+                                  : nn_color_blend(track->getColor(),
+                                                   NNColor::fromQColor(bg_color), 0.3))
+                         .toQColor();
+    QPen outline = is_selected
+                       ? QPen(t_color.lightness() < 128 ? Qt::white : Qt::black, 2)
+                       : QPen(t_color.lightness() < 128 ? t_color.lighter(150)
+                                                        : t_color.darker(150));
 
     if (is_drum) {
         int sz = h * 0.6;
@@ -231,11 +250,11 @@ void MidiEditorWidget::draw_note(const NoteNagaNote &note, const NoteNagaTrack *
     } else {
         shape = scene->addRect(x, y, w, h, outline, QBrush(t_color));
     }
-    shape->setZValue(is_selected ? 999 : track->get_id());
+    shape->setZValue(is_selected ? 999 : track->getId());
 
     QGraphicsSimpleTextItem *txt = nullptr;
     if (!is_drum && w > 15 && h > 9 && time_scale > 0.04) {
-        QString note_str = QString::fromStdString(note_name(note.note));
+        QString note_str = QString::fromStdString(nn_note_name(note.note));
         txt = scene->addSimpleText(note_str);
         txt->setBrush(QBrush(t_color.lightness() < 128 ? Qt::white : Qt::black));
         QFont f("Arial", std::max(6, h - 6));
@@ -243,10 +262,10 @@ void MidiEditorWidget::draw_note(const NoteNagaNote &note, const NoteNagaTrack *
         txt->setPos(x + 2, y + 2);
         txt->setZValue(shape->zValue() + 1);
     }
-    note_items[track->get_id()].push_back({shape, txt});
+    note_items[track->getId()].push_back({shape, txt});
 }
 
-void MidiEditorWidget::update_all_notes(const NoteNagaMIDISeq *seq) {
+void MidiEditorWidget::update_all_notes(const NoteNagaMidiSeq *seq) {
     clear_notes();
     if (!seq) return;
     int visible_x0 = horizontalScrollBar()->value();
@@ -254,63 +273,72 @@ void MidiEditorWidget::update_all_notes(const NoteNagaMIDISeq *seq) {
     int visible_y0 = verticalScrollBar()->value();
     int visible_y1 = visible_y0 + viewport()->height();
 
-    for (const auto &track : seq->get_tracks()) {
-        if (!track || !track->is_visible()) continue;
-        bool is_drum = track->get_channel().has_value() && track->get_channel().value() == 9;
-        bool is_selected = seq->get_active_track() && seq->get_active_track()->get_id() == track->get_id();
+    for (const auto &track : seq->getTracks()) {
+        if (!track || !track->isVisible()) continue;
+        bool is_drum =
+            track->getChannel().has_value() && track->getChannel().value() == 9;
+        bool is_selected =
+            seq->getActiveTrack() && seq->getActiveTrack()->getId() == track->getId();
 
-        for (const auto &note : track->get_notes()) {
+        for (const auto &note : track->getNotes()) {
             if (!note.start.has_value() || !note.length.has_value()) continue;
             int y = content_height - (note.note - MIN_NOTE + 1) * key_height;
             int x = note.start.value() * time_scale;
             int w = std::max(1, int(note.length.value() * time_scale));
             int h = key_height;
-            if (!((x + w > visible_x0 && x < visible_x1) && (y + h > visible_y0 && y < visible_y1))) continue;
+            if (!((x + w > visible_x0 && x < visible_x1) &&
+                  (y + h > visible_y0 && y < visible_y1)))
+                continue;
             draw_note(note, track, is_selected, is_drum, x, y, w, h);
         }
     }
 }
 
-void MidiEditorWidget::update_one_track_notes(const NoteNagaTrack *track, const NoteNagaMIDISeq *seq) {
+void MidiEditorWidget::update_one_track_notes(const NoteNagaTrack *track,
+                                              const NoteNagaMidiSeq *seq) {
     if (!track || !seq) return;
     int visible_x0 = horizontalScrollBar()->value();
     int visible_x1 = visible_x0 + viewport()->width();
     int visible_y0 = verticalScrollBar()->value();
     int visible_y1 = visible_y0 + viewport()->height();
 
-    bool is_drum = track->get_channel().has_value() && track->get_channel().value() == 9;
-    bool is_selected = seq->get_active_track() && seq->get_active_track()->get_id() == track->get_id();
+    bool is_drum = track->getChannel().has_value() && track->getChannel().value() == 9;
+    bool is_selected =
+        seq->getActiveTrack() && seq->getActiveTrack()->getId() == track->getId();
 
-    for (const auto &note : track->get_notes()) {
+    for (const auto &note : track->getNotes()) {
         if (!note.start.has_value() || !note.length.has_value()) continue;
         int y = content_height - (note.note - MIN_NOTE + 1) * key_height;
         int x = note.start.value() * time_scale;
         int w = std::max(1, int(note.length.value() * time_scale));
         int h = key_height;
-        if (!((x + w > visible_x0 && x < visible_x1) && (y + h > visible_y0 && y < visible_y1))) continue;
+        if (!((x + w > visible_x0 && x < visible_x1) &&
+              (y + h > visible_y0 && y < visible_y1)))
+            continue;
         draw_note(note, track, is_selected, is_drum, x, y, w, h);
     }
 }
 
-void MidiEditorWidget::update_marker(const NoteNagaMIDISeq *seq) {
+void MidiEditorWidget::update_marker(const NoteNagaMidiSeq *seq) {
     if (!seq) return;
-    int marker_x = engine->get_project()->get_current_tick() * time_scale;
+    int marker_x = engine->getProject()->getCurrentTick() * time_scale;
     int visible_y0 = verticalScrollBar()->value();
     int visible_y1 = visible_y0 + viewport()->height();
 
     if (marker_x > 0 && marker_x < content_width) {
-        marker_line = scene->addLine(marker_x, visible_y0, marker_x, visible_y1, QPen(QColor(255, 88, 88), 2));
+        marker_line = scene->addLine(marker_x, visible_y0, marker_x, visible_y1,
+                                     QPen(QColor(255, 88, 88), 2));
         marker_line->setZValue(1000);
     }
 }
 
 void MidiEditorWidget::mousePressEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton) {
-        auto seq = engine->get_project()->get_active_sequence();
+        auto seq = engine->getProject()->getActiveSequence();
         if (seq) {
             int x = int(mapToScene(event->pos()).x());
             int tick = int(x / time_scale);
-            this->engine->get_project()->set_current_tick(tick);
+            this->engine->getProject()->setCurrentTick(tick);
             emit set_position_signal(tick);
         }
     }

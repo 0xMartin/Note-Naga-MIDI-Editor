@@ -5,51 +5,103 @@
 #include "../note_naga_api.h"
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <functional>
 #include <thread>
 #include <unordered_map>
 #include <vector>
-#include <cstdint>
 
 /*******************************************************************************************************/
 // Playback Thread Worker
 /*******************************************************************************************************/
 
+/**
+ * @brief Worker class responsible for running playback logic in a separate thread.
+ */
 class PlaybackThreadWorker {
-public:
-    using CallbackId = std::uint64_t;
-    using FinishedCallback = std::function<void()>;
-    using PositionChangedCallback = std::function<void(int)>;
+  public:
+    using CallbackId = std::uint64_t;               ///< Type for callback identifier
+    using FinishedCallback = std::function<void()>; ///< Callback type for finished event
+    using PositionChangedCallback =
+        std::function<void(int)>; ///< Callback type for position changed event
 
-    PlaybackThreadWorker(NoteNagaProject *project, NoteNagaMixer *mixer, double timer_interval);
+    /**
+     * @brief Constructs the worker.
+     * @param project Pointer to NoteNagaProject instance.
+     * @param mixer Pointer to NoteNagaMixer instance.
+     * @param timer_interval Timer interval in milliseconds.
+     */
+    PlaybackThreadWorker(NoteNagaProject *project, NoteNagaMixer *mixer,
+                         double timer_interval);
 
-    void recalculate_tempo();
+    /**
+     * @brief Recalculates the tempo based on current project settings.
+     */
+    void recalculateTempo();
+
+    /**
+     * @brief Requests playback to stop (thread-safe).
+     */
     void stop();
+
+    /**
+     * @brief Main execution loop to be run in a separate thread.
+     */
     void run();
 
-    // Add callbacks (signals)
-    CallbackId add_finished_callback(FinishedCallback cb);
-    CallbackId add_position_changed_callback(PositionChangedCallback cb);
+    /**
+     * @brief Adds a callback for when playback finishes.
+     * @param cb Callback function.
+     * @return Unique callback ID.
+     */
+    CallbackId addFinishedCallback(FinishedCallback cb);
 
-    void remove_finished_callback(CallbackId id);
-    void remove_position_changed_callback(CallbackId id);
+    /**
+     * @brief Adds a callback for when playback position changes.
+     * @param cb Callback function taking the tick position.
+     * @return Unique callback ID.
+     */
+    CallbackId addPositionChangedCallback(PositionChangedCallback cb);
 
-    std::atomic<bool> should_stop{false};
+    /**
+     * @brief Removes a finished callback by its ID.
+     * @param id Callback ID to remove.
+     */
+    void removeFinishedCallback(CallbackId id);
 
-private:
-    NoteNagaProject *project;
-    NoteNagaMixer *mixer;
-    double timer_interval;
-    double ms_per_tick;
-    std::chrono::high_resolution_clock::time_point start_time_point;
-    int start_tick_at_start;
+    /**
+     * @brief Removes a position changed callback by its ID.
+     * @param id Callback ID to remove.
+     */
+    void removePositionChangedCallback(CallbackId id);
 
-    CallbackId last_id = 0;
-    std::vector<std::pair<CallbackId, FinishedCallback>> finished_callbacks;
-    std::vector<std::pair<CallbackId, PositionChangedCallback>> position_changed_callbacks;
+    std::atomic<bool> should_stop{false}; ///< Flag to signal worker thread should stop
 
-    void emit_finished();
-    void emit_position_changed(int tick);
+  private:
+    NoteNagaProject *project; ///< Pointer to project data (not owned)
+    NoteNagaMixer *mixer;     ///< Pointer to mixer (not owned)
+    double timer_interval;    ///< Timer interval in milliseconds
+    double ms_per_tick;       ///< Milliseconds per tick, for timing
+    std::chrono::high_resolution_clock::time_point
+        start_time_point;    ///< Start time of playback
+    int start_tick_at_start; ///< Tick at which playback started
+
+    CallbackId last_id = 0; ///< Last assigned callback ID
+    std::vector<std::pair<CallbackId, FinishedCallback>>
+        finished_callbacks; ///< List of finished callbacks
+    std::vector<std::pair<CallbackId, PositionChangedCallback>>
+        position_changed_callbacks; ///< List of position changed callbacks
+
+    /**
+     * @brief Emits all registered finished callbacks.
+     */
+    void emitFinished();
+
+    /**
+     * @brief Emits all registered position changed callbacks with the given tick.
+     * @param tick Current playback tick.
+     */
+    void emitPositionChanged(int tick);
 };
 
 /*******************************************************************************************************/
@@ -57,58 +109,160 @@ private:
 /*******************************************************************************************************/
 
 #ifndef QT_DEACTIVATED
+/**
+ * @brief Playback worker supporting Qt signals for GUI integration.
+ *
+ * This class manages a playback thread and provides signals/callbacks for playback state.
+ */
 class NOTE_NAGA_ENGINE_API PlaybackWorker : public QObject {
     Q_OBJECT
 #else
+/**
+ * @brief Playback worker without Qt signals (non-GUI builds).
+ *
+ * This class manages a playback thread and provides callbacks for playback state.
+ */
 class NOTE_NAGA_ENGINE_API PlaybackWorker {
 #endif
 
-public:
-    using CallbackId = std::uint64_t;
-    using FinishedCallback = std::function<void()>;
-    using PositionChangedCallback = std::function<void(int)>;
-    using PlayingStateCallback = std::function<void(bool)>;
+  public:
+    using CallbackId = std::uint64_t;               ///< Type for callback identifier
+    using FinishedCallback = std::function<void()>; ///< Callback type for finished event
+    using PositionChangedCallback =
+        std::function<void(int)>; ///< Callback type for position changed event
+    using PlayingStateCallback =
+        std::function<void(bool)>; ///< Callback type for playing state change
 
-    explicit PlaybackWorker(NoteNagaProject *project, NoteNagaMixer *mixer, double timer_interval_ms);
+    /**
+     * @brief Constructs the playback worker.
+     * @param project Pointer to NoteNagaProject.
+     * @param mixer Pointer to NoteNagaMixer.
+     * @param timer_interval_ms Worker timer interval in milliseconds.
+     */
+    explicit PlaybackWorker(NoteNagaProject *project, NoteNagaMixer *mixer,
+                            double timer_interval_ms);
 
-    bool is_playing() const { return playing; }
-    void recalculate_worker_tempo();
+    /**
+     * @brief Returns whether playback is currently running.
+     * @return True if playing, false otherwise.
+     */
+    bool isPlaying() const { return playing; }
+
+    /**
+     * @brief Recalculates the tempo in the playback thread worker.
+     */
+    void recalculateWorkerTempo();
+
+    /**
+     * @brief Starts playback.
+     * @return True if playback started successfully.
+     */
     bool play();
+
+    /**
+     * @brief Stops playback.
+     * @return True if playback was running and is now stopped.
+     */
     bool stop();
 
-    CallbackId add_finished_callback(FinishedCallback cb);
-    CallbackId add_position_changed_callback(PositionChangedCallback cb);
-    CallbackId add_playing_state_callback(PlayingStateCallback cb);
+    /**
+     * @brief Adds a callback for the finished event.
+     * @param cb Callback function.
+     * @return Unique callback ID.
+     */
+    CallbackId addFinishedCallback(FinishedCallback cb);
 
-    void remove_finished_callback(CallbackId id);
-    void remove_position_changed_callback(CallbackId id);
-    void remove_playing_state_callback(CallbackId id);
+    /**
+     * @brief Adds a callback for the position changed event.
+     * @param cb Callback function.
+     * @return Unique callback ID.
+     */
+    CallbackId addPositionChangedCallback(PositionChangedCallback cb);
 
-#ifndef QT_DEACTIVATED    
-Q_SIGNALS:
-    void finished_signal();
-    void position_changed_signal(int tick);
-    void playing_state_changed_signal(bool playing_val);
+    /**
+     * @brief Adds a callback for the playing state changed event.
+     * @param cb Callback function.
+     * @return Unique callback ID.
+     */
+    CallbackId addPlayingStateCallback(PlayingStateCallback cb);
+
+    /**
+     * @brief Removes a finished callback by its ID.
+     * @param id Callback ID.
+     */
+    void removeFinishedCallback(CallbackId id);
+
+    /**
+     * @brief Removes a position changed callback by its ID.
+     * @param id Callback ID.
+     */
+    void removePositionChangedCallback(CallbackId id);
+
+    /**
+     * @brief Removes a playing state callback by its ID.
+     * @param id Callback ID.
+     */
+    void removePlayingStateCallback(CallbackId id);
+
+#ifndef QT_DEACTIVATED
+  Q_SIGNALS:
+    /**
+     * @brief Qt signal emitted when playback is finished.
+     */
+    void finished();
+    /**
+     * @brief Qt signal emitted when playback position changes.
+     * @param tick Current tick.
+     */
+    void currentTickChanged(int tick);
+    /**
+     * @brief Qt signal emitted when playing state changes.
+     * @param playing_val New playing state.
+     */
+    void playingStateChanged(bool playing_val);
 #endif
 
-private:
-    void thread_func();
-    void cleanup_thread();
+  private:
+    /**
+     * @brief Main function for the worker thread.
+     */
+    void threadFunc();
 
-    void emit_finished();
-    void emit_position_changed(int tick);
-    void emit_playing_state(bool playing);
+    /**
+     * @brief Cleans up the worker thread.
+     */
+    void cleanupThread();
 
-    NoteNagaProject *project;
-    NoteNagaMixer *mixer;
-    double timer_interval;
-    std::atomic<bool> playing{false};
-    std::atomic<bool> should_stop{false};
-    std::thread worker_thread;
-    PlaybackThreadWorker *worker{nullptr};
+    /**
+     * @brief Emits all registered finished callbacks and the Qt signal.
+     */
+    void emitFinished();
 
-    CallbackId last_id = 0;
-    std::vector<std::pair<CallbackId, FinishedCallback>> finished_callbacks;
-    std::vector<std::pair<CallbackId, PositionChangedCallback>> position_changed_callbacks;
-    std::vector<std::pair<CallbackId, PlayingStateCallback>> playing_state_callbacks;
+    /**
+     * @brief Emits all registered position changed callbacks and the Qt signal.
+     * @param tick Current playback tick.
+     */
+    void emitPositionChanged(int tick);
+
+    /**
+     * @brief Emits all registered playing state callbacks and the Qt signal.
+     * @param playing True if playing, false otherwise.
+     */
+    void emitPlayingState(bool playing);
+
+    NoteNagaProject *project;              ///< Pointer to project data (not owned)
+    NoteNagaMixer *mixer;                  ///< Pointer to mixer (not owned)
+    double timer_interval;                 ///< Timer interval in milliseconds
+    std::atomic<bool> playing{false};      ///< Whether playback is currently running
+    std::atomic<bool> should_stop{false};  ///< Flag to signal playback should stop
+    std::thread worker_thread;             ///< Thread running the playback logic
+    PlaybackThreadWorker *worker{nullptr}; ///< Pointer to the thread worker
+
+    CallbackId last_id = 0; ///< Last assigned callback ID
+    std::vector<std::pair<CallbackId, FinishedCallback>>
+        finished_callbacks; ///< List of finished callbacks
+    std::vector<std::pair<CallbackId, PositionChangedCallback>>
+        position_changed_callbacks; ///< List of position changed callbacks
+    std::vector<std::pair<CallbackId, PlayingStateCallback>>
+        playing_state_callbacks; ///< List of playing state change callbacks
 };

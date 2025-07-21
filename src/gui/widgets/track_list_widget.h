@@ -19,11 +19,11 @@ public:
 
 private slots:
     void _init_ui();
-    void _reload_tracks(NoteNagaMIDISeq *seq);
+    void _reload_tracks(NoteNagaMidiSeq *seq);
     void _handle_playing_note(const NoteNagaNote& note);
 
 private:
-    void _update_selection(NoteNagaMIDISeq *sequence, int widget_idx);
+    void _update_selection(NoteNagaMidiSeq *sequence, int widget_idx);
 
     NoteNagaEngine* engine;
 

@@ -15,21 +15,21 @@ MidiControlBarWidget::MidiControlBarWidget(NoteNagaEngine *engine_, QWidget *par
     this->max_tick = 0;
     this->metronome_on = false;
 
-    connect(this->engine->get_project(), &NoteNagaProject::active_sequence_changed_signal, this,
-            [this](NoteNagaMIDISeq *seq) {
-                this->ppq = seq->get_ppq();
-                this->tempo = seq->get_tempo();
-                this->max_tick = seq->get_max_tick();
+    connect(this->engine->getProject(), &NoteNagaProject::activeSequenceChanged, this,
+            [this](NoteNagaMidiSeq *seq) {
+                this->ppq = seq->getPPQ();
+                this->tempo = seq->getTempo();
+                this->max_tick = seq->getMaxTick();
                 this->update_values();
             });
-    connect(this->engine->get_project(), &NoteNagaProject::sequence_meta_changed_signal, this,
-            [this](NoteNagaMIDISeq *seq, const std::string &param) {
-                this->ppq = seq->get_ppq();
-                this->tempo = seq->get_tempo();
-                this->max_tick = seq->get_max_tick();
+    connect(this->engine->getProject(), &NoteNagaProject::sequenceMetadataChanged, this,
+            [this](NoteNagaMidiSeq *seq, const std::string &param) {
+                this->ppq = seq->getPPQ();
+                this->tempo = seq->getTempo();
+                this->max_tick = seq->getMaxTick();
                 this->update_values();
             });
-    connect(this->engine->get_project(), &NoteNagaProject::current_tick_changed_signal, this,
+    connect(this->engine->getProject(), &NoteNagaProject::currentTickChanged, this,
             [this]() { this->update_values(); });
     _init_ui();
 }
@@ -148,13 +148,13 @@ void MidiControlBarWidget::_init_ui() {
 }
 
 void MidiControlBarWidget::update_values() {
-    NoteNagaProject *project = this->engine->get_project();
+    NoteNagaProject *project = this->engine->getProject();
     double us_per_tick = double(this->tempo) / double(this->ppq);
     double total_sec = double(this->max_tick) * us_per_tick / 1'000'000.0;
-    double cur_sec = double(project->get_current_tick()) * us_per_tick / 1'000'000.0;
+    double cur_sec = double(project->getCurrentTick()) * us_per_tick / 1'000'000.0;
     time_label->setText(QString("%1 / %2").arg(format_time(cur_sec), format_time(total_sec)));
     time_label->animateTick();
-    double bpm = project->get_tempo() ? (60'000'000.0 / double(project->get_tempo())) : 0.0;
+    double bpm = project->getTempo() ? (60'000'000.0 / double(project->getTempo())) : 0.0;
     tempo_label->setText(QString("%1 BPM").arg(bpm, 0, 'f', 2));
 }
 
@@ -169,16 +169,16 @@ void MidiControlBarWidget::set_playing(bool is_playing) {
 void MidiControlBarWidget::set_playing_slot(bool is_playing) { set_playing(is_playing); }
 
 void MidiControlBarWidget::edit_tempo(QMouseEvent *event) {
-    NoteNagaMIDISeq *seq = this->engine->get_project()->get_active_sequence();
+    NoteNagaMidiSeq *seq = this->engine->getProject()->getActiveSequence();
     if (!seq) return;
 
-    double cur_bpm = seq->get_tempo() ? (60'000'000.0 / double(seq->get_tempo())) : 120.0;
+    double cur_bpm = seq->getTempo() ? (60'000'000.0 / double(seq->getTempo())) : 120.0;
     bool ok = false;
     double bpm = QInputDialog::getDouble(this, "Change Tempo", "New Tempo (BPM):", cur_bpm, 5, 500, 2, &ok);
     if (ok) {
-        seq->set_tempo(int(60'000'000.0 / bpm));
+        seq->setTempo(60'000'000.0 / bpm);
         update_values();
-        emit tempo_changed_signal(seq->get_tempo());
+        emit tempo_changed_signal(seq->getTempo());
     }
 }
 

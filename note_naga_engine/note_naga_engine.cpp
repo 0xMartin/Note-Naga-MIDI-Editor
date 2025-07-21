@@ -28,61 +28,56 @@ NoteNagaEngine::~NoteNagaEngine() {
     }
 }
 
-bool NoteNagaEngine::init() {
+bool NoteNagaEngine::initialize() {
     if (!this->project) this->project = new NoteNagaProject();
-    if (!this->mixer) this->mixer = new NoteNagaMixer(this->project);
+    if (!this->mixer) this->mixer = new NoteNagaMixer(this->project, "./FluidR3_GM.sf2");
     if (!this->playback_worker) {
         this->playback_worker = new PlaybackWorker(this->project, this->mixer, 30.0);
 
-        this->playback_worker->add_finished_callback([this]() {
-            if (mixer) mixer->stop_all_notes();
+        this->playback_worker->addFinishedCallback([this]() {
+            if (mixer) mixer->stopAllNotes();
         });
     }
     return this->project && this->mixer && this->playback_worker;
 }
 
-bool NoteNagaEngine::load_project(const std::string &midi_file_path) {
+bool NoteNagaEngine::loadProject(const std::string &midi_file_path) {
     if (!this->project) {
-#ifndef QT_DEACTIVATED
-        qWarning("NoteNagaEngine: Project is not initialized.");
-#else
-        std::cerr << "NoteNagaEngine: Project is not initialized." << std::endl;
-#endif
         return false;
     }
-    this->stop_playback();
-    return this->project->load_project(midi_file_path);
+    this->stopPlayback();
+    return this->project->loadProject(midi_file_path);
 }
 
-void NoteNagaEngine::start_playback() {
+void NoteNagaEngine::startPlayback() {
     if (playback_worker) playback_worker->play();
 }
 
-void NoteNagaEngine::stop_playback() {
+void NoteNagaEngine::stopPlayback() {
     if (playback_worker) playback_worker->stop();
-    if (mixer) mixer->stop_all_notes();
+    if (mixer) mixer->stopAllNotes();
 }
 
-void NoteNagaEngine::set_playback_position(int tick) {
-    if (playback_worker && playback_worker->is_playing()) {
+void NoteNagaEngine::setPlaybackPosition(int tick) {
+    if (playback_worker && playback_worker->isPlaying()) {
         playback_worker->stop();
     }
     if (this->project) {
-        this->project->set_current_tick(tick);
+        this->project->setCurrentTick(tick);
     }
 }
 
-void NoteNagaEngine::change_tempo(int new_tempo) {
+void NoteNagaEngine::changeTempo(int new_tempo) {
     if (this->project) {
-        this->project->set_tempo(new_tempo);
+        this->project->setTempo(new_tempo);
     }
-    if (playback_worker) playback_worker->recalculate_worker_tempo();
+    if (playback_worker) playback_worker->recalculateWorkerTempo();
 }
 
-void NoteNagaEngine::mute_track(NoteNagaTrack *track, bool mute) {
-    if (mixer) mixer->mute_track(track, mute);
+void NoteNagaEngine::muteTrack(NoteNagaTrack *track, bool mute) {
+    if (mixer) mixer->muteTrack(track, mute);
 }
 
-void NoteNagaEngine::solo_track(NoteNagaTrack *track, bool solo) {
-    if (mixer) mixer->solo_track(track, solo);
+void NoteNagaEngine::soloTrack(NoteNagaTrack *track, bool solo) {
+    if (mixer) mixer->soloTrack(track, solo);
 }
