@@ -2,7 +2,8 @@
 
 #include <algorithm>
 #include <atomic>
-#include <iostream>
+
+#include <note_naga_engine/logger.h>
 
 /*******************************************************************************************************/
 // Channel Colors
@@ -51,11 +52,11 @@ double note_time_ms(const NoteNagaNote &note, int ppq, int tempo) {
 // Note Naga Track
 /*******************************************************************************************************/
 
+NoteNagaTrack::NoteNagaTrack()
 #ifndef QT_DEACTIVATED
-NoteNagaTrack::NoteNagaTrack() : QObject(nullptr) {
-#else
-NoteNagaTrack::NoteNagaTrack() {
+    : QObject(nullptr)
 #endif
+{
     this->track_id = 0;
     this->name = name.empty() ? "Track " + std::to_string(track_id + 1) : name;
     this->instrument = std::nullopt;
@@ -65,20 +66,17 @@ NoteNagaTrack::NoteNagaTrack() {
     this->muted = false;
     this->solo = false;
     this->volume = 1.0f;
+    NOTE_NAGA_LOG_INFO("Created default Track with ID: " + std::to_string(track_id));
 }
 
-#ifndef QT_DEACTIVATED
 NoteNagaTrack::NoteNagaTrack(int track_id, NoteNagaMidiSeq *parent,
                              const std::string &name,
                              const std::optional<int> &instrument,
                              const std::optional<int> &channel)
-    : QObject(nullptr) {
-#else
-NoteNagaTrack::NoteNagaTrack(int track_id, NoteNagaMidiSeq *parent,
-                             const std::string &name,
-                             const std::optional<int> &instrument,
-                             const std::optional<int> &channel) {
+#ifndef QT_DEACTIVATED
+    : QObject(nullptr)
 #endif
+{
     this->track_id = track_id;
     this->parent = parent;
     this->name = name.empty() ? "Track " + std::to_string(track_id + 1) : name;
@@ -89,28 +87,39 @@ NoteNagaTrack::NoteNagaTrack(int track_id, NoteNagaMidiSeq *parent,
     this->muted = false;
     this->solo = false;
     this->volume = 1.0f;
+    NOTE_NAGA_LOG_INFO("Created Track with ID: " + std::to_string(track_id) +
+                       " and name: " + this->name);
 }
 
 void NoteNagaTrack::setInstrument(std::optional<int> instrument) {
     if (this->instrument == instrument) return;
     this->instrument = instrument;
+    NOTE_NAGA_LOG_INFO(
+        "Instrument changed for Track ID: " + std::to_string(track_id) +
+        " to: " + (instrument.has_value() ? std::to_string(instrument.value()) : "None"));
     NN_QT_EMIT(metadataChanged(this, "instrument"));
 }
 
 void NoteNagaTrack::setChannel(std::optional<int> channel) {
     if (this->channel == channel) return;
     this->channel = channel;
+    NOTE_NAGA_LOG_INFO(
+        "Channel changed for Track ID: " + std::to_string(track_id) +
+        " to: " + (channel.has_value() ? std::to_string(channel.value()) : "None"));
     NN_QT_EMIT(metadataChanged(this, "channel"));
 }
 
 void NoteNagaTrack::setId(int new_id) {
     if (this->track_id == new_id) return;
+    NOTE_NAGA_LOG_INFO("ID of Track changed from: " + std::to_string(track_id) +
+                       " to: " + std::to_string(new_id));
     this->track_id = new_id;
     NN_QT_EMIT(metadataChanged(this, "id"));
 }
 
 void NoteNagaTrack::setName(const std::string &new_name) {
     if (this->name == new_name) return;
+    NOTE_NAGA_LOG_INFO("Name of Track changed from: " + this->name + " to: " + new_name);
     this->name = new_name;
     NN_QT_EMIT(metadataChanged(this, "name"));
 }
@@ -149,11 +158,11 @@ void NoteNagaTrack::setVolume(float new_volume) {
 // Note Naga MIDI Sequence
 /*******************************************************************************************************/
 
+NoteNagaMidiSeq::NoteNagaMidiSeq()
 #ifndef QT_DEACTIVATED
-NoteNagaMidiSeq::NoteNagaMidiSeq() : QObject(nullptr) {
-#else
-NoteNagaMidiSeq::NoteNagaMidiSeq() {
+    : QObject(nullptr)
 #endif
+{
     this->sequence_id = nn_generate_unique_seq_id();
     this->clear();
 }
@@ -167,12 +176,14 @@ NoteNagaMidiSeq::NoteNagaMidiSeq(int sequence_id, std::vector<NoteNagaTrack *> t
     this->sequence_id = nn_generate_unique_seq_id();
     this->clear();
     this->tracks = std::move(tracks);
+    NOTE_NAGA_LOG_INFO("Created MIDI sequence with ID: " + std::to_string(sequence_id));
 }
 
 NoteNagaMidiSeq::~NoteNagaMidiSeq() { clear(); }
 
 void NoteNagaMidiSeq::clear() {
-    std::cout << "AppContext: Clearing context" << std::endl;
+    NOTE_NAGA_LOG_INFO("Clearing MIDI sequence with ID: " + std::to_string(sequence_id));
+
     // Dealokace všech tracků
     for (NoteNagaTrack *track : this->tracks) {
         if (track) delete track;
@@ -194,6 +205,8 @@ void NoteNagaMidiSeq::clear() {
 
 void NoteNagaMidiSeq::setId(int new_id) {
     if (this->sequence_id == new_id) return;
+    NOTE_NAGA_LOG_INFO("ID of MIDI sequence changed from: " +
+                       std::to_string(sequence_id) + " to: " + std::to_string(new_id));
     sequence_id = new_id;
     NN_QT_EMIT(metadataChanged(this, "id"));
 }
@@ -201,42 +214,64 @@ void NoteNagaMidiSeq::setId(int new_id) {
 void NoteNagaMidiSeq::setPPQ(int ppq) {
     if (this->ppq == ppq) return;
     this->ppq = ppq;
+    NOTE_NAGA_LOG_INFO("PPQ changed to: " + std::to_string(ppq) +
+                       " for MIDI sequence ID: " + std::to_string(sequence_id));
     NN_QT_EMIT(metadataChanged(this, "ppq"));
 }
 
 void NoteNagaMidiSeq::setTempo(int tempo) {
     if (this->tempo == tempo) return;
     this->tempo = tempo;
+    NOTE_NAGA_LOG_INFO("Tempo changed to: " + std::to_string(60'000'000.0 / tempo) +
+                       " for MIDI sequence ID: " + std::to_string(sequence_id));
     NN_QT_EMIT(metadataChanged(this, "tempo"));
 }
 
 void NoteNagaMidiSeq::setSoloTrack(NoteNagaTrack *track) {
+    NoteNagaTrack *current = this->active_track;
+
     if (track) {
         for (NoteNagaTrack *tr : this->tracks) {
             if (tr == track) {
                 this->solo_track = track;
+                NOTE_NAGA_LOG_INFO("Track with ID: " + std::to_string(track->getId()) +
+                                   " set as solo track for MIDI sequence ID: " +
+                                   std::to_string(sequence_id));
                 break;
             }
         }
     } else {
         this->solo_track = nullptr;
+        NOTE_NAGA_LOG_INFO("Solo track cleared for MIDI sequence ID: " +
+                           std::to_string(sequence_id));
     }
-    NN_QT_EMIT(metadataChanged(this, "solo_track"));
+
+    if (current != track) { NN_QT_EMIT(metadataChanged(this, "solo_track")); }
 }
 
 void NoteNagaMidiSeq::setActiveTrack(NoteNagaTrack *track) {
+    NoteNagaTrack *current = this->active_track;
+
     if (track) {
         for (NoteNagaTrack *tr : this->tracks) {
             if (tr == track) {
                 this->active_track = track;
+                NOTE_NAGA_LOG_INFO("Track with ID: " + std::to_string(track->getId()) +
+                                   " set as active track for MIDI sequence ID: " +
+                                   std::to_string(sequence_id));
                 break;
             }
         }
     } else {
         this->active_track = nullptr;
+        NOTE_NAGA_LOG_INFO("Active track cleared for MIDI sequence ID: " +
+                           std::to_string(sequence_id));
     }
-    NN_QT_EMIT(metadataChanged(this, "active_track"));
-    NN_QT_EMIT(activeTrackChanged(this->active_track));
+
+    if (current != track) {
+        NN_QT_EMIT(metadataChanged(this, "active_track"));
+        NN_QT_EMIT(activeTrackChanged(this->active_track));
+    }
 }
 
 NoteNagaTrack *NoteNagaMidiSeq::getTrackById(int track_id) {
@@ -262,16 +297,16 @@ int NoteNagaMidiSeq::computeMaxTick() {
 void NoteNagaMidiSeq::loadFromMidi(const std::string &midi_file_path) {
     // Check for empty path
     if (midi_file_path.empty()) {
-        std::cout << "AppContext: No MIDI file path provided." << std::endl;
+        NOTE_NAGA_LOG_ERROR("No MIDI file path provided");
         return;
     }
 
-    std::cout << "AppContext: Loading MIDI file from " << midi_file_path << std::endl;
+    NOTE_NAGA_LOG_INFO("Loading MIDI file from: " + midi_file_path);
     clear();
 
     MidiFile *midiFile = new MidiFile();
     if (!midiFile->load(midi_file_path)) {
-        std::cout << "AppContext: Failed to load MIDI file." << std::endl;
+        NOTE_NAGA_LOG_ERROR("Failed to load MIDI file: " + midi_file_path);
         delete midiFile;
         return;
     }
@@ -301,10 +336,15 @@ void NoteNagaMidiSeq::loadFromMidi(const std::string &midi_file_path) {
                 &NoteNagaMidiSeq::trackMetadataChanged);
 #endif
     }
+
+    NOTE_NAGA_LOG_INFO("MIDI file loaded successfully. Num tracks: " +
+                       std::to_string(this->tracks.size()));
 }
 
 // --- Helper: load type 0 MIDI file (split channels) ---
 std::vector<NoteNagaTrack *> NoteNagaMidiSeq::loadType0Tracks(const MidiFile *midiFile) {
+    NOTE_NAGA_LOG_INFO("Loading Type 0 MIDI tracks");
+
     std::vector<NoteNagaTrack *> tracks_tmp;
 
     // Only one track - need to split by MIDI channel
@@ -399,6 +439,8 @@ std::vector<NoteNagaTrack *> NoteNagaMidiSeq::loadType0Tracks(const MidiFile *mi
 
 // --- Helper: load type 1 MIDI file (one track per chunk) ---
 std::vector<NoteNagaTrack *> NoteNagaMidiSeq::loadType1Tracks(const MidiFile *midiFile) {
+    NOTE_NAGA_LOG_INFO("Loading Type 1 MIDI tracks");
+
     std::vector<NoteNagaTrack *> tracks_tmp;
 
     int tempo = 500000;

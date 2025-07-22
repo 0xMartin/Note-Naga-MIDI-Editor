@@ -4,16 +4,19 @@
 #include <iostream>
 #include <memory>
 
+#include <note_naga_engine/logger.h>
+
+NoteNagaProject::NoteNagaProject()
 #ifndef QT_DEACTIVATED
-NoteNagaProject::NoteNagaProject() : QObject(nullptr) {
-#else
-NoteNagaProject::NoteNagaProject() {
+    : QObject(nullptr)
 #endif
+{
     // Initialize with empty sequences
     sequences.clear();
     active_sequence = nullptr;
     current_tick = 0;
     max_tick = 0;
+    NOTE_NAGA_LOG_INFO("Project manager initialized");
 }
 
 NoteNagaProject::~NoteNagaProject() {
@@ -21,10 +24,18 @@ NoteNagaProject::~NoteNagaProject() {
         if (seq) delete seq;
     }
     sequences.clear();
+    NOTE_NAGA_LOG_INFO("Project manager destroyed");
 }
 
 bool NoteNagaProject::loadProject(const std::string &project_path) {
-    if (project_path.empty()) { return false; }
+    if (project_path.empty()) { 
+        NOTE_NAGA_LOG_ERROR("Project path is empty, cannot load project");
+        return false;
+    }
+    
+    if (!sequences.empty()) {
+        NOTE_NAGA_LOG_INFO("Cleaning existing project data before loading new project");
+    }
     for (NoteNagaMidiSeq *seq : sequences) {
         if (seq) delete seq;
     }
@@ -44,6 +55,7 @@ bool NoteNagaProject::loadProject(const std::string &project_path) {
             &NoteNagaProject::trackMetaChanged);
 #endif
     NN_QT_EMIT(this->projectFileLoaded());
+    NOTE_NAGA_LOG_INFO("Project loaded from: " + project_path);
     return true;
 }
 
@@ -54,6 +66,7 @@ void NoteNagaProject::addSequence(NoteNagaMidiSeq *sequence) {
             this->active_sequence = sequence;
             NN_QT_EMIT(activeSequenceChanged(sequence));
         }
+        NOTE_NAGA_LOG_INFO("Added MIDI sequence with ID: " + std::to_string(sequence->getId()));
     }
 }
 
@@ -67,6 +80,9 @@ void NoteNagaProject::removeSequence(NoteNagaMidiSeq *sequence) {
                 active_sequence = nullptr;
                 NN_QT_EMIT(activeSequenceChanged(nullptr));
             }
+            NOTE_NAGA_LOG_INFO("Removed MIDI sequence with ID: " + std::to_string(sequence->getId()));
+        } else {
+            NOTE_NAGA_LOG_WARNING("Attempted to remove a sequence that does not exist in the project");
         }
     }
 }
@@ -90,19 +106,29 @@ void NoteNagaProject::setCurrentTick(int tick) {
 }
 
 bool NoteNagaProject::setActiveSequence(NoteNagaMidiSeq *sequence) {
-    if (!sequence) {
-        this->active_sequence = nullptr;
+    if (sequence == this->active_sequence) {
+        NOTE_NAGA_LOG_WARNING("Active sequence is already set to the requested sequence");
         return false;
     }
+
+    if (!sequence) {
+        this->active_sequence = nullptr;
+        NOTE_NAGA_LOG_INFO("Active sequence cleared");
+        NN_QT_EMIT(activeSequenceChanged(sequence));
+        return true;
+    }
+
     for (NoteNagaMidiSeq *seq : this->sequences) {
         if (seq->getId() == sequence->getId()) {
             this->active_sequence = seq;
+            NOTE_NAGA_LOG_INFO("Active sequence set to ID: " + std::to_string(seq->getId()));
             NN_QT_EMIT(activeSequenceChanged(seq));
             return true;
         }
     }
-    NN_QT_EMIT(activeSequenceChanged(sequence));
-    return true;
+
+    NOTE_NAGA_LOG_WARNING("Could not set active sequence, sequence not found in project");
+    return false;
 }
 
 int NoteNagaProject::getMaxTick() const {

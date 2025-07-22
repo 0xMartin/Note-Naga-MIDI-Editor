@@ -458,8 +458,9 @@ public:
     int getPPQ() const { return ppq; }
 
     /**
-     * @brief Gets the tempo (BPM).
+     * @brief Gets the tempo (BPM). In microseconds per quarter note.
      * @return Tempo.
+     * @note int bpm = 60'000'000.0 / seq->getTempo(); // Convert to BPM
      */
     int getTempo() const { return tempo; }
 
@@ -516,8 +517,9 @@ public:
     void setPPQ(int ppq);
 
     /**
-     * @brief Sets the tempo (BPM).
+     * @brief Sets the tempo (BPM). In microseconds per quarter note.
      * @param tempo Tempo value.
+     * @note seq->getTempo(60'000'000.0 / bpm); // Convert to BPM
      */
     void setTempo(int tempo);
 

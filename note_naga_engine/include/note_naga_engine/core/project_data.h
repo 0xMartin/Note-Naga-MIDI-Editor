@@ -62,6 +62,7 @@ public:
     /**
      * @brief Returns the project's tempo.
      * @return Tempo (BPM).
+     * @note int bpm = 60'000'000.0 / project->getTempo(); // Convert to BPM
      */
     int getTempo() const;
 

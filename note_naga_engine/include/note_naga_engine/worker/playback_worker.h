@@ -109,20 +109,15 @@ private:
 // Playback Worker
 /*******************************************************************************************************/
 
-#ifndef QT_DEACTIVATED
 /**
  * @brief Playback worker supporting Qt signals for GUI integration.
  *
  * This class manages a playback thread and provides signals/callbacks for playback state.
  */
+#ifndef QT_DEACTIVATED
 class NOTE_NAGA_ENGINE_API PlaybackWorker : public QObject {
     Q_OBJECT
 #else
-/**
- * @brief Playback worker without Qt signals (non-GUI builds).
- *
- * This class manages a playback thread and provides callbacks for playback state.
- */
 class NOTE_NAGA_ENGINE_API PlaybackWorker {
 #endif
 

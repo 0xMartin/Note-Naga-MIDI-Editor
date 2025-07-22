@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.16)
 project(note_naga_engine LANGUAGES CXX)
 
+set(PROJECT_VERSION_MAJOR 1)
+set(PROJECT_VERSION_MINOR 0)
+set(PROJECT_VERSION_PATCH 0)
+set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/note_naga_version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/note_naga_engine/note_naga_version.h
+)
+
 if(NOT QT_DEACTIVATED)
     set(CMAKE_AUTOUIC ON)
     set(CMAKE_AUTOMOC ON)
@@ -45,7 +55,6 @@ pkg_check_modules(FLUIDSYNTH REQUIRED IMPORTED_TARGET fluidsynth)
 pkg_check_modules(RTMIDI REQUIRED IMPORTED_TARGET rtmidi)
 
 if(NOT QT_DEACTIVATED)
-    find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Widgets)
     if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets)
     else()
@@ -61,6 +70,7 @@ add_library(note_naga_engine STATIC
 target_include_directories(note_naga_engine
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         $<INSTALL_INTERFACE:include>
 )
 
@@ -83,16 +93,6 @@ target_link_libraries(note_naga_engine
 )
 endif()
 
-if(NOT QT_DEACTIVATED)
-    target_link_libraries(note_naga_engine PUBLIC Qt${QT_VERSION_MAJOR}::Core)
-    set_target_properties(note_naga_engine PROPERTIES AUTOMOC ON)
-    get_target_property(QTCORE_INCLUDE_DIRS Qt${QT_VERSION_MAJOR}::Core INTERFACE_INCLUDE_DIRECTORIES)
-    message(STATUS "Qt${QT_VERSION_MAJOR}::Core include dirs: ${QTCORE_INCLUDE_DIRS}")
-    target_include_directories(note_naga_engine PUBLIC ${QTCORE_INCLUDE_DIRS})
-else()
-    set_target_properties(note_naga_engine PROPERTIES AUTOMOC OFF)
-endif()
-
 if(QT_DEACTIVATED)
     target_compile_definitions(note_naga_engine PUBLIC QT_DEACTIVATED)
 endif()
@@ -103,3 +103,4 @@ install(TARGETS note_naga_engine
     RUNTIME DESTINATION bin
 )
 install(FILES ${PUBLIC_HEADER_FILES} DESTINATION include/note_naga_engine)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/note_naga_engine/note_naga_version.h DESTINATION include/note_naga_engine)

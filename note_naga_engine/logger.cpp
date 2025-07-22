@@ -51,5 +51,10 @@ std::string NoteNagaLogger::currentDateTime() {
 
 std::string NoteNagaLogger::shortFileName(const std::string &path) {
     auto slash = path.find_last_of("/\\");
-    return (slash == std::string::npos) ? path : path.substr(slash + 1);
+    std::string filename = (slash == std::string::npos) ? path : path.substr(slash + 1);
+    auto dot = filename.find_last_of('.');
+    if (dot != std::string::npos) {
+        filename = filename.substr(0, dot);
+    }
+    return filename;
 }

@@ -1,5 +1,8 @@
 #include <note_naga_engine/note_naga_engine.h>
 
+#include <note_naga_engine/logger.h>
+#include <note_naga_engine/note_naga_version.h>
+
 NoteNagaEngine::NoteNagaEngine()
 #ifndef QT_DEACTIVATED
     : QObject(nullptr)
@@ -8,6 +11,7 @@ NoteNagaEngine::NoteNagaEngine()
     this->project = nullptr;
     this->mixer = nullptr;
     this->playback_worker = nullptr;
+    NOTE_NAGA_LOG_INFO("Instance created. Version: " + std::string(NOTE_NAGA_VERSION_STR));
 }
 
 NoteNagaEngine::~NoteNagaEngine() {
@@ -26,6 +30,7 @@ NoteNagaEngine::~NoteNagaEngine() {
         delete project;
         project = nullptr;
     }
+    NOTE_NAGA_LOG_INFO("Instance destroyed");
 }
 
 bool NoteNagaEngine::initialize() {
@@ -38,46 +43,81 @@ bool NoteNagaEngine::initialize() {
             if (mixer) mixer->stopAllNotes();
         });
     }
-    return this->project && this->mixer && this->playback_worker;
+    bool status = this->project && this->mixer && this->playback_worker;
+    if (status) {
+        NOTE_NAGA_LOG_INFO("Initialized successfully");
+    } else {
+        NOTE_NAGA_LOG_ERROR("Failed to initialize Note Naga Engine components");
+    }
+    return status;
 }
 
 bool NoteNagaEngine::loadProject(const std::string &midi_file_path) {
-    if (!this->project) { return false; }
+    if (!this->project) { 
+        NOTE_NAGA_LOG_ERROR("Project is not initialized");
+        return false; 
+    }
     this->stopPlayback();
     return this->project->loadProject(midi_file_path);
 }
 
-void NoteNagaEngine::startPlayback() {
+bool NoteNagaEngine::startPlayback() {
     if (playback_worker) {
         if (playback_worker->play()) {
             NN_QT_EMIT(this->playbackStarted());
+            return true;
         }
     }
+    NOTE_NAGA_LOG_ERROR("Failed to start playback");
+    return false;
 }
 
-void NoteNagaEngine::stopPlayback() {
+bool NoteNagaEngine::stopPlayback() {
     if (playback_worker) {
         if (playback_worker->stop()) {
             NN_QT_EMIT(this->playbackStopped());
+            return true;
         }
     }
     if (mixer) mixer->stopAllNotes();
+    NOTE_NAGA_LOG_ERROR("Failed to stop playback");
+    return false;
 }
 
 void NoteNagaEngine::setPlaybackPosition(int tick) {
     if (playback_worker && playback_worker->isPlaying()) { playback_worker->stop(); }
-    if (this->project) { this->project->setCurrentTick(tick); }
+    if (this->project) { 
+        this->project->setCurrentTick(tick); 
+    } else {
+        NOTE_NAGA_LOG_ERROR("Failed to set playback position: Project is not initialized");
+    }
 }
 
 void NoteNagaEngine::changeTempo(int new_tempo) {
-    if (this->project) { this->project->setTempo(new_tempo); }
-    if (playback_worker) playback_worker->recalculateWorkerTempo();
+    if (this->project) { 
+        this->project->setTempo(new_tempo); 
+    } else {
+        NOTE_NAGA_LOG_ERROR("Failed to change tempo: Project is not initialized");
+    }
+    if (playback_worker) {
+        playback_worker->recalculateWorkerTempo();
+    } else {
+        NOTE_NAGA_LOG_ERROR("Failed to change tempo: Playback worker is not initialized");
+    }
 }
 
 void NoteNagaEngine::muteTrack(NoteNagaTrack *track, bool mute) {
-    if (mixer) mixer->muteTrack(track, mute);
+    if (mixer) {
+        mixer->muteTrack(track, mute);
+    } else {
+        NOTE_NAGA_LOG_ERROR("Failed to mute track: Mixer is not initialized");
+    }
 }
 
 void NoteNagaEngine::soloTrack(NoteNagaTrack *track, bool solo) {
-    if (mixer) mixer->soloTrack(track, solo);
+    if (mixer) {
+        mixer->soloTrack(track, solo);
+    } else {
+        NOTE_NAGA_LOG_ERROR("Failed to solo track: Mixer is not initialized");
+    }
 }

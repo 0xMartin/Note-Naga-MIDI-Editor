@@ -64,13 +64,16 @@ public:
 
     /**
      * @brief Starts MIDI/audio playback.
+     * @return True if playback started successfully, false if already playing or
+     * failed to start.
      */
-    void startPlayback();
+    bool startPlayback();
 
     /**
      * @brief Stops MIDI/audio playback.
+     * @return True if playback stopped successfully, false if not playing.
      */
-    void stopPlayback();
+    bool stopPlayback();
 
     /**
      * @brief Sets the playback position (tick).

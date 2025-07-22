@@ -1,6 +1,7 @@
-#include <algorithm>
-#include <iostream>
 #include <note_naga_engine/worker/playback_worker.h>
+
+#include <algorithm>
+#include <note_naga_engine/logger.h>
 
 /*******************************************************************************************************/
 // Playback Thread Worker
@@ -47,6 +48,11 @@ void PlaybackThreadWorker::recalculateTempo() {
     ms_per_tick = us_per_tick / 1000.0;
     start_time_point = std::chrono::high_resolution_clock::now();
     start_tick_at_start = current_tick;
+
+    NOTE_NAGA_LOG_INFO(
+        "Recalculated tempo: " + std::to_string(60'000'000.0 / this->project->getTempo()) +
+        " BPM, PPQ: " + std::to_string(this->project->getPPQ()) +
+        ", ms per tick: " + std::to_string(ms_per_tick));
 }
 
 void PlaybackThreadWorker::emitFinished() {
@@ -123,6 +129,7 @@ void PlaybackThreadWorker::run() {
         std::this_thread::sleep_for(std::chrono::duration<double>(timer_interval));
     }
 
+    NOTE_NAGA_LOG_INFO("Playback thread finished");
     emitFinished();
 }
 
@@ -132,21 +139,24 @@ void PlaybackThreadWorker::stop() { should_stop = true; }
 // Playback Worker
 /*******************************************************************************************************/
 
+PlaybackWorker::PlaybackWorker(NoteNagaProject *project, NoteNagaMixer *mixer,
+                               double timer_interval_ms)
 #ifndef QT_DEACTIVATED
-PlaybackWorker::PlaybackWorker(NoteNagaProject *project, NoteNagaMixer *mixer,
-                               double timer_interval_ms)
-    : QObject(nullptr), project(project), mixer(mixer),
-      timer_interval(timer_interval_ms / 1000.0), last_id(0) {}
-#else
-PlaybackWorker::PlaybackWorker(NoteNagaProject *project, NoteNagaMixer *mixer,
-                               double timer_interval_ms)
-    : project(project), mixer(mixer), timer_interval(timer_interval_ms / 1000.0),
-      last_id(0), worker(nullptr) {}
+    : QObject(nullptr)
 #endif
+{
+    this->project = project;
+    this->mixer = mixer;
+    this->timer_interval = timer_interval_ms / 1000.0;
+    this->last_id = 0;
+    NOTE_NAGA_LOG_INFO("Initialized successfully with timer interval: " +
+                       std::to_string(timer_interval_ms) + " ms");
+}
 
 PlaybackWorker::CallbackId PlaybackWorker::addFinishedCallback(FinishedCallback cb) {
     CallbackId id = ++last_id;
     finished_callbacks.emplace_back(id, std::move(cb));
+    NOTE_NAGA_LOG_INFO("Added finished callback with ID: " + std::to_string(id));
     return id;
 }
 
@@ -154,6 +164,7 @@ PlaybackWorker::CallbackId
 PlaybackWorker::addPositionChangedCallback(PositionChangedCallback cb) {
     CallbackId id = ++last_id;
     position_changed_callbacks.emplace_back(id, std::move(cb));
+    NOTE_NAGA_LOG_INFO("Added position changed callback with ID: " + std::to_string(id));
     return id;
 }
 
@@ -161,38 +172,58 @@ PlaybackWorker::CallbackId
 PlaybackWorker::addPlayingStateCallback(PlayingStateCallback cb) {
     CallbackId id = ++last_id;
     playing_state_callbacks.emplace_back(id, std::move(cb));
+    NOTE_NAGA_LOG_INFO("Added playing state callback with ID: " + std::to_string(id));
     return id;
 }
 
 void PlaybackWorker::removeFinishedCallback(CallbackId id) {
-    finished_callbacks.erase(
-        std::remove_if(finished_callbacks.begin(), finished_callbacks.end(),
-                       [id](const auto &pair) { return pair.first == id; }),
-        finished_callbacks.end());
+    auto it = std::remove_if(finished_callbacks.begin(), finished_callbacks.end(),
+                             [id](const auto &pair) { return pair.first == id; });
+    bool removed = (it != finished_callbacks.end());
+    finished_callbacks.erase(it, finished_callbacks.end());
+    if (removed) {
+        NOTE_NAGA_LOG_INFO("Removed finished callback with ID: " + std::to_string(id));
+    } else {
+        NOTE_NAGA_LOG_INFO("No finished callback found with ID: " + std::to_string(id));
+    }
 }
 
 void PlaybackWorker::removePositionChangedCallback(CallbackId id) {
-    position_changed_callbacks.erase(
-        std::remove_if(position_changed_callbacks.begin(),
-                       position_changed_callbacks.end(),
-                       [id](const auto &pair) { return pair.first == id; }),
-        position_changed_callbacks.end());
+    auto it = std::remove_if(position_changed_callbacks.begin(),
+                             position_changed_callbacks.end(),
+                             [id](const auto &pair) { return pair.first == id; });
+    bool removed = (it != position_changed_callbacks.end());
+    position_changed_callbacks.erase(it, position_changed_callbacks.end());
+    if (removed) {
+        NOTE_NAGA_LOG_INFO("Removed position changed callback with ID: " +
+                           std::to_string(id));
+    } else {
+        NOTE_NAGA_LOG_INFO("No position changed callback found with ID: " +
+                           std::to_string(id));
+    }
 }
 
 void PlaybackWorker::removePlayingStateCallback(CallbackId id) {
-    playing_state_callbacks.erase(
+    auto it =
         std::remove_if(playing_state_callbacks.begin(), playing_state_callbacks.end(),
-                       [id](const auto &pair) { return pair.first == id; }),
-        playing_state_callbacks.end());
+                       [id](const auto &pair) { return pair.first == id; });
+    bool removed = (it != playing_state_callbacks.end());
+    playing_state_callbacks.erase(it, playing_state_callbacks.end());
+    if (removed) {
+        NOTE_NAGA_LOG_INFO("Removed playing state callback with ID: " +
+                           std::to_string(id));
+    } else {
+        NOTE_NAGA_LOG_INFO("No playing state callback found with ID: " +
+                           std::to_string(id));
+    }
 }
 
 void PlaybackWorker::recalculateWorkerTempo() {
-    if (!worker) {
-        std::cerr
-            << "PlaybackWorker: Worker is not running, unable to recalculate tempo.\n";
-        return;
+    if (worker) {
+        worker->recalculateTempo();
+    } else {
+        NOTE_NAGA_LOG_ERROR("Worker is not running, unable to recalculate tempo");
     }
-    worker->recalculateTempo();
 }
 
 void PlaybackWorker::emitFinished() {
@@ -215,14 +246,13 @@ void PlaybackWorker::emitPlayingState(bool playing_val) {
 
 bool PlaybackWorker::play() {
     if (playing) {
-        std::cerr << "PlaybackWorker: Already playing.\n";
+        NOTE_NAGA_LOG_ERROR("Already playing");
         return false;
     }
     if (!project) {
-        std::cerr << "PlaybackWorker: No project data available.\n";
+        NOTE_NAGA_LOG_ERROR("No project available");
         return false;
     }
-    std::cerr << "PlaybackWorker: Starting playback.\n";
 
     should_stop = false;
     worker = new PlaybackThreadWorker(project, mixer, timer_interval);
@@ -238,20 +268,23 @@ bool PlaybackWorker::play() {
     emitPlayingState(true);
 
     worker_thread = std::thread(&PlaybackThreadWorker::run, worker);
+
+    NOTE_NAGA_LOG_INFO("Playback worker started");
     return true;
 }
 
 bool PlaybackWorker::stop() {
     if (!playing) {
-        std::cerr << "PlaybackWorker: Not currently playing.\n";
+        NOTE_NAGA_LOG_ERROR("Playback worker not currently playing");
         return false;
     }
-    std::cerr << "PlaybackWorker: Stopping playback.\n";
 
     should_stop = true;
     if (worker) worker->stop();
     if (worker_thread.joinable()) worker_thread.join();
     cleanupThread();
+
+    NOTE_NAGA_LOG_INFO("Playback worker stopped");
     return true;
 }
 
@@ -262,4 +295,5 @@ void PlaybackWorker::cleanupThread() {
     }
     playing = false;
     emitPlayingState(false);
+    NOTE_NAGA_LOG_INFO("Playback thread resources cleaned up");
 }
