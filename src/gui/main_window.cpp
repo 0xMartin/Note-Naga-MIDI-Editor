@@ -143,7 +143,7 @@ void MainWindow::setup_dock_layout() {
     midi_keyboard_ruler->setFixedWidth(80);
 
     midi_tact_ruler = new MidiTactRuler(this->engine, this);
-    midi_tact_ruler->setTimeScale(midi_editor->get_time_scale());
+    midi_tact_ruler->setTimeScale(midi_editor->getTimeScale());
 
     // -- GRID LAYOUT --
     grid->addWidget(new QWidget(), 0, 0);
@@ -247,7 +247,7 @@ void MainWindow::connect_signals() {
     auto *vbar = midi_editor->verticalScrollBar();
     connect(hbar, &QScrollBar::valueChanged, midi_tact_ruler, &MidiTactRuler::setHorizontalScroll);
     connect(vbar, &QScrollBar::valueChanged,
-            [this](int v) { midi_keyboard_ruler->setVerticalScroll(v, midi_editor->get_key_height()); });
+            [this](int v) { midi_keyboard_ruler->setVerticalScroll(v, midi_editor->getKeyHeight()); });
 }
 
 void MainWindow::set_auto_follow(bool checked) { auto_follow = checked; }
@@ -261,14 +261,14 @@ void MainWindow::toggle_play() {
 }
 
 void MainWindow::zoom_in_x() {
-    double scale = std::min(2.0, midi_editor->get_time_scale() * 1.3);
-    midi_editor->set_time_scale_slot(scale);
+    double scale = std::min(2.0, midi_editor->getTimeScale() * 1.3);
+    midi_editor->setTimeScale(scale);
     midi_tact_ruler->setTimeScale(scale);
 }
 
 void MainWindow::zoom_out_x() {
-    double scale = std::max(0.02, midi_editor->get_time_scale() / 1.3);
-    midi_editor->set_time_scale_slot(scale);
+    double scale = std::max(0.02, midi_editor->getTimeScale() / 1.3);
+    midi_editor->setTimeScale(scale);
     midi_tact_ruler->setTimeScale(scale);
 }
 
@@ -309,7 +309,7 @@ void MainWindow::export_midi() {
 
 void MainWindow::current_tick_position_changed(int current_tick) {
     if (auto_follow && engine->isPlaying()) {
-        int marker_x = int(this->engine->getProject()->getCurrentTick() * midi_editor->get_time_scale());
+        int marker_x = int(this->engine->getProject()->getCurrentTick() * midi_editor->getTimeScale());
         int width = midi_editor->viewport()->width();
         int margin = width / 2;
         int value = std::max(0, marker_x - margin);

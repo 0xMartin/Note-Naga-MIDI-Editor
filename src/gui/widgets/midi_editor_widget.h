@@ -7,71 +7,46 @@
 #include <QGraphicsView>
 #include <QMap>
 #include <memory>
-#include <vector>
-
 #include <note_naga_engine/note_naga_engine.h>
-
-// MidiEditorWidget: přehledněji rozdělená implementace, optimalizace pro signál
-// track_meta_changed_signal
+#include <vector>
 
 class MidiEditorWidget : public QGraphicsView {
     Q_OBJECT
-  public:
+public:
     explicit MidiEditorWidget(NoteNagaEngine *engine, QWidget *parent = nullptr);
 
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override;
 
-    double get_time_scale() const { return time_scale; }
-    int get_key_height() const { return key_height; }
+    double getTimeScale() const { return time_scale; }
+    int getKeyHeight() const { return key_height; }
 
-  signals:
-    void set_position_signal(int tick);
+signals:
+    void positionSelected(int tick);
 
-  public slots:
-    void repaint_slot();
-    void set_time_scale_slot(double scale);
-    void set_key_height_slot(int h);
-    void update_marker_slot();
-    void on_viewport_changed();
-    void reload_all(); // pro active_sequence_changed_signal
-    void reload_track(NoteNagaTrack *track,
-                      const std::string &param); // pro track_meta_changed_signal
+public slots:
+    // Refreshe používají vždy uloženou sekvenci
+    void refreshAll();
+    void refreshMarker();
+    void refreshTrack(NoteNagaTrack *track);
+    void refreshSequence(NoteNagaMidiSeq *seq);
 
-  protected:
+    void setTimeScale(double scale);
+    void setKeyHeight(int h);
+
+protected:
     void resizeEvent(QResizeEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
 
-  private:
-    void setup_connections();
-
-    // Výpočty a přepočty
-    void recalculate_content_size(NoteNagaMidiSeq *seq = nullptr);
-    void set_time_scale(double scale);
-    void set_key_height(int h);
-
-    // Vykreslování (rozděleno)
-    void update_scene_items(NoteNagaMidiSeq *seq = nullptr);
-    void update_grid(const NoteNagaMidiSeq *seq);
-    void update_bar_grid(const NoteNagaMidiSeq *seq);
-    void update_all_notes(const NoteNagaMidiSeq *seq); // všechny tracky
-    void update_one_track_notes(const NoteNagaTrack *track,
-                                const NoteNagaMidiSeq *seq); // pouze jeden track
-    void update_marker(const NoteNagaMidiSeq *seq);
-
-    void draw_note(const NoteNagaNote &note, const NoteNagaTrack *track, bool is_selected,
-                   bool is_drum, int x, int y, int w, int h);
-    void clear_scene();
-    void clear_notes();
-    void clear_track_notes(int track_id);
-
-    // UI data
+private:
     NoteNagaEngine *engine;
-    double time_scale;
-    int key_height;
-    int content_width;
-    int content_height;
-    int tact_subdiv;
+    NoteNagaMidiSeq *last_seq = nullptr; /// Last sequence being edited
+
+    double time_scale; /// < 1.0 = zoomed in, > 1.0 = zoomed out
+    int key_height; /// Height of each key in pixels
+    int content_width; /// Width of the content area
+    int content_height; /// Height of the content area
+    int tact_subdiv; /// Number of subdivisions per tact
 
     QGraphicsScene *scene;
 
@@ -79,13 +54,33 @@ class MidiEditorWidget : public QGraphicsView {
         QGraphicsItem *item;
         QGraphicsSimpleTextItem *label;
     };
-    QMap<int, std::vector<NoteGraphics>> note_items; // track_id -> notes
+    QMap<int, std::vector<NoteGraphics>> note_items;
 
     QGraphicsLineItem *marker_line = nullptr;
     std::vector<QGraphicsLineItem *> grid_lines;
     std::vector<QGraphicsLineItem *> bar_grid_lines;
     std::vector<QGraphicsSimpleTextItem *> bar_grid_labels;
 
+    // --- Colors ---
     QColor bg_color, fg_color, line_color, subline_color, grid_bar_color, grid_row_color1,
         grid_row_color2, grid_bar_label_color, grid_subdiv_color;
+
+    // --- Setup & Helpers ---
+    void setupConnections();
+    void setSequence(NoteNagaMidiSeq *seq);
+
+    // --- UI/Scene Update ---
+    void recalculateContentSize();
+    void updateScene();
+    void updateGrid();
+    void updateBarGrid();
+    void updateAllNotes();
+    void updateTrackNotes(NoteNagaTrack *track);
+
+    void drawNote(const NoteNagaNote &note, const NoteNagaTrack *track, bool is_selected,
+                  bool is_drum, int x, int y, int w, int h);
+
+    void clearScene();
+    void clearNotes();
+    void clearTrackNotes(int track_id);
 };
