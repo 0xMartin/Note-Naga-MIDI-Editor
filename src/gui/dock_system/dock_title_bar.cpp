@@ -13,8 +13,7 @@ CustomDockTitleBar::CustomDockTitleBar(
     setStyleSheet(
         "QFrame#CustomDockTitleBar {"
         "  background: #2b2f37;"
-        "  border-top-left-radius: 9px;"
-        "  border-top-right-radius: 9px;"
+        "  border: 1px solid #19191f;"
         "  margin-bottom: 0px; "
         "}");
 
@@ -49,7 +48,6 @@ CustomDockTitleBar::CustomDockTitleBar(
     defaultButtons->setStyleSheet(
         "QFrame#DefaultDockButtonsFrame {"
         " background: #26292f;"
-        " border-radius: 7px;"
         " padding-left: 0px; padding-right: 0px;"
         "}");
 
@@ -57,7 +55,7 @@ CustomDockTitleBar::CustomDockTitleBar(
     btnLayout->setContentsMargins(2, 2, 2, 2);
     btnLayout->setSpacing(0);
 
-    QPushButton* floatBtn = createDefaultButton(QIcon(":/icons/maximize.svg"), "Undock", SLOT(onFloatClicked()));
+    QPushButton* floatBtn = createDefaultButton(QIcon(":/icons/maximize.svg"), "Undock / Dock", SLOT(onFloatClicked()));
     btnLayout->addWidget(floatBtn);
 
     QPushButton* closeBtn = createDefaultButton(QIcon(":/icons/close.svg"), "Close", SLOT(onCloseClicked()));
@@ -93,9 +91,9 @@ QPushButton* CustomDockTitleBar::createDefaultButton(const QIcon& icon, const QS
     btn->setFixedSize(24, 24);
     btn->setFlat(true);
     btn->setStyleSheet("QPushButton { background: transparent; border: none; "
-                       "border-radius: 6px; min-width: 24px; max-width: 24px; "
+                       "border-radius: 0px; min-width: 24px; max-width: 24px; "
                        "min-height: 24px; max-height: 24px; padding: 0px;}"
-                       "QPushButton:hover { background: #3477c0; color: #fff; }");
+                       "QPushButton:hover { background: #5a35a0; color: #fff; }");
     connect(btn, SIGNAL(clicked()), this, slotName);
     return btn;
 }

@@ -16,6 +16,7 @@ AdvancedDockWidget::AdvancedDockWidget(const QString &title, const QIcon &icon,
     titleBar = new CustomDockTitleBar(this, title, icon, customButtonWidget);
     setTitleBarWidget(titleBar);
     setMouseTracking(true);
+    setStyleSheet("QDockWidget { border: 1px solid #19191f; }");
 }
 
 void AdvancedDockWidget::setTitleText(const QString &text) {
@@ -67,10 +68,10 @@ void AdvancedDockWidget::mouseMoveEvent(QMouseEvent *event) {
             for (auto dock : docks) {
                 if (dock == this) continue;
                 QRect gr = dock->rect();
-                QPoint rel = dock->mapFromGlobal(event->globalPos());
+                QPoint rel = dock->mapFromGlobal(event->globalPosition().toPoint());
                 if (gr.contains(rel)) {
                     dock->showDockOverlay();
-                    dock->updateDockOverlay(event->globalPos());
+                    dock->updateDockOverlay(event->globalPosition().toPoint());
                 } else {
                     dock->hideDockOverlay();
                 }

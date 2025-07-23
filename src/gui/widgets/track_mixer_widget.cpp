@@ -39,7 +39,7 @@ void TrackMixerWidget::initUI() {
     controls_frame->setObjectName("MixerControlsFrame");
     controls_frame->setStyleSheet(
         "QFrame#MixerControlsFrame { background: #2F3139; border: 1px solid #494d56; "
-        "border-radius: 10px; padding: 10px 0px 8px 0px; }");
+        "border-radius: 10px; padding: 2px 0px 0px 0px; }");
     QHBoxLayout *controls_layout = new QHBoxLayout(controls_frame);
     controls_layout->setContentsMargins(5, 0, 5, 0);
 
@@ -107,7 +107,7 @@ void TrackMixerWidget::initUI() {
     QFrame *channel_output_frame = new QFrame();
     channel_output_frame->setObjectName("MixerSectionLabelFrame");
     channel_output_frame->setStyleSheet(
-        "QFrame#MixerSectionLabelFrame { background: #353a44; border-radius: 8px; "
+        "QFrame#MixerSectionLabelFrame { background: #3c424e; border-radius: 8px; "
         "margin-bottom: 0px; }");
     QHBoxLayout *channel_output_label_layout = new QHBoxLayout(channel_output_frame);
     channel_output_label_layout->setContentsMargins(12, 5, 12, 5);
@@ -162,17 +162,15 @@ void TrackMixerWidget::initUI() {
                 }
             });
 
-    main_layout->addSpacing(18);
-
     // Routing Table section
     QFrame *routing_label_controls_frame = new QFrame();
     routing_label_controls_frame->setObjectName("RoutingLabelControlsFrame");
     routing_label_controls_frame->setStyleSheet(
-        "QFrame#RoutingLabelControlsFrame { background: #353a44; border-radius: 8px; }");
+        "QFrame#RoutingLabelControlsFrame { background: #3c424e; border-radius: 8px; }");
     QHBoxLayout *routing_label_controls_layout =
         new QHBoxLayout(routing_label_controls_frame);
     routing_label_controls_layout->setContentsMargins(12, 5, 12, 5);
-    routing_label_controls_layout->setSpacing(4);
+    routing_label_controls_layout->setSpacing(0);
 
     QLabel *routing_label = new QLabel("Routing Table");
     routing_label->setStyleSheet("font-size: 15px; font-weight: bold; color: #79b8ff;");
@@ -271,9 +269,10 @@ void TrackMixerWidget::onGlobalPanChanged(float value) {
 
 void TrackMixerWidget::setChannelOutputValue(const std::string &device, int channel_idx,
                                              float value, int time_ms) {
-    if (channel_volume_bars.contains(QString::fromStdString(device))) {
-        channel_volume_bars[QString::fromStdString(device)]->setValue(channel_idx, value,
-                                                                      time_ms);
+    QString device_name = QString::fromStdString(device);
+    if (channel_volume_bars.contains(device_name)) {
+        if (channel_volume_bars[device_name]->isVisible())
+            channel_volume_bars[device_name]->setValue(channel_idx, value, time_ms);
     }
 }
 

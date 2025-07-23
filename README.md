@@ -1,12 +1,5 @@
 ## Build 
 
-1. opravit chyb v UI (aby to vypadalo stejne jak predtim)
-   1. custom tile bar pro QDock widgety..
-   2. Dock Panel Nefunguje jak by mel: reset layout, nachyta se presne na dane pozice jak by mel
-
-----
-NOVE FUNKCE:
-
 bug: lepsi detekce bicích nastoroju (v Midi editoru ...)
 
 midi editor zoom bug (kdyz se zoomuje tak ujizdi s akutalni pozice)
@@ -16,6 +9,8 @@ midi editor optimalizace
    -> moznost upravy sledovani aktualni pozice (komplexni moznosti)
 
 midi control bar: impelemnatce celkoveho nahledu tracku (nahradi time label)
+
+vice instanci syntetizeru
 
 nastaveni editoru + gui dialog
 
