@@ -1,14 +1,9 @@
 ## Build 
 
-tlacitka u track listu:
-   -> add, remove, remove all, record
+bug: kdyz jsem na konci tracku a dam play tak to spadne
 
 tlacitka u mixeru:
-   -> set all to min volume / max volume
    -> set output for all (replace ouput)
-   -> automacaly select channels 
-
-pouziti u routing entry = indikacni led diada (signalizace aktivniho routingu)
 
 1. opravit chyb v UI (aby to vypadalo stejne jak predtim)
    1. custom tile bar pro QDock widgety..

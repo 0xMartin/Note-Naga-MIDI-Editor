@@ -423,6 +423,10 @@ void NoteNagaMixer::playNoteOnOutputDevice(const std::string &output, int ch,
 void NoteNagaMixer::ensureFluidsynth() {
     if (!fluidsynth) {
         synth_settings = new_fluid_settings();
+
+        // Enable reverb
+        fluid_settings_setint(synth_settings, "synth.reverb.active", 1);
+
         fluidsynth = new_fluid_synth(synth_settings);
         int sfid = fluid_synth_sfload(fluidsynth, sf2_path.c_str(), 1);
         NOTE_NAGA_LOG_INFO("SoundFont loaded, sfid=" + std::to_string(sfid) + " from " +

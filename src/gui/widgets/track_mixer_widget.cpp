@@ -1,4 +1,5 @@
 #include "track_mixer_widget.h"
+
 #include <QIcon>
 
 TrackMixerWidget::TrackMixerWidget(NoteNagaEngine *engine_, QWidget *parent)
@@ -176,7 +177,7 @@ void TrackMixerWidget::initUI() {
     QHBoxLayout *routing_label_controls_layout =
         new QHBoxLayout(routing_label_controls_frame);
     routing_label_controls_layout->setContentsMargins(12, 5, 12, 5);
-    routing_label_controls_layout->setSpacing(10);
+    routing_label_controls_layout->setSpacing(4);
 
     QLabel *routing_label = new QLabel("Routing Table");
     routing_label->setStyleSheet("font-size: 15px; font-weight: bold; color: #79b8ff;");
@@ -218,10 +219,31 @@ void TrackMixerWidget::initUI() {
     connect(btn_default, &QPushButton::clicked, this,
             &TrackMixerWidget::onDefaultEntries);
 
+    QPushButton *btn_max_volume = make_btn(
+        ":/icons/sound-on.svg", "Toggle max volume for all tracks",
+        "MaxVolumeAllTracksButton");
+    btn_max_volume->setCheckable(true);
+    connect(btn_max_volume, &QPushButton::clicked, this, &TrackMixerWidget::onMaxVolumeAllTracks);
+
+    QPushButton *btn_min_volume = make_btn(
+        ":/icons/sound-off.svg", "Set min volume for all tracks",
+        "MinVolumeAllTracksButton");
+    btn_min_volume->setCheckable(true);
+    connect(btn_min_volume, &QPushButton::clicked, this, &TrackMixerWidget::onMinVolumeAllTracks);
+
+    QPushButton *btn_output_device = make_btn(
+        ":/icons/device.svg", "Set output device for all tracks",
+        "OutputDeviceAllTracksButton");
+    btn_output_device->setCheckable(true);
+    //connect(btn_output_device, &QPushButton::clicked, this, &TrackMixerWidget::onOutputDeviceAllTracks);
+
     routing_label_controls_layout->addWidget(btn_add, 0, Qt::AlignRight);
     routing_label_controls_layout->addWidget(btn_remove, 0, Qt::AlignRight);
     routing_label_controls_layout->addWidget(btn_clear, 0, Qt::AlignRight);
     routing_label_controls_layout->addWidget(btn_default, 0, Qt::AlignRight);
+    routing_label_controls_layout->addWidget(btn_max_volume, 0, Qt::AlignRight);
+    routing_label_controls_layout->addWidget(btn_min_volume, 0, Qt::AlignRight);
+    routing_label_controls_layout->addWidget(btn_output_device, 0, Qt::AlignRight);
 
     main_layout->addWidget(routing_label_controls_frame);
     main_layout->addSpacing(6);
@@ -334,12 +356,40 @@ void TrackMixerWidget::onDefaultEntries() {
     }
 }
 
+void TrackMixerWidget::onMaxVolumeAllTracks() {
+    for (auto &entry : engine->getMixer()->getRoutingEntries()) {
+        entry.volume = 1.0f;
+    }
+    refresh_routing_table();
+}
+
+void TrackMixerWidget::onMinVolumeAllTracks() {
+    for (auto &entry : engine->getMixer()->getRoutingEntries()) {
+        entry.volume = 0.0f;
+    }
+    refresh_routing_table();
+}
+
 void TrackMixerWidget::handlePlayingNote(const NN_Note_t &note,
                                          const std::string &device_name, int channel) {
+    // channel signalization
     NoteNagaProject *project = engine->getProject();
     int time_ms = int(note_time_ms(note, project->getPPQ(), project->getTempo()));
     if (note.velocity.has_value() && note.velocity.value() > 0) {
         setChannelOutputValue(device_name, channel, note.velocity.value(), time_ms);
+    }
+
+    // entry signalization
+    NoteNagaTrack *track = note.parent;
+    if (!track) return;
+    for (size_t i = 0; i < entry_widgets.size(); ++i) {
+        RoutingEntryWidget *entry_widget = entry_widgets[i];
+        if (!entry_widget) continue;
+        NoteNagaRoutingEntry *entry = entry_widget->getRoutingEntry();
+        if (!entry) continue;
+        if (entry->track == track) {
+            entry_widget->getIndicatorLed()->setState(true, false, time_ms);     
+        }
     }
 }
 

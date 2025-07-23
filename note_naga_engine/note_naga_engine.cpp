@@ -68,7 +68,7 @@ bool NoteNagaEngine::startPlayback() {
             return true;
         }
     }
-    NOTE_NAGA_LOG_ERROR("Failed to start playback");
+    NOTE_NAGA_LOG_WARNING("Failed to start playback");
     return false;
 }
 
@@ -80,7 +80,7 @@ bool NoteNagaEngine::stopPlayback() {
         }
     }
     if (mixer) mixer->stopAllNotes();
-    NOTE_NAGA_LOG_ERROR("Failed to stop playback");
+    NOTE_NAGA_LOG_WARNING("Failed to stop playback");
     return false;
 }
 

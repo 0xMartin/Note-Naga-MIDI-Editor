@@ -2,6 +2,7 @@
 
 #include <QColor>
 #include <QWidget>
+#include <QTimer>
 
 /**
  * @brief The IndicatorLedWidget class provides a simple LED indicator widget.
@@ -35,10 +36,18 @@ public:
 
 public slots:
     /**
-     * @brief Sets the active state of the LED indicator.
-     * @param active If true, the LED is turned on; otherwise, it is turned off.
+     * @brief Sets the LED state directly (on/off).
+     * @param state True for on, false for off.
      */
-    void setActive(bool active);
+    void setState(bool state);
+
+    /**
+     * @brief Temporarily sets LED state; after time_ms (max 50ms) returns to previous state.
+     * @param state State to set (true = on, false = off).
+     * @param end_active State to restore after timeout.
+     * @param time_ms Duration in ms (will be clamped to max 50ms).
+     */
+    void setState(bool state, bool end_active, int time_ms);
 
     /**
      * @brief Sets the color of the LED indicator.
@@ -52,4 +61,10 @@ protected:
 private:
     QColor led_color;
     bool is_active;
+
+    QTimer timer;
+    bool end_active = false;
+
+private slots:
+    void restorePreviousState();
 };

@@ -10,6 +10,7 @@
 
 #include "../components/audio_dial.h"
 #include "../components/audio_dial_centered.h"
+#include "../components/indicator_led_widget.h"
 #include <note_naga_engine/note_naga_engine.h>
 
 /**
@@ -26,6 +27,18 @@ public:
      */
     explicit RoutingEntryWidget(NoteNagaEngine *engine, NoteNagaRoutingEntry *entry,
                                 QWidget *parent = nullptr);
+
+    /**
+     * @brief Returns the NoteNagaRoutingEntry associated with this widget.
+     * @return Pointer to the NoteNagaRoutingEntry.
+     */
+    NoteNagaRoutingEntry *getRoutingEntry() const { return entry; }
+
+    /**
+     * @brief Returns the routing entry associated with this widget.
+     * @return Pointer to the NoteNagaRoutingEntry.
+     */
+    IndicatorLedWidget *getIndicatorLed() const { return indicator_led; }
 
 public slots:
     /**
@@ -54,7 +67,9 @@ private:
     AudioDial *volume_dial;
     AudioDialCentered *pan_dial;
     AudioDialCentered *offset_dial;
+    IndicatorLedWidget *indicator_led;
 
+    void setupUI();
     void populateTrackComboBox(NoteNagaTrack *track);
     void populateOutputComboBox();
     void setComboBoxSelections();

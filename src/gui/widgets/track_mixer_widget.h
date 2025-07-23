@@ -50,6 +50,8 @@ private slots:
     void onRemoveSelectedEntry();
     void onClearRoutingTable();
     void onDefaultEntries();
+    void onMaxVolumeAllTracks();
+    void onMinVolumeAllTracks();
     void handlePlayingNote(const NN_Note_t& note, const std::string& device_name, int channel);
 
 private:

@@ -24,7 +24,7 @@ void TrackListWidget::initUI() {
                                 "border-radius: 9px; margin-bottom: 8px; }");
     QHBoxLayout *header_layout = new QHBoxLayout(header_frame);
     header_layout->setContentsMargins(10, 5, 10, 5);
-    header_layout->setSpacing(12);
+    header_layout->setSpacing(4);
 
     QLabel *header_icon = new QLabel();
     header_icon->setPixmap(QIcon(":/icons/track.svg").pixmap(23, 23));

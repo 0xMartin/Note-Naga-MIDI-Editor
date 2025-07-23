@@ -1,16 +1,74 @@
 #include "routing_entry_widget.h"
 
-RoutingEntryWidget::RoutingEntryWidget(NoteNagaEngine *engine_, NoteNagaRoutingEntry *entry_, QWidget *parent)
-    : QFrame(parent), entry(entry_), engine(engine_) {
+#include <QLabel>
+#include <QMouseEvent>
+#include <QPainter>
+
+RoutingEntryWidget::RoutingEntryWidget(NoteNagaEngine *engine_,
+                                       NoteNagaRoutingEntry *entry_, QWidget *parent)
+    : QFrame(parent), entry(entry_), engine(engine_), indicator_led(nullptr) {
+    setupUI();
+
+    // ComboBox initialization
+    populateTrackComboBox(entry->track);
+    populateOutputComboBox();
+    setComboBoxSelections();
+
+    // Connect to track info changed (refresh combos)
+    connect(entry->track, &NoteNagaTrack::metadataChanged, this,
+            &RoutingEntryWidget::onTrackMetadataChanged);
+
+    // Style
+    refresh_style(false);
+}
+
+void RoutingEntryWidget::setupUI() {
     setObjectName("RoutingEntryWidget");
     setMouseTracking(true);
     setFocusPolicy(Qt::StrongFocus);
 
-    // Layout
+    // Main Layout
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setContentsMargins(2, 1, 2, 1);
     layout->setSpacing(5);
 
+    // ----- Side Panel -----
+    QWidget *sidePanel = new QWidget(this);
+    sidePanel->setFixedWidth(38);
+    sidePanel->setObjectName("RoutingEntrySidePanel");
+
+    QVBoxLayout *sideLayout = new QVBoxLayout(sidePanel);
+    sideLayout->setContentsMargins(0, 4, 0, 4);
+    sideLayout->setSpacing(4);
+
+    // Index Label
+    int index;
+    for (index = 0; index < engine->getMixer()->getRoutingEntries().size(); ++index) {
+        if (entry == &engine->getMixer()->getRoutingEntries()[index]) { break; }
+    }
+    QLabel *indexLabel = new QLabel(QString::number(index + 1));
+    indexLabel->setAlignment(Qt::AlignCenter);
+    indexLabel->setObjectName("RoutingEntryIndexLabel");
+    indexLabel->setStyleSheet(
+        "QLabel#RoutingEntryIndexLabel { color: #b0b4b8; font-size: 14px; }");
+    sideLayout->addWidget(indexLabel, 0, Qt::AlignHCenter);
+
+    // LED Indicator
+    indicator_led = new IndicatorLedWidget(Qt::red, sidePanel);
+    indicator_led->setFixedSize(16, 16);
+    sideLayout->addWidget(indicator_led, 0, Qt::AlignHCenter);
+
+    sideLayout->addStretch(1);
+    sidePanel->setLayout(sideLayout);
+
+    // Side panel style (darker, no border, rounded left)
+    sidePanel->setStyleSheet("QWidget#RoutingEntrySidePanel {"
+                             "background: #292b2e;"
+                             "border-top-left-radius: 8px;"
+                             "border-bottom-left-radius: 8px;"
+                             "}");
+
+    // ----- Central UI -----
     // Combo column
     QVBoxLayout *combo_col = new QVBoxLayout();
     combo_col->setContentsMargins(0, 0, 0, 0);
@@ -24,17 +82,16 @@ RoutingEntryWidget::RoutingEntryWidget(NoteNagaEngine *engine_, NoteNagaRoutingE
     track_icon->setFixedSize(18, 18);
     track_icon->setAlignment(Qt::AlignCenter);
     track_icon->setObjectName("RoutingTrackIcon");
-    track_icon->setStyleSheet(
-        "QLabel#RoutingTrackIcon { min-width: 18px; max-width: 18px; min-height: 18px; max-height: 18px;"
-        "border-radius: 3px; background: transparent; }");
+    track_icon->setStyleSheet("QLabel#RoutingTrackIcon { min-width: 18px; max-width: "
+                              "18px; min-height: 18px; max-height: 18px;"
+                              "border-radius: 3px; background: transparent; }");
     track_icon->setPixmap(QIcon(":/icons/track.svg").pixmap(16, 16));
     track_row->addWidget(track_icon, Qt::AlignVCenter);
 
     track_combo = new QComboBox();
-    track_combo->setFixedWidth(120);
     connect(track_combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &RoutingEntryWidget::onTrackChanged);
-    track_row->addWidget(track_combo);
+    track_row->addWidget(track_combo, 1);
     combo_col->addLayout(track_row);
 
     // Device row
@@ -45,17 +102,16 @@ RoutingEntryWidget::RoutingEntryWidget(NoteNagaEngine *engine_, NoteNagaRoutingE
     device_icon->setFixedSize(18, 18);
     device_icon->setAlignment(Qt::AlignCenter);
     device_icon->setObjectName("RoutingDeviceIcon");
-    device_icon->setStyleSheet(
-        "QLabel#RoutingDeviceIcon { min-width: 18px; max-width: 18px; min-height: 18px; max-height: 18px;"
-        "border-radius: 3px; background: transparent; }");
+    device_icon->setStyleSheet("QLabel#RoutingDeviceIcon { min-width: 18px; max-width: "
+                               "18px; min-height: 18px; max-height: 18px;"
+                               "border-radius: 3px; background: transparent; }");
     device_icon->setPixmap(QIcon(":/icons/route.svg").pixmap(16, 16));
     device_row->addWidget(device_icon, Qt::AlignVCenter);
 
     output_combo = new QComboBox();
-    output_combo->setFixedWidth(120);
     connect(output_combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &RoutingEntryWidget::onDeviceChanged);
-    device_row->addWidget(output_combo);
+    device_row->addWidget(output_combo, 1);
     combo_col->addLayout(device_row);
 
     // --- Dials ---
@@ -71,7 +127,8 @@ RoutingEntryWidget::RoutingEntryWidget(NoteNagaEngine *engine_, NoteNagaRoutingE
     channel_dial->setDefaultValue(1);
     channel_dial->showValue(true);
     channel_dial->setValueDecimals(0);
-    connect(channel_dial, &AudioDial::valueChanged, this, &RoutingEntryWidget::onChannelChanged);
+    connect(channel_dial, &AudioDial::valueChanged, this,
+            &RoutingEntryWidget::onChannelChanged);
     dials_layout->addWidget(channel_dial);
 
     // Volume
@@ -83,7 +140,8 @@ RoutingEntryWidget::RoutingEntryWidget(NoteNagaEngine *engine_, NoteNagaRoutingE
     volume_dial->setValueDecimals(1);
     volume_dial->setValuePostfix(" %");
     volume_dial->showValue(true);
-    connect(volume_dial, &AudioDial::valueChanged, this, &RoutingEntryWidget::onVolumeChanged);
+    connect(volume_dial, &AudioDial::valueChanged, this,
+            &RoutingEntryWidget::onVolumeChanged);
     dials_layout->addWidget(volume_dial);
 
     // Pan
@@ -93,7 +151,8 @@ RoutingEntryWidget::RoutingEntryWidget(NoteNagaEngine *engine_, NoteNagaRoutingE
     pan_dial->setValueDecimals(2);
     pan_dial->setValue(entry->pan);
     pan_dial->setDefaultValue(0.0);
-    connect(pan_dial, &AudioDialCentered::valueChanged, this, &RoutingEntryWidget::onGlobalPanChanged);
+    connect(pan_dial, &AudioDialCentered::valueChanged, this,
+            &RoutingEntryWidget::onGlobalPanChanged);
     dials_layout->addWidget(pan_dial);
 
     // Note offset
@@ -104,25 +163,15 @@ RoutingEntryWidget::RoutingEntryWidget(NoteNagaEngine *engine_, NoteNagaRoutingE
     offset_dial->showValue(true);
     offset_dial->setValueDecimals(0);
     offset_dial->setDefaultValue(0);
-    connect(offset_dial, &AudioDialCentered::valueChanged, this, &RoutingEntryWidget::onOffsetChanged);
+    connect(offset_dial, &AudioDialCentered::valueChanged, this,
+            &RoutingEntryWidget::onOffsetChanged);
     dials_layout->addWidget(offset_dial);
 
-    // Main layout
+    // Layout order: [panel][combo][stretch][dials]
+    layout->addWidget(sidePanel);
     layout->addLayout(combo_col);
-    layout->addStretch(1);
     layout->addLayout(dials_layout);
     setLayout(layout);
-
-    // ComboBox initialization
-    populateTrackComboBox(entry->track);
-    populateOutputComboBox();
-    setComboBoxSelections();
-
-    // Connect to track info changed (refresh combos)
-    connect(entry->track, &NoteNagaTrack::metadataChanged, this, &RoutingEntryWidget::onTrackMetadataChanged);
-
-    // Style
-    refresh_style(false);
 }
 
 void RoutingEntryWidget::populateTrackComboBox(NoteNagaTrack *track) {
@@ -141,7 +190,7 @@ void RoutingEntryWidget::populateTrackComboBox(NoteNagaTrack *track) {
         track_combo->addItem(name, tr->getId());
     }
 
-    // selecte current track of entry
+    // select current track of entry
     NoteNagaTrack *entry_track = entry->track;
     if (entry_track) {
         int current_track_index = track_combo->findData(entry_track->getId());
@@ -198,7 +247,9 @@ void RoutingEntryWidget::onDeviceChanged(int idx) {
 
 void RoutingEntryWidget::onChannelChanged(float val) { entry->channel = int(val - 1); }
 
-void RoutingEntryWidget::onVolumeChanged(float val) { entry->volume = float(val / 100.0f); }
+void RoutingEntryWidget::onVolumeChanged(float val) {
+    entry->volume = float(val / 100.0f);
+}
 
 void RoutingEntryWidget::onOffsetChanged(float val) { entry->note_offset = int(val); }
 
@@ -213,7 +264,8 @@ void RoutingEntryWidget::refresh_style(bool selected) {
             padding: 2px;
         }
     )";
-    QString style = selected ? base_style.arg("#273a51", "#3477c0") : base_style.arg("#2F3139", "#494d56");
+    QString style = selected ? base_style.arg("#273a51", "#3477c0")
+                             : base_style.arg("#2F3139", "#494d56");
     setStyleSheet(style);
     update();
 }
