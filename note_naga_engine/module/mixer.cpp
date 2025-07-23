@@ -348,6 +348,16 @@ void NoteNagaMixer::soloTrack(NoteNagaTrack *track, bool solo) {
     }
 }
 
+bool NoteNagaMixer::isPercussion(NoteNagaTrack *track) const {
+    if (!track) return false;
+    for (const NoteNagaRoutingEntry &entry : routing_entries) {
+        if (entry.track == track && entry.channel == 9) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /********************************************************************************************************/
 // Private methods
 /********************************************************************************************************/

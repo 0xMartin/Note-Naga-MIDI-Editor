@@ -41,6 +41,7 @@ set(HEADER_FILES
     src/gui/components/indicator_led_widget.h
     src/gui/components/multi_channel_volume_bar.h
     src/gui/components/volume_bar.h
+    src/gui/components/separator.h
     # gui/dialogs
     src/gui/dialogs/instrument_selector_dialog.h
     # gui/widgets
@@ -71,6 +72,7 @@ set(SOURCE_FILES
     src/gui/components/indicator_led_widget.cpp
     src/gui/components/multi_channel_volume_bar.cpp
     src/gui/components/volume_bar.cpp
+    src/gui/components/separator.cpp
     # gui/dialogs
     src/gui/dialogs/instrument_selector_dialog.cpp
     # gui/widgets

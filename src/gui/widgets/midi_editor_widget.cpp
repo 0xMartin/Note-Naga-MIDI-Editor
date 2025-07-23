@@ -1,8 +1,13 @@
 #include "midi_editor_widget.h"
+
+#include <QHBoxLayout>
+#include <QPushButton>
 #include <QResizeEvent>
 #include <QScrollBar>
 #include <algorithm>
 #include <cmath>
+
+#include "../nn_gui_utils.h"
 
 #define MIN_NOTE 0
 #define MAX_NOTE 127
@@ -18,6 +23,9 @@ MidiEditorWidget::MidiEditorWidget(NoteNagaEngine *engine, QWidget *parent)
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    this->title_widget = nullptr;
+    initTitleUI();
 
     this->time_scale = 0.2;
     this->key_height = 16;
@@ -36,6 +44,37 @@ MidiEditorWidget::MidiEditorWidget(NoteNagaEngine *engine, QWidget *parent)
     // Init last_seq_ to current active sequence if available
     setSequence(engine->getProject()->getActiveSequence());
     refreshAll();
+}
+
+void MidiEditorWidget::initTitleUI() {
+    if (this->title_widget) return;
+    this->title_widget = new QWidget();
+    QHBoxLayout *layout = new QHBoxLayout(title_widget);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+
+    QPushButton *btn_follow_center = create_small_button(
+        ":/icons/follow-from-left.svg", "Follow from Center", "FollowCenter");
+    QPushButton *btn_follow_left = create_small_button(
+        ":/icons/follow-from-center.svg", "Follow from Center", "FollowCenter");
+    QPushButton *btn_follow_step = create_small_button(
+        ":/icons/follow-step-by-step.svg", "Follow Step by Step", "FollowStep");
+    QPushButton *btn_follow_none = create_small_button(
+        ":/icons/follow-none.svg", "Don't Follow", "FollowNone");
+        
+    QPushButton *btn_zoom_in = create_small_button(
+        ":/icons/zoom-in.svg", "Zoom In", "ZoomIn");
+    QPushButton *btn_zoom_out = create_small_button(
+        ":/icons/zoom-out.svg", "Zoom Out", "ZoomOut");  
+
+
+    layout->addWidget(btn_zoom_in, 0, Qt::AlignRight);
+    layout->addWidget(btn_zoom_out, 0, Qt::AlignRight);
+    layout->addWidget(create_separator());
+    layout->addWidget(btn_follow_center, 0, Qt::AlignRight);
+    layout->addWidget(btn_follow_left, 0, Qt::AlignRight);
+    layout->addWidget(btn_follow_step, 0, Qt::AlignRight);
+    layout->addWidget(btn_follow_none, 0, Qt::AlignRight);
 }
 
 void MidiEditorWidget::setupConnections() {
@@ -254,7 +293,8 @@ void MidiEditorWidget::drawNote(const NN_Note_t &note, const NoteNagaTrack *trac
     float luminance = nn_yiq_luminance(t_color);
     QPen outline =
         is_selected ? QPen(luminance < 128 ? Qt::white : Qt::black, 2)
-                    : QPen((luminance < 128 ? t_color.lighter(150) : t_color.darker(150)).toQColor());
+                    : QPen((luminance < 128 ? t_color.lighter(150) : t_color.darker(150))
+                               .toQColor());
 
     if (is_drum) {
         int sz = h * 0.6;

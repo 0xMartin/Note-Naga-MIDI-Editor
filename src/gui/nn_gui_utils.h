@@ -1,6 +1,8 @@
 #pragma once
 
+#include "components/separator.h"
 #include <QColor>
+#include <QFrame>
 #include <QIcon>
 #include <QPushButton>
 #include <QString>
@@ -31,7 +33,19 @@ extern QIcon instrument_icon(const QString &instrument_name = "piano");
  * @param iconPath Path to the icon file.
  * @param tooltip Tooltip text for the button.
  * @param objname Object name for the button.
+ * @param parent Parent widget for the button, default is nullptr.
  * @return Pointer to the created QPushButton.
  */
 extern QPushButton *create_small_button(const QString &iconPath, const QString &tooltip,
-                                        const char *objname);
+                                        const char *objname, QWidget *parent = nullptr);
+
+/**
+ * @brief Create a separator widget with a specified orientation.
+ * @param orientation The orientation of the separator, default is Vertical.
+ * @param color The color of the separator, default is "#19191f".
+ * @param parent The parent widget for the separator, default is nullptr.
+ * @return Pointer to the created Separator.
+ */
+extern Separator *create_separator(int orientation = Separator::Vertical,
+                                   const QColor &color = QColor("#19191f"),
+                                   QWidget *parent = nullptr);

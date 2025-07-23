@@ -40,8 +40,8 @@ QIcon instrument_icon(const QString &instrument_name) {
 }
 
 QPushButton *create_small_button(const QString &iconPath, const QString &tooltip,
-                                 const char *objname) {
-    QPushButton *btn = new QPushButton();
+                                 const char *objname, QWidget *parent) {
+    QPushButton *btn = new QPushButton(parent);
     btn->setObjectName(objname);
     btn->setIcon(QIcon(iconPath));
     btn->setToolTip(tooltip);
@@ -53,3 +53,7 @@ QPushButton *create_small_button(const QString &iconPath, const QString &tooltip
                        "QPushButton:hover { background: #3477c0; color: #fff; }");
     return btn;
 };
+
+Separator *create_separator(int orientation, const QColor &color, QWidget *parent) {
+    return new Separator(static_cast<Separator::Orientation>(orientation), color, parent);
+}

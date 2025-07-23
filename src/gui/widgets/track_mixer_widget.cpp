@@ -1,7 +1,7 @@
 #include "track_mixer_widget.h"
 
-#include <QIcon>
 #include "../nn_gui_utils.h"
+#include <QIcon>
 
 TrackMixerWidget::TrackMixerWidget(NoteNagaEngine *engine_, QWidget *parent)
     : QWidget(parent), engine(engine_), selected_entry_index(-1), selected_row(-1) {
@@ -10,7 +10,7 @@ TrackMixerWidget::TrackMixerWidget(NoteNagaEngine *engine_, QWidget *parent)
             &TrackMixerWidget::handlePlayingNote);
     connect(engine->getMixer(), &NoteNagaMixer::routingEntryStackChanged, this,
             &TrackMixerWidget::refresh_routing_table);
-    
+
     this->title_widget = nullptr;
     initTitleUI();
     initUI();
@@ -46,7 +46,7 @@ void TrackMixerWidget::initUI() {
     dial_min = new AudioDial();
     dial_min->setLabel("Note Min");
     dial_min->setRange(0, 127);
-    dial_min->setValue(engine->getMixer()->master_min_note);
+    dial_min->setValue(engine->getMixer()->getMasterMinNote());
     dial_min->setDefaultValue(0);
     dial_min->showValue(true);
     dial_min->setValueDecimals(0);
@@ -56,7 +56,7 @@ void TrackMixerWidget::initUI() {
     dial_max = new AudioDial();
     dial_max->setLabel("Note Max");
     dial_max->setRange(0, 127);
-    dial_max->setValue(engine->getMixer()->master_max_note);
+    dial_max->setValue(engine->getMixer()->getMasterMaxNote());
     dial_max->setDefaultValue(127);
     dial_max->showValue(true);
     dial_max->setValueDecimals(0);
@@ -66,7 +66,7 @@ void TrackMixerWidget::initUI() {
     dial_offset = new AudioDialCentered();
     dial_offset->setLabel("Offset");
     dial_offset->setRange(-24, 24);
-    dial_offset->setValue(engine->getMixer()->master_note_offset);
+    dial_offset->setValue(engine->getMixer()->getMasterNoteOffset());
     dial_offset->setDefaultValue(0);
     dial_offset->showValue(true);
     dial_offset->setValueDecimals(0);
@@ -77,7 +77,7 @@ void TrackMixerWidget::initUI() {
     dial_vol->setLabel("Volume");
     dial_vol->setRange(0, 100);
     dial_vol->setValueDecimals(1);
-    dial_vol->setValue(engine->getMixer()->master_volume * 100);
+    dial_vol->setValue(engine->getMixer()->getMasterVolume() * 100);
     dial_vol->setDefaultValue(100);
     dial_vol->setValuePostfix(" %");
     dial_vol->showValue(true);
@@ -88,7 +88,7 @@ void TrackMixerWidget::initUI() {
     dial_pan->setLabel("Pan");
     dial_pan->setRange(-1.0, 1.0);
     dial_pan->setValueDecimals(2);
-    dial_pan->setValue(engine->getMixer()->master_pan);
+    dial_pan->setValue(engine->getMixer()->getMasterPan());
     dial_pan->setDefaultValue(0.0);
     connect(dial_pan, &AudioDialCentered::valueChanged, this,
             &TrackMixerWidget::onGlobalPanChanged);
@@ -178,8 +178,8 @@ void TrackMixerWidget::initUI() {
 
     routing_label_controls_layout->addStretch(1);
 
-    QPushButton *btn_add =
-        create_small_button(":/icons/add.svg", "Add new routing entry", "RoutingAddButton");
+    QPushButton *btn_add = create_small_button(":/icons/add.svg", "Add new routing entry",
+                                               "RoutingAddButton");
     connect(btn_add, &QPushButton::clicked, this, &TrackMixerWidget::onAddEntry);
 
     QPushButton *btn_remove = create_small_button(
@@ -187,8 +187,8 @@ void TrackMixerWidget::initUI() {
     connect(btn_remove, &QPushButton::clicked, this,
             &TrackMixerWidget::onRemoveSelectedEntry);
 
-    QPushButton *btn_clear =
-        create_small_button(":/icons/clear.svg", "Clear all routing entries", "RoutingClearButton");
+    QPushButton *btn_clear = create_small_button(
+        ":/icons/clear.svg", "Clear all routing entries", "RoutingClearButton");
     connect(btn_clear, &QPushButton::clicked, this,
             &TrackMixerWidget::onClearRoutingTable);
 
@@ -198,23 +198,26 @@ void TrackMixerWidget::initUI() {
     connect(btn_default, &QPushButton::clicked, this,
             &TrackMixerWidget::onDefaultEntries);
 
-    QPushButton *btn_max_volume = create_small_button(
-        ":/icons/sound-on.svg", "Toggle max volume for all tracks",
-        "MaxVolumeAllTracksButton");
+    QPushButton *btn_max_volume =
+        create_small_button(":/icons/sound-on.svg", "Toggle max volume for all tracks",
+                            "MaxVolumeAllTracksButton");
     btn_max_volume->setCheckable(true);
-    connect(btn_max_volume, &QPushButton::clicked, this, &TrackMixerWidget::onMaxVolumeAllTracks);
+    connect(btn_max_volume, &QPushButton::clicked, this,
+            &TrackMixerWidget::onMaxVolumeAllTracks);
 
-    QPushButton *btn_min_volume = create_small_button(
-        ":/icons/sound-off.svg", "Set min volume for all tracks",
-        "MinVolumeAllTracksButton");
+    QPushButton *btn_min_volume =
+        create_small_button(":/icons/sound-off.svg", "Set min volume for all tracks",
+                            "MinVolumeAllTracksButton");
     btn_min_volume->setCheckable(true);
-    connect(btn_min_volume, &QPushButton::clicked, this, &TrackMixerWidget::onMinVolumeAllTracks);
+    connect(btn_min_volume, &QPushButton::clicked, this,
+            &TrackMixerWidget::onMinVolumeAllTracks);
 
-    QPushButton *btn_output_device = create_small_button(
-        ":/icons/device.svg", "Set output device for all tracks",
-        "OutputDeviceAllTracksButton");
+    QPushButton *btn_output_device =
+        create_small_button(":/icons/device.svg", "Set output device for all tracks",
+                            "OutputDeviceAllTracksButton");
     btn_output_device->setCheckable(true);
-    //connect(btn_output_device, &QPushButton::clicked, this, &TrackMixerWidget::onOutputDeviceAllTracks);
+    // connect(btn_output_device, &QPushButton::clicked, this,
+    // &TrackMixerWidget::onOutputDeviceAllTracks);
 
     routing_label_controls_layout->addWidget(btn_add, 0, Qt::AlignRight);
     routing_label_controls_layout->addWidget(btn_remove, 0, Qt::AlignRight);
@@ -252,19 +255,19 @@ void TrackMixerWidget::initUI() {
 }
 
 void TrackMixerWidget::onMinNoteChanged(float value) {
-    engine->getMixer()->master_min_note = int(value);
+    engine->getMixer()->setMasterMinNote(int(value));
 }
 void TrackMixerWidget::onMaxNoteChanged(float value) {
-    engine->getMixer()->master_max_note = int(value);
+    engine->getMixer()->setMasterMaxNote(int(value));
 }
 void TrackMixerWidget::onGlobalOffsetChanged(float value) {
-    engine->getMixer()->master_note_offset = int(value);
+    engine->getMixer()->setMasterNoteOffset(int(value));
 }
 void TrackMixerWidget::onGlobalVolumeChanged(float value) {
-    engine->getMixer()->master_volume = float(value / 100.0f);
+    engine->getMixer()->setMasterVolume(float(value / 100.0f));
 }
 void TrackMixerWidget::onGlobalPanChanged(float value) {
-    engine->getMixer()->master_pan = value;
+    engine->getMixer()->setMasterPan(value);
 }
 
 void TrackMixerWidget::setChannelOutputValue(const std::string &device, int channel_idx,
@@ -368,7 +371,7 @@ void TrackMixerWidget::handlePlayingNote(const NN_Note_t &note,
         NoteNagaRoutingEntry *entry = entry_widget->getRoutingEntry();
         if (!entry) continue;
         if (entry->track == track) {
-            entry_widget->getIndicatorLed()->setState(true, false, time_ms);     
+            entry_widget->getIndicatorLed()->setState(true, false, time_ms);
         }
     }
 }

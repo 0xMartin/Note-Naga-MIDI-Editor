@@ -30,9 +30,6 @@ public:
      */
     QWidget *getTitleWidget() const { return this->title_widget; }
 
-    QSize sizeHint() const override;
-    QSize minimumSizeHint() const override;
-
     /**
      * @brief Gets the current time scale for the MIDI editor.
      * @return Time scale factor.
@@ -44,6 +41,10 @@ public:
      * @return Key height in pixels.
      */
     int getKeyHeight() const { return key_height; }
+
+    // Size hints for the widget
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
 
 signals:
     /**
@@ -106,6 +107,7 @@ private:
         grid_row_color2, grid_bar_label_color, grid_subdiv_color;
 
     // --- Setup & Helpers ---
+    void initTitleUI();
     void setupConnections();
     void setSequence(NoteNagaMidiSeq *seq);
 

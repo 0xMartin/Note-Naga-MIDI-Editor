@@ -23,13 +23,13 @@ CustomDockTitleBar::CustomDockTitleBar(
 
     // Icon
     iconLabel = new QLabel(this);
-    iconLabel->setPixmap(icon.pixmap(23, 23));
-    iconLabel->setFixedSize(23, 23);
+    iconLabel->setPixmap(icon.pixmap(20, 20));
+    iconLabel->setFixedSize(20, 20);
     header_layout->addWidget(iconLabel, 0, Qt::AlignVCenter);
 
     // Title
     titleLabel = new QLabel(title, this);
-    titleLabel->setStyleSheet("font-size: 20px; font-weight: bold; color: #79b8ff; letter-spacing: 1.2px;");
+    titleLabel->setStyleSheet("font-size: 18px; font-weight: bold; color: #79b8ff; letter-spacing: 1.2px;");
     header_layout->addWidget(titleLabel, 0, Qt::AlignVCenter);
 
     header_layout->addStretch(1);

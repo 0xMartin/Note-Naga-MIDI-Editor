@@ -125,7 +125,7 @@ void MainWindow::setup_toolbar() {
     QToolBar *toolbar = new QToolBar("Playback");
     toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
     toolbar->setIconSize(QSize(21, 21));
-    toolbar->setMovable(false);
+    toolbar->setMovable(true);
     addToolBar(Qt::TopToolBarArea, toolbar);
 
     toolbar->addAction(action_open);
@@ -169,7 +169,7 @@ void MainWindow::setup_dock_layout() {
     editor_container->setLayout(editor_layout);
 
     auto *editor_dock =
-        new AdvancedDockWidget("MIDI Editor", QIcon(":/icons/track.svg"), nullptr, this);
+        new AdvancedDockWidget("MIDI Editor", QIcon(":/icons/track.svg"), midi_editor->getTitleWidget(), this);
     editor_dock->setWidget(editor_container);
     editor_dock->setObjectName("editor");
     editor_dock->setAllowedAreas(Qt::AllDockWidgetAreas);

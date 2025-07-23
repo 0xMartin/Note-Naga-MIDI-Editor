@@ -27,6 +27,10 @@
     <file>icons/settings.svg</file>
     <file>icons/maximize.svg</file>
     <file>icons/close.svg</file>
+    <file>icons/follow-from-center.svg</file>
+    <file>icons/follow-from-left.svg</file>
+    <file>icons/follow-none.svg</file>
+    <file>icons/follow-step-by-step.svg</file>
   </qresource>
   <qresource prefix="/">
     <file>instruments_icons/accordion.svg</file>

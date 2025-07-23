@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <atomic>
 
 #define TRACK_ROUTING_ENTRY_ANY_DEVICE "any"
 
@@ -191,11 +192,26 @@ public:
      */
     void soloTrack(NoteNagaTrack *track, bool solo);
 
-    float master_volume;    ///< Master volume multiplier
-    int master_min_note;    ///< Master minimum note value
-    int master_max_note;    ///< Master maximum note value
-    int master_note_offset; ///< Master note number offset
-    float master_pan;       ///< Master stereo pan position
+    /**
+     * @brief Checks if the track is a percussion track.
+     * @param track Pointer to the track.
+     * @return True if this is a percussion track.
+     */
+    bool isPercussion(NoteNagaTrack *track) const;
+
+    // GETTERS AND SETTERS for master controls
+
+    float getMasterVolume() const { return master_volume.load(); }
+    int getMasterMinNote() const { return master_min_note.load(); }
+    int getMasterMaxNote() const { return master_max_note.load(); }
+    int getMasterNoteOffset() const { return master_note_offset.load(); }
+    float getMasterPan() const { return master_pan.load(); }
+
+    void setMasterVolume(float volume) { master_volume.store(volume); }
+    void setMasterMinNote(int min_note) { master_min_note.store(min_note); }
+    void setMasterMaxNote(int max_note) { master_max_note.store(max_note); }
+    void setMasterNoteOffset(int note_offset) { master_note_offset.store(note_offset); }
+    void setMasterPan(float pan) { master_pan.store(pan); }
 
 protected:
     /**
@@ -256,6 +272,13 @@ private:
 
     SequenceNotesMap playing_notes;       ///< Map of currently playing notes
     DeviceChannelStateMap channel_states; ///< Map of device/channel state (program, pan)
+
+    // MASTER CONTROLS
+    std::atomic<float> master_volume;    ///< Master volume multiplier
+    std::atomic<int> master_min_note;    ///< Master minimum note value
+    std::atomic<int> master_max_note;    ///< Master maximum note value
+    std::atomic<int> master_note_offset; ///< Master note number offset
+    std::atomic<float> master_pan;       ///< Master stereo pan position
 
     /********************************************************************************************************/
     // Private methods
