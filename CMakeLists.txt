@@ -30,6 +30,10 @@ set(HEADER_FILES
     # gui
     src/gui/nn_gui_utils.h
     src/gui/main_window.h
+    # gui/dock_system
+    src/gui/dock_system/dock_indicator_overlay.h
+    src/gui/dock_system/dock_title_bar.h
+    src/gui/dock_system/advanced_dock_widget.h
     # gui/components
     src/gui/components/animated_time_label.h
     src/gui/components/audio_dial.h
@@ -56,6 +60,10 @@ set(SOURCE_FILES
     # gui
     src/gui/nn_gui_utils.cpp
     src/gui/main_window.cpp
+    # gui/dock_system
+    src/gui/dock_system/dock_indicator_overlay.cpp
+    src/gui/dock_system/dock_title_bar.cpp
+    src/gui/dock_system/advanced_dock_widget.cpp
     # gui/components
     src/gui/components/animated_time_label.cpp
     src/gui/components/audio_dial.cpp

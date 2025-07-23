@@ -60,23 +60,30 @@ struct NOTE_NAGA_ENGINE_API NN_Color_t {
     }
 
     /**
-     * @brief Make the color lighter
+     * @brief Make the color lighter.
      * @param factor Brightness factor (default is 120).
+     *        100 = původní barva, >100 zesvětlení, <100 ztmavení.
      * @return Lighter color.
      */
     NN_Color_t lighter(int factor = 120) const {
-        return NN_Color_t(std::min(255, red + factor), std::min(255, green + factor),
-                          std::min(255, blue + factor));
+        // Qt: result = qMin(255, (component * factor) / 100)
+        return NN_Color_t(std::min(255, (red * factor) / 100),
+                          std::min(255, (green * factor) / 100),
+                          std::min(255, (blue * factor) / 100));
     }
 
     /**
-     * @brief Make the color darker
+     * @brief Make the color darker.
      * @param factor Darkness factor (default is 120).
+     *        100 = původní barva, >100 ztmavení, <100 zesvětlení.
      * @return Darker color.
      */
     NN_Color_t darker(int factor = 120) const {
-        return NN_Color_t(std::max(0, red - factor), std::max(0, green - factor),
-                          std::max(0, blue - factor));
+        // Qt: result = qMin(255, (component * 100) / factor)
+        // Ale logičtější (a běžnější) je: result = qMax(0, (component * 100) / factor)
+        return NN_Color_t(std::max(0, (red * 100) / factor),
+                          std::max(0, (green * 100) / factor),
+                          std::max(0, (blue * 100) / factor));
     }
 
 #ifndef QT_DEACTIVATED

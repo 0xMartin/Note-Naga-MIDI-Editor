@@ -6,6 +6,7 @@
 #include <QMainWindow>
 #include <QMenu>
 
+#include "dock_system/advanced_dock_widget.h"
 #include "widgets/midi_control_bar_widget.h"
 #include "widgets/midi_editor_widget.h"
 #include "widgets/midi_keyboard_ruler.h"
@@ -43,7 +44,7 @@ private:
     NoteNagaEngine *engine;
 
     bool auto_follow;
-    QMap<QString, QDockWidget *> docks;
+    QMap<QString, AdvancedDockWidget *> docks;
 
     QAction *action_open;
     QAction *action_export;

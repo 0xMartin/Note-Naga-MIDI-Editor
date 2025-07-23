@@ -128,7 +128,7 @@ void MainWindow::setup_toolbar() {
 }
 
 void MainWindow::setup_dock_layout() {
-    // Editor dock
+    // === Editor dock ===
     QWidget *editor_main = new QWidget();
     QGridLayout *grid = new QGridLayout(editor_main);
     grid->setContentsMargins(0, 0, 0, 0);
@@ -141,15 +141,15 @@ void MainWindow::setup_dock_layout() {
 
     midi_keyboard_ruler = new MidiKeyboardRuler(this->engine, 16, this);
     midi_keyboard_ruler->setFixedWidth(70);
-
     midi_tact_ruler = new MidiTactRuler(this->engine, this);
     midi_tact_ruler->setTimeScale(midi_editor->getTimeScale());
 
-    // -- GRID LAYOUT --
     grid->addWidget(new QWidget(), 0, 0);
     grid->addWidget(midi_tact_ruler, 0, 1);
     grid->addWidget(midi_keyboard_ruler, 1, 0);
     grid->addWidget(midi_editor, 1, 1);
+    grid->setRowStretch(1, 1);
+    grid->setColumnStretch(1, 1);
 
     QVBoxLayout *editor_layout = new QVBoxLayout();
     editor_layout->setContentsMargins(0, 0, 0, 0);
@@ -160,42 +160,44 @@ void MainWindow::setup_dock_layout() {
     QWidget *editor_container = new QWidget();
     editor_container->setLayout(editor_layout);
 
-    QDockWidget *editor_dock = new QDockWidget("MIDI Editor", this);
+    auto *editor_dock = new AdvancedDockWidget("MIDI Editor", QIcon(":/icons/track.svg"), nullptr, this);
     editor_dock->setWidget(editor_container);
     editor_dock->setObjectName("editor");
     editor_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-    editor_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable |
-                             QDockWidget::DockWidgetFloatable);
+    editor_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetFloatable);
     connect(editor_dock, &QDockWidget::visibilityChanged, this,
-            [this](bool visible) { action_toggle_editor->setChecked(visible); });
+            [this](bool visible) { if (action_toggle_editor->isChecked() != visible) action_toggle_editor->setChecked(visible); });
     addDockWidget(Qt::RightDockWidgetArea, editor_dock);
     docks["editor"] = editor_dock;
 
-    // Track list dock
+    // === Track list dock ===
     tracklist_widget = new TrackListWidget(this->engine, this);
-    QDockWidget *tracklist_dock = new QDockWidget("Track List", this);
+    auto *tracklist_dock = new AdvancedDockWidget("Tracks", QIcon(":/icons/track.svg"), nullptr, this);
     tracklist_dock->setWidget(tracklist_widget);
     tracklist_dock->setObjectName("tracklist");
     tracklist_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-    tracklist_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable |
-                                QDockWidget::DockWidgetFloatable);
+    tracklist_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetFloatable);
     connect(tracklist_dock, &QDockWidget::visibilityChanged, this,
-            [this](bool visible) { action_toggle_tracklist->setChecked(visible); });
+            [this](bool visible) { if (action_toggle_tracklist->isChecked() != visible) action_toggle_tracklist->setChecked(visible); });
     addDockWidget(Qt::LeftDockWidgetArea, tracklist_dock);
     docks["tracklist"] = tracklist_dock;
 
-    // Mixer dock
+    // === Mixer dock ===
     mixer_widget = new TrackMixerWidget(this->engine, this);
-    QDockWidget *mixer_dock = new QDockWidget("Track Mixer", this);
+    auto *mixer_dock = new AdvancedDockWidget("Track Mixer", QIcon(":/icons/mixer.svg"), nullptr, this);
     mixer_dock->setWidget(mixer_widget);
     mixer_dock->setObjectName("mixer");
     mixer_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-    mixer_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable |
-                            QDockWidget::DockWidgetFloatable);
+    mixer_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetFloatable);
     connect(mixer_dock, &QDockWidget::visibilityChanged, this,
-            [this](bool visible) { action_toggle_mixer->setChecked(visible); });
+            [this](bool visible) { if (action_toggle_mixer->isChecked() != visible) action_toggle_mixer->setChecked(visible); });
     addDockWidget(Qt::RightDockWidgetArea, mixer_dock);
     docks["mixer"] = mixer_dock;
+
+    // === Dock layout ===
+    docks["editor"]->setParent(this);
+    docks["tracklist"]->setParent(this);
+    docks["mixer"]->setParent(this);
 
     tabifyDockWidget(docks["editor"], docks["mixer"]);
     splitDockWidget(docks["tracklist"], docks["editor"], Qt::Horizontal);
@@ -203,34 +205,69 @@ void MainWindow::setup_dock_layout() {
     docks["tracklist"]->setFloating(false);
     docks["mixer"]->setFloating(false);
 
-    docks["editor"]->setVisible(true);
-    docks["tracklist"]->setVisible(true);
-    docks["mixer"]->setVisible(true);
-    resizeDocks({docks["tracklist"], docks["editor"], docks["mixer"]}, {300, 800, 250}, Qt::Horizontal);
+    for (auto dock : docks)
+        dock->setVisible(true);
+
+    // Adjust initial size ratios so that editor panel grows most
+    QList<QDockWidget*> order = {docks["tracklist"], docks["editor"], docks["mixer"]};
+    QList<int> sizes = {200, 1000, 200};
+    resizeDocks(order, sizes, Qt::Horizontal);
 }
 
 void MainWindow::show_hide_dock(const QString &name, bool checked) {
     QDockWidget *dock = docks.value(name, nullptr);
-    if (dock) dock->setVisible(checked);
+    if (!dock)
+        return;
+
+    if (checked) {
+        // Pokud nebyl dock už přidán (typicky po zavření uživatelem), přidej ho zpět do MainWindow
+        if (!dock->parentWidget()) {
+            if (name == "tracklist") {
+                addDockWidget(Qt::LeftDockWidgetArea, dock);
+            } else {
+                addDockWidget(Qt::RightDockWidgetArea, dock);
+                // Tabify editor a mixer mezi sebou
+                if (docks.contains("editor") && docks.contains("mixer"))
+                    tabifyDockWidget(docks["editor"], docks["mixer"]);
+            }
+        }
+        dock->show();
+        dock->raise();
+    } else {
+        dock->hide();
+    }
 }
 
 void MainWindow::reset_layout() {
-    for (auto &dock : docks)
-        dock->setVisible(true);
+    // Přidej zpět všechny docky do okna
+    if (!docks["tracklist"]->parentWidget())
+        addDockWidget(Qt::LeftDockWidgetArea, docks["tracklist"]);
+    if (!docks["editor"]->parentWidget())
+        addDockWidget(Qt::RightDockWidgetArea, docks["editor"]);
+    if (!docks["mixer"]->parentWidget())
+        addDockWidget(Qt::RightDockWidgetArea, docks["mixer"]);
+
+    // Zviditelni všechny
+    docks["tracklist"]->setVisible(true);
+    docks["editor"]->setVisible(true);
+    docks["mixer"]->setVisible(true);
+
+    // Tabify editor a mixer
+    tabifyDockWidget(docks["editor"], docks["mixer"]);
+    docks["editor"]->raise();
+
+    // Split mezi tracklist a editor
+    splitDockWidget(docks["tracklist"], docks["editor"], Qt::Horizontal);
+
+    // Nastav velikosti
+    QList<QDockWidget*> order = {docks["tracklist"], docks["editor"], docks["mixer"]};
+    QList<int> sizes = {200, 1000, 200};
+    resizeDocks(order, sizes, Qt::Horizontal);
+
+    // Update menu checky
     action_toggle_editor->setChecked(true);
     action_toggle_tracklist->setChecked(true);
     action_toggle_mixer->setChecked(true);
-    removeDockWidget(docks["editor"]);
-    removeDockWidget(docks["tracklist"]);
-    removeDockWidget(docks["mixer"]);
-    addDockWidget(Qt::LeftDockWidgetArea, docks["tracklist"]);
-    addDockWidget(Qt::RightDockWidgetArea, docks["editor"]);
-    addDockWidget(Qt::RightDockWidgetArea, docks["mixer"]);
-    tabifyDockWidget(docks["editor"], docks["mixer"]);
-    docks["editor"]->raise();
-    docks["tracklist"]->setFloating(false);
-    docks["mixer"]->setFloating(false);
-    resizeDocks({docks["tracklist"], docks["editor"], docks["mixer"]}, {300, 800, 250}, Qt::Horizontal);
 }
 
 void MainWindow::connect_signals() {

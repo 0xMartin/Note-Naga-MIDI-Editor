@@ -34,7 +34,7 @@ void RoutingEntryWidget::setupUI() {
 
     // ----- Side Panel -----
     QWidget *sidePanel = new QWidget(this);
-    sidePanel->setFixedWidth(38);
+    sidePanel->setFixedWidth(30);
     sidePanel->setObjectName("RoutingEntrySidePanel");
 
     QVBoxLayout *sideLayout = new QVBoxLayout(sidePanel);
@@ -50,7 +50,7 @@ void RoutingEntryWidget::setupUI() {
     indexLabel->setAlignment(Qt::AlignCenter);
     indexLabel->setObjectName("RoutingEntryIndexLabel");
     indexLabel->setStyleSheet(
-        "QLabel#RoutingEntryIndexLabel { color: #b0b4b8; font-size: 14px; }");
+        "QLabel#RoutingEntryIndexLabel { color: #b0b4b8; font-size: 13px; }");
     sideLayout->addWidget(indexLabel, 0, Qt::AlignHCenter);
 
     // LED Indicator
