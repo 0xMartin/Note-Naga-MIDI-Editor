@@ -69,9 +69,11 @@ CustomDockTitleBar::CustomDockTitleBar(
 void CustomDockTitleBar::setTitleText(const QString& text) {
     titleLabel->setText(text);
 }
+
 void CustomDockTitleBar::setTitleIcon(const QIcon& icon) {
     iconLabel->setPixmap(icon.pixmap(23, 23));
 }
+
 void CustomDockTitleBar::setCustomButtonWidget(QWidget* widget) {
     if (customButtons && customButtons->parent() == this) {
         customButtons->hide();
@@ -97,8 +99,17 @@ QPushButton* CustomDockTitleBar::createDefaultButton(const QIcon& icon, const QS
     return btn;
 }
 
+void CustomDockTitleBar::onFloatClicked() {
+    if (dockWidget) dockWidget->setFloating(!dockWidget->isFloating());
+}
+
+void CustomDockTitleBar::onCloseClicked() {
+    if (dockWidget) dockWidget->close();
+}
+
 void CustomDockTitleBar::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
+        setCursor(Qt::SizeAllCursor);
         dragging = true;
         dragStartPos = event->globalPos();
         event->accept();
@@ -122,6 +133,7 @@ void CustomDockTitleBar::mouseMoveEvent(QMouseEvent* event) {
 }
 
 void CustomDockTitleBar::mouseReleaseEvent(QMouseEvent* event) {
+    unsetCursor();
     if (dragging) {
         dragging = false;
         if (dockWidget) dockWidget->endDragFromTitleBar();
@@ -129,10 +141,11 @@ void CustomDockTitleBar::mouseReleaseEvent(QMouseEvent* event) {
     }
 }
 
-void CustomDockTitleBar::onFloatClicked() {
-    if (dockWidget) dockWidget->setFloating(!dockWidget->isFloating());
-}
-
-void CustomDockTitleBar::onCloseClicked() {
-    if (dockWidget) dockWidget->close();
+void CustomDockTitleBar::mouseDoubleClickEvent(QMouseEvent* event) {
+    if (dockWidget && dockWidget->isFloating()) {
+        dockWidget->toggleMaximizeRestoreFloating();
+        event->accept();
+        return;
+    }
+    QFrame::mouseDoubleClickEvent(event);
 }

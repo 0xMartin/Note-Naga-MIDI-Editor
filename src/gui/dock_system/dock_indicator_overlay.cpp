@@ -26,10 +26,13 @@ void DockIndicatorOverlay::paintEvent(QPaintEvent*) {
     p.setPen(Qt::NoPen);
     p.drawRect(rect());
 
-    int r = width() / 2, iconR = 28;
+    int cx = width() / 2, cy = height() / 2, iconR = 28;
     QPoint centers[5] = {
-        QPoint(r, r), QPoint(r, 36), QPoint(r, height() - 36),
-        QPoint(36, r), QPoint(width() - 36, r)
+        QPoint(cx, cy),                 // center
+        QPoint(cx, 36),                 // top
+        QPoint(cx, height() - 36),      // bottom
+        QPoint(36, cy),                 // left
+        QPoint(width() - 36, cy)        // right
     };
     for (int i = 0; i < 5; ++i) {
         QPoint center = centers[i];
@@ -57,9 +60,14 @@ void DockIndicatorOverlay::paintEvent(QPaintEvent*) {
 }
 
 int DockIndicatorOverlay::areaAt(const QPoint& pos) const {
-    int r = width() / 2;
-    QPoint centers[5] = {QPoint(r, r), QPoint(r, 36), QPoint(r, height() - 36),
-                         QPoint(36, r), QPoint(width() - 36, r)};
+    int cx = width() / 2, cy = height() / 2;
+    QPoint centers[5] = {
+        QPoint(cx, cy),
+        QPoint(cx, 36),
+        QPoint(cx, height() - 36),
+        QPoint(36, cy),
+        QPoint(width() - 36, cy)
+    };
     for (int i = 0; i < 5; ++i) {
         if (QLineF(pos, centers[i]).length() < 28) return i;
     }
@@ -88,7 +96,7 @@ void DockIndicatorOverlay::leaveEvent(QEvent*) {
 void DockIndicatorOverlay::applyDocking() {
     if (highlightedArea == -1) return;
     if (advDock) {
-        advDock->dockToArea(highlightedArea);
+        advDock->dockToArea(static_cast<AdvancedDockWidget::Area>(highlightedArea));
         advDock->dragging = false;
         advDock->dragOnTitleBar = false;
     }

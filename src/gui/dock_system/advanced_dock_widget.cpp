@@ -21,9 +21,11 @@ AdvancedDockWidget::AdvancedDockWidget(const QString &title, const QIcon &icon,
 void AdvancedDockWidget::setTitleText(const QString &text) {
     if (titleBar) titleBar->setTitleText(text);
 }
+
 void AdvancedDockWidget::setTitleIcon(const QIcon &icon) {
     if (titleBar) titleBar->setTitleIcon(icon);
 }
+
 void AdvancedDockWidget::setCustomButtonWidget(QWidget *widget) {
     if (titleBar) titleBar->setCustomButtonWidget(widget);
 }
@@ -75,6 +77,7 @@ void AdvancedDockWidget::mouseMoveEvent(QMouseEvent *event) {
             }
         }
     }
+
     QDockWidget::mouseMoveEvent(event);
 }
 
@@ -94,6 +97,22 @@ void AdvancedDockWidget::paintEvent(QPaintEvent *event) {
     QStylePainter p(this);
     p.drawPrimitive(QStyle::PE_Widget, opt);
     QDockWidget::paintEvent(event);
+}
+
+void AdvancedDockWidget::setFloating(bool floating) {
+    QDockWidget::setFloating(floating);
+
+    if (floating) {
+        setWindowFlags(Qt::Window |
+                       Qt::WindowTitleHint |
+                       Qt::WindowSystemMenuHint |
+                       Qt::WindowMinMaxButtonsHint |
+                       Qt::WindowCloseButtonHint);
+        show();
+    } else {
+        setWindowFlags(Qt::Widget);
+        show();
+    }
 }
 
 void AdvancedDockWidget::showDockOverlay() {
@@ -126,7 +145,7 @@ void AdvancedDockWidget::updateDockOverlay(const QPoint &globalPos) {
     }
 }
 
-void AdvancedDockWidget::dockToArea(int area) {
+void AdvancedDockWidget::dockToArea(AdvancedDockWidget::Area area) {
     QMainWindow *mw = qobject_cast<QMainWindow *>(parentWidget());
     if (!mw) return;
 
@@ -151,20 +170,34 @@ void AdvancedDockWidget::dockToArea(int area) {
     if (dragged_dock->isFloating()) { dragged_dock->setFloating(false); }
 
     switch (area) {
-    case DockIndicatorOverlay::Area::Center:
+    case AdvancedDockWidget::Area::Center:
         mw->tabifyDockWidget(this, dragged_dock);
         break;
-    case DockIndicatorOverlay::Area::Top:
+    case AdvancedDockWidget::Area::Top:
         mw->splitDockWidget(dragged_dock, this, Qt::Vertical);
         break;
-    case DockIndicatorOverlay::Area::Bottom:
+    case AdvancedDockWidget::Area::Bottom:
         mw->splitDockWidget(this, dragged_dock, Qt::Vertical);
         break;
-    case DockIndicatorOverlay::Area::Left:
+    case AdvancedDockWidget::Area::Left:
         mw->splitDockWidget(dragged_dock, this, Qt::Horizontal);
         break;
-    case DockIndicatorOverlay::Area::Right:
+    case AdvancedDockWidget::Area::Right:
         mw->splitDockWidget(this, dragged_dock, Qt::Horizontal);
         break;
+    }
+}
+
+void AdvancedDockWidget::toggleMaximizeRestoreFloating() {
+    if (!isFloating()) return;
+    QWidget *floatWin = this->window();
+    if (!floatingMaximized) {
+        floatingRestoreGeometry = floatWin->geometry();
+        auto screen = floatWin->screen()->availableGeometry();
+        floatWin->setGeometry(screen);
+        floatingMaximized = true;
+    } else {
+        floatWin->setGeometry(floatingRestoreGeometry);
+        floatingMaximized = false;
     }
 }
