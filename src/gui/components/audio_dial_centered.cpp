@@ -1,203 +1,250 @@
 #include "audio_dial_centered.h"
-#include <QPainter>
-#include <QPen>
+
 #include <QBrush>
-#include <QMouseEvent>
-#include <QWheelEvent>
+#include <QConicalGradient>
 #include <QFont>
 #include <QFontMetrics>
-#include <QConicalGradient>
-#include <cmath>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPen>
+#include <QRadialGradient>
+#include <QWheelEvent>
 #include <algorithm>
+#include <cmath>
 
-AudioDialCentered::AudioDialCentered(QWidget* parent)
-    : QWidget(parent),
-      _min(-1.0f),
-      _max(1.0f),
-      _value(0.0f),
-      _default_value(0.0f),
-      _start_angle(135),
-      _angle_range(270),
-      bg_color("#2b2f33"),
-      inner_color("#3a3f45"),
-      inner_outline("#111"),
-      arc_bg_color("#1e1e20"),
-      dot_color("#6cb0ff"),
-      dot_end_color("#ff50f9"),
-      gradient_start("#6cb0ff"),
-      gradient_end("#ae6cff"),
-      _pressed(false),
-      _label("Pan"),
-      _show_label(true),
-      _show_value(true),
-      _value_prefix(""),
-      _value_postfix(""),
-      _value_decimals(2)
-{
-    setMinimumSize(30, 55);
+AudioDialCentered::AudioDialCentered(QWidget *parent)
+    : QWidget(parent), _min(0.0f), _max(100.0f), _value(0.0f), _default_value(0.0f),
+      _start_angle(-135), _angle_range(270), bg_color("#3a3f45"), inner_outline("#111"),
+      arc_bg_color("#1e1e20"), tick_color("#6cb0ff"), tick_end_color("#ff50f9"),
+      gradient_start("#6cb0ff"), gradient_end("#ae6cff"),
+      center_gradient_start("#232731"), center_gradient_end("#3e4a5a"), _pressed(false),
+      _label("Volume"), _show_label(true), _show_value(true), _value_prefix(""),
+      _value_postfix(""), _value_decimals(2) {
+    setMinimumSize(40, 60);
     setMouseTracking(true);
     updateGeometryCache();
 }
 
-void AudioDialCentered::resizeEvent(QResizeEvent* event) {
+void AudioDialCentered::resizeEvent(QResizeEvent *event) {
     QWidget::resizeEvent(event);
     updateGeometryCache();
 }
 
 void AudioDialCentered::updateGeometryCache() {
     int w = width(), h = height();
-    int size_for_circle = std::min(w, h);
-    int label_space = 0;
-    int label_font_size = std::max(8, int(size_for_circle * 0.15));
-    int value_font_size = std::max(7, int(size_for_circle * 0.11));
-    if (_show_label && !_label.isEmpty()) {
-        label_space += QFontMetrics(QFont("Segoe UI", label_font_size, QFont::Bold)).height();
-    }
-    if (_show_value) {
-        label_space += QFontMetrics(QFont("Segoe UI", value_font_size, QFont::Normal)).height();
-    }
-    label_space += 4;
-    int size = std::min(w, h - label_space);
-    if (size < 10) size = 10;
-    QPointF center(w / 2.0, size / 2.0 + 2);
-    float arc_thickness = std::max(2.0f, size * 0.1f);
-    float outer_radius = (size / 2.0f) - (arc_thickness / 2.0f) - 1.0f;
-    float inner_radius = outer_radius * 0.72f;
-    _geometry_cache = std::make_tuple(label_font_size, value_font_size, size, center, inner_radius, outer_radius);
-    _geometry_cache_size = std::make_tuple(w, h, _show_label, _show_value, _label, _value_decimals);
+
+    // Font sizes as fraction of dial size
+    int max_dial_size = std::min(w, h);
+
+    // Estimate font heights
+    int label_font_size = std::max(8, int(max_dial_size * 0.13));
+    int value_font_size = std::max(7, int(max_dial_size * 0.11));
+    int label_height =
+        (_show_label && !_label.isEmpty())
+            ? QFontMetrics(QFont("Segoe UI", label_font_size, QFont::Bold)).height()
+            : 0;
+
+    // Reserve margins for text above/below and a small padding
+    int margin_top = 2;
+    int margin_bottom = 6;
+    int reserved_height = label_height + margin_top + margin_bottom + 5;
+    int dial_size = std::min(w - 2 * margin_top, h - reserved_height);
+    // Prevent dial from being too small
+    dial_size = std::max(dial_size, 10);
+
+    QPointF center(w / 2.0f, h / 2.0f);
+
+    float arc_thickness = std::max(2.0f, dial_size * 0.10f);
+    float outer_radius = (dial_size / 2.0f) - (arc_thickness / 2.0f) - 1.0f;
+    float inner_radius = outer_radius * 0.7f;
+    float tick_length = std::max(arc_thickness * 1.1f, 5.0f);
+
+    QRectF dial_rect(center.x() - outer_radius, center.y() - outer_radius,
+                     outer_radius * 2, outer_radius * 2);
+    QRectF inner_rect(center.x() - inner_radius, center.y() - inner_radius,
+                      inner_radius * 2, inner_radius * 2);
+
+    // Label position: above dial, but never outside widget
+    int label_y = int(center.y() - dial_size / 2.0f - margin_top);
+    if (label_y < margin_top) label_y = margin_top;
+
+    // Value position: below dial, but never outside widget
+    int value_y = int(center.y() + dial_size / 2.0f + margin_bottom);
+    int max_value_y = h - 5;
+    if (value_y > max_value_y) value_y = max_value_y;
+
+    _geometry_cache = AudioDialCentered::DialGeometry{
+        label_font_size, value_font_size, dial_size, center,
+        inner_radius,    outer_radius,    dial_rect, arc_thickness,
+        tick_length,     inner_rect,      label_y,   value_y};
+    _last_size = QSize(w, h);
+    _last_label = _show_label;
+    _last_value = _show_value;
+    _last_label_text = _label;
+    _last_decimals = _value_decimals;
 }
 
-std::tuple<int, int, int, QPointF, float, float> AudioDialCentered::getCircleGeometry() {
-    int w = width(), h = height();
-    auto cache_key = std::make_tuple(w, h, _show_label, _show_value, _label, _value_decimals);
-    if (_geometry_cache_size != cache_key) {
-        updateGeometryCache();
-    }
+const AudioDialCentered::DialGeometry &AudioDialCentered::geometry() const {
+    bool needs_update = _last_size != QSize(width(), height()) ||
+                        _last_label != _show_label || _last_value != _show_value ||
+                        _last_label_text != _label || _last_decimals != _value_decimals;
+    if (needs_update) const_cast<AudioDialCentered *>(this)->updateGeometryCache();
     return _geometry_cache;
 }
 
 void AudioDialCentered::setValue(float value) {
     value = std::clamp(value, _min, _max);
     if (value != _value) {
-        _value = std::round(value * std::pow(10, _value_decimals)) / std::pow(10, _value_decimals);
+        _value = std::round(value * std::pow(10, _value_decimals)) /
+                 std::pow(10, _value_decimals);
         emit valueChanged(_value);
         update();
     }
 }
 
-void AudioDialCentered::setDefaultValue(float value) { _default_value = value; }
-void AudioDialCentered::setRange(float min_val, float max_val) { _min = min_val; _max = max_val; update(); }
-void AudioDialCentered::setGradient(const QColor& color_start, const QColor& color_end) { gradient_start = color_start; gradient_end = color_end; update(); }
-void AudioDialCentered::setLabel(const QString& label) { _label = label; _show_label = true; updateGeometryCache(); update(); }
-void AudioDialCentered::showLabel(bool show) { _show_label = show; updateGeometryCache(); update(); }
-void AudioDialCentered::showValue(bool show) { _show_value = show; updateGeometryCache(); update(); }
-void AudioDialCentered::setValuePrefix(const QString& prefix) { _value_prefix = prefix; update(); }
-void AudioDialCentered::setValuePostfix(const QString& postfix) { _value_postfix = postfix; update(); }
-void AudioDialCentered::setValueDecimals(int decimals) { _value_decimals = decimals; updateGeometryCache(); update(); }
+void AudioDialCentered::setRange(float min_val, float max_val) {
+    _min = min_val;
+    _max = max_val;
+    update();
+}
 
-void AudioDialCentered::paintEvent(QPaintEvent* event) {
+void AudioDialCentered::setGradient(const QColor &color_start, const QColor &color_end) {
+    gradient_start = color_start;
+    gradient_end = color_end;
+    update();
+}
+
+void AudioDialCentered::setLabel(const QString &label) {
+    _label = label;
+    _show_label = true;
+    updateGeometryCache();
+    update();
+}
+
+void AudioDialCentered::showLabel(bool show) {
+    _show_label = show;
+    updateGeometryCache();
+    update();
+}
+
+void AudioDialCentered::showValue(bool show) {
+    _show_value = show;
+    updateGeometryCache();
+    update();
+}
+
+void AudioDialCentered::setValuePrefix(const QString &prefix) {
+    _value_prefix = prefix;
+    update();
+}
+
+void AudioDialCentered::setValuePostfix(const QString &postfix) {
+    _value_postfix = postfix;
+    update();
+}
+
+void AudioDialCentered::setValueDecimals(int decimals) {
+    _value_decimals = decimals;
+    updateGeometryCache();
+    update();
+}
+
+void AudioDialCentered::paintEvent(QPaintEvent *event) {
     Q_UNUSED(event);
-    int label_font_size, value_font_size, size;
-    QPointF center;
-    float inner_radius, outer_radius;
-    std::tie(label_font_size, value_font_size, size, center, inner_radius, outer_radius) = getCircleGeometry();
-    float arc_thickness = std::max(2.0f, size * 0.1f);
-
-    QRectF adjusted_rect(center.x() - outer_radius,
-                        center.y() - outer_radius,
-                        outer_radius * 2,
-                        outer_radius * 2);
+    const DialGeometry &geom = geometry();
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    // Draw dial background
-    painter.setBrush(QBrush(inner_color));
-    painter.setPen(QPen(inner_outline, 1));
-    painter.drawEllipse(center, inner_radius, inner_radius);
-
-    // Background arc
-    QPen arcPen(arc_bg_color, arc_thickness);
+    // Draw arc b.  vackground
+    QPen arcPen(arc_bg_color, geom.arc_thickness);
     arcPen.setCapStyle(Qt::RoundCap);
     painter.setPen(arcPen);
-    painter.drawArc(adjusted_rect,
-                   int((360 - _start_angle) * 16),
-                   int(-_angle_range * 16));
+    painter.drawArc(geom.dial_rect, int((90 - _start_angle) * 16),
+                    int(-_angle_range * 16));
 
-    // Value (gradient arc)
-    QConicalGradient gradient(center, _start_angle + 110);
+    // Draw value arc (gradient FL style)
+    float value_frac = ((_value - _min) / (_max - _min) - 0.5f);
+    QConicalGradient gradient(geom.center, 100 - _start_angle);
     gradient.setColorAt(1.0, gradient_start);
     gradient.setColorAt(0.0, gradient_end);
-    QPen pen(QBrush(gradient), arc_thickness);
+    QPen pen(QBrush(gradient), geom.arc_thickness);
     pen.setCapStyle(Qt::RoundCap);
     painter.setPen(pen);
-    // Centered dial: value is mapped -1.0..1.0
-    float value_frac = (_value - _min) / (_max - _min);
-    painter.drawArc(adjusted_rect,
-                   int(90 * 16),
-                   int(-(_value / (_max - _min)) *  _angle_range) * 16);
+    painter.drawArc(geom.dial_rect, int(90 * 16),
+                    int(-_angle_range * value_frac * 16));
 
-    // Indicator dot
-    float angle = float(M_PI) / 180.0f * (_start_angle + _angle_range * value_frac);
-    float dot_radius = inner_radius * 0.6f;
-    float dot_size = std::max(2.0f, size * 0.04f);
-    float dx = std::cos(angle);
-    float dy = std::sin(angle);
-    QPointF dot_pos(center.x() + dot_radius * dx, center.y() + dot_radius * dy);
+    // Draw inner circle (center dial) with radial gradient
+    QRadialGradient innerGrad(geom.center, geom.inner_radius, geom.center);
+    innerGrad.setColorAt(0.0, center_gradient_start);
+    innerGrad.setColorAt(1.0, center_gradient_end);
+    painter.setBrush(QBrush(innerGrad));
+    painter.setPen(QPen(inner_outline, 2));
+    painter.drawEllipse(geom.inner_rect);
 
-    painter.setBrush(_value <= _min || _value >= _max ? dot_end_color : dot_color);
-    painter.setPen(Qt::NoPen);
-    painter.drawEllipse(dot_pos, dot_size, dot_size);
+    // Draw position tick (on inner circle edge)
+    float angle_deg = valueToAngle(_value);
+    float angle_rad = angle_deg * M_PI / 180.0f;
+    QPointF tick_outer(geom.center.x() + std::cos(angle_rad) * geom.inner_radius * 0.8f,
+                       geom.center.y() + std::sin(angle_rad) * geom.inner_radius * 0.8f);
+    QPointF tick_inner(geom.center.x() + std::cos(angle_rad) * (geom.inner_radius * 0.8f -
+                                                                geom.tick_length),
+                       geom.center.y() + std::sin(angle_rad) * (geom.inner_radius * 0.8f -
+                                                                geom.tick_length));
 
-    // --- Labels below dial ---
-    float label_y = size * 0.92f;
+    QPen tickPen(_value <= _min || _value >= _max ? tick_end_color : tick_color,
+                 geom.arc_thickness * 0.4);
+    tickPen.setCapStyle(Qt::RoundCap);
+    painter.setPen(tickPen);
+    painter.drawLine(tick_inner, tick_outer);
 
+    // Draw label above dial, centered, but fix position if dial is big
     if (_show_label && !_label.isEmpty()) {
-        painter.setFont(QFont("Segoe UI", label_font_size, QFont::Bold));
+        painter.setFont(QFont("Segoe UI", geom.label_font_size, QFont::Bold));
         painter.setPen(QColor("#fff"));
         QFontMetrics fm(painter.font());
         int text_w = fm.horizontalAdvance(_label);
         int label_x = (width() - text_w) / 2;
-        painter.drawText(label_x, int(label_y) + fm.ascent(), _label);
-        label_y += fm.height() - 1;
+        painter.drawText(label_x, geom.label_y, _label);
     }
 
+    // Draw value below dial, centered, but fix position if dial is big
     if (_show_value) {
         QString value_str;
         if (_value_decimals <= 0) {
-            value_str = QString("%1%2%3").arg(_value_prefix).arg(int(_value)).arg(_value_postfix);
+            value_str =
+                QString("%1%2%3").arg(_value_prefix).arg(int(_value)).arg(_value_postfix);
         } else {
-            value_str = QString("%1%2%3").arg(_value_prefix).arg(QString::number(_value, 'f', _value_decimals)).arg(_value_postfix);
+            value_str = QString("%1%2%3")
+                            .arg(_value_prefix)
+                            .arg(QString::number(_value, 'f', _value_decimals))
+                            .arg(_value_postfix);
         }
-        painter.setFont(QFont("Segoe UI", value_font_size, QFont::Normal));
+        painter.setFont(QFont("Segoe UI", geom.value_font_size, QFont::Normal));
         painter.setPen(QColor("#b5bac1"));
         QFontMetrics fm(painter.font());
         int text_w = fm.horizontalAdvance(value_str);
         int value_x = (width() - text_w) / 2;
-        painter.drawText(value_x, int(label_y) + fm.ascent(), value_str);
+        painter.drawText(value_x, geom.value_y, value_str);
     }
 
     painter.end();
 }
 
-float AudioDialCentered::angleToValue(float angle_deg) const {
-    float relative_angle = (angle_deg + _start_angle) / float(_angle_range);
-    float val = _min + relative_angle * (_max - _min);
-    return std::clamp(val, _min, _max);
+float AudioDialCentered::valueToAngle(float value) const {
+    float frac = (_max == _min) ? 0 : (value - _min) / (_max - _min);
+    return - _start_angle + _angle_range * frac;
 }
 
-bool AudioDialCentered::inCircleArea(const QPoint& pos) {
-    int _, __, ___;
-    QPointF center;
-    float ____, outer_radius;
-    std::tie(_, __, ___, center, ____, outer_radius) = getCircleGeometry();
-    float dx = pos.x() - center.x();
-    float dy = pos.y() - center.y();
+bool AudioDialCentered::inCircleArea(const QPoint &pos) {
+    const DialGeometry &geom = geometry();
+    float dx = pos.x() - geom.center.x();
+    float dy = pos.y() - geom.center.y();
     float dist = std::hypot(dx, dy);
-    return dist <= outer_radius * 1.15f;
+    return dist <= geom.outer_radius * 1.15f;
 }
 
-void AudioDialCentered::mousePressEvent(QMouseEvent* event) {
+void AudioDialCentered::mousePressEvent(QMouseEvent *event) {
     if (!inCircleArea(event->pos())) {
         event->ignore();
         return;
@@ -207,40 +254,38 @@ void AudioDialCentered::mousePressEvent(QMouseEvent* event) {
         mouseMoveEvent(event); // update on press
         event->accept();
     }
-    if (event->button() == Qt::RightButton) {
-        setValue(_default_value);
-    }
+    if (event->button() == Qt::RightButton) { setValue(_default_value); }
 }
 
-void AudioDialCentered::mouseMoveEvent(QMouseEvent* event) {
+void AudioDialCentered::mouseMoveEvent(QMouseEvent *event) {
     if (_pressed) {
-        auto [label_font_size, value_font_size, size, center, inner_radius, outer_radius] = getCircleGeometry();
-        float dx = event->pos().x() - center.x();
-        float dy = event->pos().y() - center.y();
+        const DialGeometry &geom = geometry();
+        float dx = event->pos().x() - geom.center.x();
+        float dy = event->pos().y() - geom.center.y();
         float angle = std::atan2(dy, dx) * 180.0f / float(M_PI) + 90.0f;
         if (angle < -180.0f) {
             angle += 360.0f;
         } else if (angle > 180.0f) {
             angle -= 360.0f;
         }
-        float value = angleToValue(angle);
+
+        float value = _min + ((angle - _start_angle) / _angle_range) * (_max - _min);
+        qDebug() << "Angle:" << angle << "Value:" << value;
         setValue(value);
         event->accept();
     }
 }
 
-void AudioDialCentered::mouseReleaseEvent(QMouseEvent* event) {
+void AudioDialCentered::mouseReleaseEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton) {
         _pressed = false;
         event->accept();
     }
 }
 
-void AudioDialCentered::wheelEvent(QWheelEvent* event) {
+void AudioDialCentered::wheelEvent(QWheelEvent *event) {
     float step = 1.0f;
-    if (_value_decimals > 0) {
-        step = (_max - _min) / 50.0f;
-    }
+    if (_value_decimals > 0) { step = (_max - _min) / 50.0f; }
     if (event->angleDelta().y() > 0) {
         setValue(_value + step);
     } else {

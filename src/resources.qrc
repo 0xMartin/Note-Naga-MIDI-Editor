@@ -31,6 +31,11 @@
     <file>icons/follow-from-left.svg</file>
     <file>icons/follow-none.svg</file>
     <file>icons/follow-step-by-step.svg</file>
+    <file>icons/zoom-in-horizontal.svg</file>
+    <file>icons/zoom-out-horizontal.svg</file>
+    <file>icons/zoom-in-vertical.svg</file>
+    <file>icons/zoom-out-vertical.svg</file>
+    <file>icons/midi.svg</file>
   </qresource>
   <qresource prefix="/">
     <file>instruments_icons/accordion.svg</file>

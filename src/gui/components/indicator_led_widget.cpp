@@ -60,14 +60,14 @@ void IndicatorLedWidget::paintEvent(QPaintEvent *event) {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
 
-    int w = width();
-    int h = height();
-    int s = qMin(w, h) - 2;
+    float w = width();
+    float h = height();
+    float s = qMin(w, h) - 5;
 
     QRectF ledRect((w - s) / 2, (h - s) / 2, s, s);
 
     // Draw dark border
-    QPen borderPen(QColor(20, 20, 20), 2);
+    QPen borderPen(QColor(20, 20, 20), 4);
     p.setPen(borderPen);
     p.setBrush(Qt::NoBrush);
     p.drawEllipse(ledRect);

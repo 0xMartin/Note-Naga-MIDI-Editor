@@ -49,8 +49,9 @@ public slots:
     /**
      * @brief Refreshes the widget's style based on the track's state.
      * @param selected True if the track is selected, false otherwise.
+     * @param darker_bg True if the background should be darker, false otherwise.
      */
-    void refreshStyle(bool selected);
+    void refreshStyle(bool selected, bool darker_bg);
 
 signals:
     /**

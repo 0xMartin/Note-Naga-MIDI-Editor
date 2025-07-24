@@ -126,7 +126,7 @@ void MainWindow::setup_toolbar() {
     toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
     toolbar->setIconSize(QSize(21, 21));
     toolbar->setMovable(true);
-    addToolBar(Qt::TopToolBarArea, toolbar);
+    addToolBar(Qt::LeftToolBarArea, toolbar);
 
     toolbar->addAction(action_open);
     toolbar->addAction(action_export);
@@ -148,7 +148,7 @@ void MainWindow::setup_dock_layout() {
     midi_editor->setMinimumHeight(250);
 
     midi_keyboard_ruler = new MidiKeyboardRuler(this->engine, 16, this);
-    midi_keyboard_ruler->setFixedWidth(70);
+    midi_keyboard_ruler->setFixedWidth(60);
     midi_tact_ruler = new MidiTactRuler(this->engine, this);
     midi_tact_ruler->setTimeScale(midi_editor->getTimeScale());
 
@@ -169,7 +169,7 @@ void MainWindow::setup_dock_layout() {
     editor_container->setLayout(editor_layout);
 
     auto *editor_dock =
-        new AdvancedDockWidget("MIDI Editor", QIcon(":/icons/track.svg"), midi_editor->getTitleWidget(), this);
+        new AdvancedDockWidget("MIDI Editor", QIcon(":/icons/midi.svg"), midi_editor->getTitleWidget(), this);
     editor_dock->setWidget(editor_container);
     editor_dock->setObjectName("editor");
     editor_dock->setAllowedAreas(Qt::AllDockWidgetAreas);

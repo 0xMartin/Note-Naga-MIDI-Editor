@@ -39,7 +39,7 @@ void TrackMixerWidget::initUI() {
     controls_frame->setObjectName("MixerControlsFrame");
     controls_frame->setStyleSheet(
         "QFrame#MixerControlsFrame { background: #2F3139; border: 1px solid #494d56; "
-        "border-radius: 10px; padding: 2px 0px 0px 0px; }");
+        "border-radius: 8px; padding: 2px 0px 0px 0px; }");
     QHBoxLayout *controls_layout = new QHBoxLayout(controls_frame);
     controls_layout->setContentsMargins(5, 0, 5, 0);
 
@@ -100,14 +100,13 @@ void TrackMixerWidget::initUI() {
     controls_layout->addWidget(dial_pan, 0, Qt::AlignVCenter);
 
     main_layout->addWidget(controls_frame);
-
-    main_layout->addSpacing(10);
-
+    main_layout->addSpacing(5);
+    
     // Channel Output section with device selector
     QFrame *channel_output_frame = new QFrame();
     channel_output_frame->setObjectName("MixerSectionLabelFrame");
     channel_output_frame->setStyleSheet(
-        "QFrame#MixerSectionLabelFrame { background: #3c424e; border-radius: 8px; "
+        "QFrame#MixerSectionLabelFrame { background: #3c424e; border: 1px solid #282b32; "
         "margin-bottom: 0px; }");
     QHBoxLayout *channel_output_label_layout = new QHBoxLayout(channel_output_frame);
     channel_output_label_layout->setContentsMargins(12, 5, 12, 5);
@@ -127,7 +126,6 @@ void TrackMixerWidget::initUI() {
     channel_output_label_layout->addWidget(device_selector, 0, Qt::AlignRight);
 
     main_layout->addWidget(channel_output_frame);
-    main_layout->addSpacing(6);
 
     // MultiChannelVolumeBar for each device
     std::vector<std::string> outputs = engine->getMixer()->getAvailableOutputs();
@@ -166,7 +164,7 @@ void TrackMixerWidget::initUI() {
     QFrame *routing_label_controls_frame = new QFrame();
     routing_label_controls_frame->setObjectName("RoutingLabelControlsFrame");
     routing_label_controls_frame->setStyleSheet(
-        "QFrame#RoutingLabelControlsFrame { background: #3c424e; border-radius: 8px; }");
+        "QFrame#RoutingLabelControlsFrame { background: #3c424e; border: 1px solid #282b32; }");
     QHBoxLayout *routing_label_controls_layout =
         new QHBoxLayout(routing_label_controls_frame);
     routing_label_controls_layout->setContentsMargins(12, 5, 12, 5);
@@ -216,8 +214,6 @@ void TrackMixerWidget::initUI() {
         create_small_button(":/icons/device.svg", "Set output device for all tracks",
                             "OutputDeviceAllTracksButton");
     btn_output_device->setCheckable(true);
-    // connect(btn_output_device, &QPushButton::clicked, this,
-    // &TrackMixerWidget::onOutputDeviceAllTracks);
 
     routing_label_controls_layout->addWidget(btn_add, 0, Qt::AlignRight);
     routing_label_controls_layout->addWidget(btn_remove, 0, Qt::AlignRight);
@@ -228,7 +224,6 @@ void TrackMixerWidget::initUI() {
     routing_label_controls_layout->addWidget(btn_output_device, 0, Qt::AlignRight);
 
     main_layout->addWidget(routing_label_controls_frame);
-    main_layout->addSpacing(6);
 
     // Routing entries scroll area
     routing_scroll = new QScrollArea(this);
@@ -241,8 +236,8 @@ void TrackMixerWidget::initUI() {
 
     routing_entries_container = new QWidget();
     routing_entries_layout = new QVBoxLayout(routing_entries_container);
-    routing_entries_layout->setContentsMargins(3, 3, 3, 3);
-    routing_entries_layout->setSpacing(4);
+    routing_entries_layout->setContentsMargins(0, 0, 0, 0);
+    routing_entries_layout->setSpacing(0);
     routing_entries_layout->addStretch(1);
     routing_scroll->setWidget(routing_entries_container);
 
@@ -302,6 +297,7 @@ void TrackMixerWidget::refresh_routing_table() {
         RoutingEntryWidget *widget = new RoutingEntryWidget(engine, &entries[idx]);
         widget->installEventFilter(this);
         widget->setMouseTracking(true);
+        widget->refreshStyle(false, idx % 2 == 0);
         connect(widget, &RoutingEntryWidget::clicked, this,
                 [this, idx]() { this->updateEntrySelection(idx); });
         layout->insertWidget(layout->count() - 1, widget);
@@ -379,7 +375,7 @@ void TrackMixerWidget::handlePlayingNote(const NN_Note_t &note,
 void TrackMixerWidget::updateEntrySelection(int idx) {
     selected_row = idx;
     for (size_t i = 0; i < entry_widgets.size(); ++i) {
-        entry_widgets[i]->refresh_style(int(i) == idx);
+        entry_widgets[i]->refreshStyle(int(i) == idx, i % 2 == 0);
         if (int(i) == idx) { selected_entry_index = int(i); }
     }
 }

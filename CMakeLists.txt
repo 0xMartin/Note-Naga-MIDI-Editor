@@ -35,7 +35,7 @@ set(HEADER_FILES
     src/gui/dock_system/dock_title_bar.h
     src/gui/dock_system/advanced_dock_widget.h
     # gui/components
-    src/gui/components/animated_time_label.h
+    src/gui/components/midi_seq_progress_bar.h
     src/gui/components/audio_dial.h
     src/gui/components/audio_dial_centered.h
     src/gui/components/indicator_led_widget.h
@@ -66,7 +66,7 @@ set(SOURCE_FILES
     src/gui/dock_system/dock_title_bar.cpp
     src/gui/dock_system/advanced_dock_widget.cpp
     # gui/components
-    src/gui/components/animated_time_label.cpp
+    src/gui/components/midi_seq_progress_bar.cpp
     src/gui/components/audio_dial.cpp
     src/gui/components/audio_dial_centered.cpp
     src/gui/components/indicator_led_widget.cpp

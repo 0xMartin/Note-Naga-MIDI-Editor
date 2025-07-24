@@ -32,6 +32,16 @@ public:
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override;
 
+    // Colors
+    QColor bg_color;
+    QColor white_key_color;
+    QColor black_key_color;
+    QColor white_key_line_color;
+    QColor black_key_line_color;
+    QColor hover_color;
+    QColor press_color;
+    QColor c_key_label_color;
+
 signals:
     /**
      * @brief Signal emitted when a note is pressed.
@@ -86,15 +96,6 @@ private:
 
     QMap<int, QColor> key_highlights;
     QMap<int, QTimer *> highlight_timers;
-
-    QColor bg_color;
-    QColor white_key_color;
-    QColor black_key_color;
-    QColor white_key_line_color;
-    QColor black_key_line_color;
-    QColor hover_color;
-    QColor press_color;
-    QColor c_key_label_color;
 
     std::vector<int> white_keys() const;
     std::vector<int> black_keys() const;

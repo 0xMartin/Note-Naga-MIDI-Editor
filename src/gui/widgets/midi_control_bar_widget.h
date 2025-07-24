@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QFrame>
 #include <QWidget>
 #include <QPushButton>
 #include <QLabel>
@@ -8,13 +9,13 @@
 #include <QPropertyAnimation>
 
 #include <note_naga_engine/note_naga_engine.h>
-#include "../components/animated_time_label.h"
+#include "../components/midi_seq_progress_bar.h"
 
 /**
  * @brief The MidiControlBarWidget class provides a control bar for MIDI playback.
  * It includes buttons for play/pause, navigation, and tempo control...
  */
-class MidiControlBarWidget : public QWidget {
+class MidiControlBarWidget : public QFrame {
     Q_OBJECT
 public:
     /**
@@ -25,11 +26,6 @@ public:
     explicit MidiControlBarWidget(NoteNagaEngine* engine, QWidget* parent = nullptr);
 
 public slots:
-    /**
-     * @brief Updates the control bar values based on the current project state.
-     */
-    void updateValues();
-
     /**
      * @brief Set playing state of the control bar.
      */
@@ -64,7 +60,9 @@ signals:
     void metronomeToggled(bool state);
 
 private slots:
-    void metronome_btn_clicked();
+    void updateBPM();
+    void updateProgressBar();
+    void metronomeBtnClicked();
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
@@ -79,7 +77,7 @@ private:
 
     QLabel* tempo_label;
     QLabel* tempo_icon;
-    AnimatedTimeLabel* time_label;
+    MidiSequenceProgressBar* progress_bar;
     QPushButton* play_btn;
     QPushButton* to_start_btn;
     QPushButton* to_end_btn;

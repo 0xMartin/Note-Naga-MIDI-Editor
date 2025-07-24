@@ -179,9 +179,9 @@ void MultiChannelVolumeBar::paintEvent(QPaintEvent *event) {
         painter.drawText(label_x, label_y, channel_label);
     }
 
-    int scale_x = start_x + total_bar_width + 10;
+    int scale_x = start_x + total_bar_width + 4;
     QColor scale_color("#999");
-    int tick_length = 8;
+    int tick_length = 6;
     painter.setPen(scale_color);
 
     std::vector<int> positions = {bottom, (bottom + top) / 2, top};
@@ -199,7 +199,7 @@ void MultiChannelVolumeBar::paintEvent(QPaintEvent *event) {
         float frac = float(i) / 10.0f;
         int y = int(bottom - frac * (bottom - top));
         if (std::find(positions.begin(), positions.end(), y) != positions.end()) continue;
-        painter.drawLine(scale_x + 3, y, scale_x + 5, y);
+        painter.drawLine(scale_x + 2, y, scale_x + 4, y);
     }
 
     painter.end();

@@ -39,7 +39,6 @@ CustomDockTitleBar::CustomDockTitleBar(
     setCustomButtonWidget(customButtonWidget);
     if (customButtons) {
         header_layout->addWidget(customButtons, 0, Qt::AlignVCenter);
-        header_layout->addSpacing(4);
     }
 
     // Default control buttons

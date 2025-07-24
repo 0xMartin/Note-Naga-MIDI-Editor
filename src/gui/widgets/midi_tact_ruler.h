@@ -28,6 +28,13 @@ public:
      */
     void setTimeScale(double time_scale);
 
+    // Colors
+    QColor bg_color;
+    QColor fg_color;
+    QColor subline_color;
+    QColor tact_bg_color;
+    QColor tact_line_color;
+
 public slots:
     /**
      * @brief Sets the horizontal scroll position. Must be same as the horizontal scroll
@@ -53,11 +60,4 @@ private:
     double time_scale;
     int horizontalScroll;
     QFont font;
-
-    // Colors
-    QColor bg_color;
-    QColor fg_color;
-    QColor subline_color;
-    QColor tact_bg_color;
-    QColor tact_line_color;
 };

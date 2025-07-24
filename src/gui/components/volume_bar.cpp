@@ -10,14 +10,14 @@ VolumeBar::VolumeBar(float value, const QString &start_color_str,
                      const QString &end_color_str, bool dynamic_mode, QWidget *parent)
     : QWidget(parent), start_color(QColor(start_color_str)),
       end_color(QColor(end_color_str)), dynamic_mode(dynamic_mode), min_value(0.0f),
-      max_value(1.0f), bar_height(6),
+      max_value(1.0f), bar_height(5),
       labels({QString::number(min_value, 'f', 1),
               QString::number((min_value + max_value) / 2.0, 'f', 1),
               QString::number(max_value, 'f', 1)}),
       current_value(dynamic_mode ? 0.0f : value), target_value(0.0f),
       initial_decay_value(0.0f), decay_time(400), min_decay_time(120),
       timer(new QTimer(this)), anim_active(false), decay_steepness(2.2f) {
-    setFixedHeight(30);
+    setFixedHeight(25);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     connect(timer, &QTimer::timeout, this, &VolumeBar::onAnimTick);
 }
@@ -109,7 +109,7 @@ void VolumeBar::paintEvent(QPaintEvent *event) {
     // Pravítko (měřítko)
     int scale_y = bar_height + 3;
     QColor scale_color("#999");
-    int tick_length = 7;
+    int tick_length = 5;
     QFont font(this->font());
     font.setPointSize(8);
     painter.setFont(font);
@@ -137,7 +137,7 @@ void VolumeBar::paintEvent(QPaintEvent *event) {
         float frac = float(i) / 10.0f;
         int x = int(frac * width);
         if (std::find(positions.begin(), positions.end(), x) != positions.end()) continue;
-        painter.drawLine(x, scale_y + 2, x, scale_y + 4);
+        painter.drawLine(x, scale_y, x, scale_y + 2);
     }
 
     painter.end();

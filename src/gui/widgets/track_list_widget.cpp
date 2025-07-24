@@ -52,8 +52,8 @@ void TrackListWidget::initUI() {
 
     container = new QWidget();
     vbox = new QVBoxLayout(container);
-    vbox->setContentsMargins(3, 3, 3, 3);
-    vbox->setSpacing(4);
+    vbox->setContentsMargins(0, 0, 0, 0);
+    vbox->setSpacing(0);
     vbox->addStretch(1);
 
     scroll_area->setWidget(container);
@@ -88,6 +88,7 @@ void TrackListWidget::reloadTracks(NoteNagaMidiSeq *seq) {
         // Selection handling via event filter
         widget->installEventFilter(this);
         widget->setMouseTracking(true);
+        widget->refreshStyle(false, idx % 2 == 0);
 
         // Custom mousePressEvent via subclass or signal (see below)
         connect(widget, &TrackWidget::clicked, this,
@@ -103,7 +104,7 @@ void TrackListWidget::reloadTracks(NoteNagaMidiSeq *seq) {
 void TrackListWidget::updateSelection(NoteNagaMidiSeq *sequence, int widget_idx) {
     selected_row = widget_idx;
     for (size_t i = 0; i < track_widgets.size(); ++i) {
-        track_widgets[i]->refreshStyle(static_cast<int>(i) == widget_idx);
+        track_widgets[i]->refreshStyle(static_cast<int>(i) == widget_idx, i % 2 == 0);
         if (static_cast<int>(i) == widget_idx) {
             sequence->setActiveTrack(track_widgets[i]->getTrack());
         }

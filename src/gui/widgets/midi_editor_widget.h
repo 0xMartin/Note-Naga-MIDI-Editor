@@ -46,6 +46,17 @@ public:
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override;
 
+    // Colors
+    QColor bg_color;
+    QColor fg_color;
+    QColor line_color;
+    QColor subline_color;
+    QColor grid_bar_color;
+    QColor grid_row_color1;
+    QColor grid_row_color2;
+    QColor grid_bar_label_color;
+    QColor grid_subdiv_color;
+
 signals:
     /**
      * @brief Signal emitted when position is selected in editor.
@@ -101,10 +112,6 @@ private:
     std::vector<QGraphicsLineItem *> grid_lines;
     std::vector<QGraphicsLineItem *> bar_grid_lines;
     std::vector<QGraphicsSimpleTextItem *> bar_grid_labels;
-
-    // --- Colors ---
-    QColor bg_color, fg_color, line_color, subline_color, grid_bar_color, grid_row_color1,
-        grid_row_color2, grid_bar_label_color, grid_subdiv_color;
 
     // --- Setup & Helpers ---
     void initTitleUI();

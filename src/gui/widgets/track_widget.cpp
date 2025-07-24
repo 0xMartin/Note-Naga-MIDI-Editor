@@ -15,8 +15,8 @@ TrackWidget::TrackWidget(NoteNagaEngine *engine_, NoteNagaTrack* track_, QWidget
     setObjectName("TrackWidget");
 
     QHBoxLayout *main_hbox = new QHBoxLayout(this);
-    main_hbox->setContentsMargins(2, 2, 2, 2);
-    main_hbox->setSpacing(4);
+    main_hbox->setContentsMargins(0, 0, 0, 0);
+    main_hbox->setSpacing(0);
 
     instrument_btn = new QPushButton();
     instrument_btn->setObjectName("InstrumentButton");
@@ -102,7 +102,6 @@ TrackWidget::TrackWidget(NoteNagaEngine *engine_, NoteNagaTrack* track_, QWidget
 
     setLayout(main_hbox);
     updateTrackInfo(this->track, "");
-    refreshStyle(false);
     setFocusPolicy(Qt::StrongFocus);
 }
 
@@ -189,13 +188,12 @@ void TrackWidget::mousePressEvent(QMouseEvent *event)
     QFrame::mousePressEvent(event);
 }
 
-void TrackWidget::refreshStyle(bool selected)
+void TrackWidget::refreshStyle(bool selected, bool darker_bg)
 {
     QString base_style = R"(
         QFrame#TrackWidget {
             background: %1;
             border: 1px solid %2;
-            border-radius: 10px;
             padding: 2px;
         }
         QFrame#TrackWidgetContent {
@@ -203,15 +201,14 @@ void TrackWidget::refreshStyle(bool selected)
         }
         QFrame#TrackWidgetHeader {
             background: transparent;
-            border-radius: 0px;
         }
         QLabel#TrackWidgetIndex {
             background: #304060;
+            border-radius: 5px;
             color: #fff;
             font-weight: bold;
             font-size: 11px;
             min-width: 18px; max-width: 18px;
-            border-radius: 5px;
             padding: 1px 3px;
         }
         QPushButton#ColorButton,
@@ -242,9 +239,10 @@ void TrackWidget::refreshStyle(bool selected)
             background: transparent;
         }
     )";
-    QString style = selected
-                        ? base_style.arg("#273a51", "#3477c0")
-                        : base_style.arg("#2F3139", "#494d56");
+
+    QString bg = darker_bg ? "#282930" : "#2F3139";
+    QString style = selected ? base_style.arg("#273a51", "#3477c0")
+                             : base_style.arg(bg, "#494d56");
     setStyleSheet(style);
     update();
 }

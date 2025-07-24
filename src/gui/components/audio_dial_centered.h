@@ -7,91 +7,84 @@
 #include <QWidget>
 
 /**
- * @brief A custom audio dial widget for displaying and adjusting audio levels or values.
- * This version is centered, better choice for + and - range.
+ * @brief A custom dial widget for audio controls.
+ * This widget allows users to adjust a value within a specified range using a circular dial.
+ * It supports features like gradient backgrounds, labels, and value display.
  */
 class AudioDialCentered : public QWidget {
     Q_OBJECT
 public:
-    /**
-     * @brief Constructs a new AudioDialCentered widget.
-     * @param parent The parent widget.
-     */
     explicit AudioDialCentered(QWidget *parent = nullptr);
 
     /**
-     * @brief Returns the current value of the dial.
-     * @return The current value.
+     * @brief Get the current value of the dial.
+     * @return The current value of the dial.
      */
     float getValue() const { return _value; }
 
     /**
-     * @brief Sets the value of the dial.
-     * @param value The value to set, clamped between min and max.
+     * @brief Set the value of the dial.
+     * @param value The new value to set.
      */
     void setValue(float value);
 
     /**
-     * @brief Sets the default value of the dial.
+     * @brief Set default value for the dial.
      * @param value The default value to set.
      */
-    void setDefaultValue(float value);
+    void setDefaultValue(float value) { _default_value = value; }
 
     /**
-     * @brief Sets the range of the dial.
+     * @brief Set the range of values for the dial.
      * @param min_val The minimum value.
      * @param max_val The maximum value.
      */
     void setRange(float min_val, float max_val);
 
     /**
-     * @brief Sets the gradient colors for the dial. Color of progress arc.
+     * @brief Set fill gradient colors for the dial value progress arc.
      * @param color_start The starting color of the gradient.
      * @param color_end The ending color of the gradient.
      */
     void setGradient(const QColor &color_start, const QColor &color_end);
 
     /**
-     * @brief Sets label text for the dial.
-     * @param label The label text to display.
+     * @brief Set label text displayed above the dial.
+     * @param label The text to display as the label.
      */
     void setLabel(const QString &label);
 
     /**
-     * @brief Sets if the label should be shown.
+     * @brief Show or hide the label above the dial.
      * @param show True to show the label, false to hide it.
      */
     void showLabel(bool show);
 
     /**
-     * @brief Sets if the value should be shown.
+     * @brief Show or hide the value displayed below the dial.
      * @param show True to show the value, false to hide it.
      */
     void showValue(bool show);
 
     /**
-     * @brief Sets the prefix for the value display.
+     * @brief Set the prefix for the value displayed below the dial.
      * @param prefix The prefix string to display before the value.
      */
     void setValuePrefix(const QString &prefix);
 
     /**
-     * @brief Sets the postfix for the value display.
+     * @brief Set the postfix for the value displayed below the dial.
      * @param postfix The postfix string to display after the value.
      */
     void setValuePostfix(const QString &postfix);
 
     /**
-     * @brief Sets the number of decimal places for the value display.
+     * @brief Set the number of decimal places for the value displayed below the dial.
      * @param decimals The number of decimal places to display.
      */
     void setValueDecimals(int decimals);
 
 signals:
-    /**
-     * @brief Signal emitted when the value changes.
-     * @param value The new value of the dial.
-     */
     void valueChanged(float value);
 
 protected:
@@ -103,9 +96,25 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
 
 private:
+    struct DialGeometry {
+        int label_font_size;
+        int value_font_size;
+        int dial_size;
+        QPointF center;
+        float inner_radius;
+        float outer_radius;
+        QRectF dial_rect;
+        float arc_thickness;
+        float tick_length;
+        QRectF inner_rect;
+        int label_y;
+        int value_y;
+    };
+
     void updateGeometryCache();
-    std::tuple<int, int, int, QPointF, float, float> getCircleGeometry();
-    float angleToValue(float angle_deg) const;
+    const DialGeometry& geometry() const;
+
+    float valueToAngle(float value) const;
     bool inCircleArea(const QPoint &pos);
 
     float _min;
@@ -117,13 +126,14 @@ private:
     int _angle_range;
 
     QColor bg_color;
-    QColor inner_color;
     QColor inner_outline;
     QColor arc_bg_color;
-    QColor dot_color;
-    QColor dot_end_color;
+    QColor tick_color;
+    QColor tick_end_color;
     QColor gradient_start;
     QColor gradient_end;
+    QColor center_gradient_start;
+    QColor center_gradient_end;
 
     bool _pressed;
 
@@ -134,7 +144,9 @@ private:
     QString _value_postfix;
     int _value_decimals;
 
-    // Geometry cache
-    std::tuple<int, int, int, QPointF, float, float> _geometry_cache;
-    std::tuple<int, int, bool, bool, QString, int> _geometry_cache_size;
+    mutable DialGeometry _geometry_cache;
+    mutable QSize _last_size;
+    mutable bool _last_label, _last_value;
+    mutable QString _last_label_text;
+    mutable int _last_decimals;
 };

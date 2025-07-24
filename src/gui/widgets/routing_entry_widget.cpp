@@ -17,9 +17,6 @@ RoutingEntryWidget::RoutingEntryWidget(NoteNagaEngine *engine_,
     // Connect to track info changed (refresh combos)
     connect(entry->track, &NoteNagaTrack::metadataChanged, this,
             &RoutingEntryWidget::onTrackMetadataChanged);
-
-    // Style
-    refresh_style(false);
 }
 
 void RoutingEntryWidget::setupUI() {
@@ -30,7 +27,7 @@ void RoutingEntryWidget::setupUI() {
     // Main Layout
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(3);
+    layout->setSpacing(2);
 
     // ----- Side Panel -----
     QWidget *sidePanel = new QWidget(this);
@@ -38,8 +35,8 @@ void RoutingEntryWidget::setupUI() {
     sidePanel->setObjectName("RoutingEntrySidePanel");
 
     QVBoxLayout *sideLayout = new QVBoxLayout(sidePanel);
-    sideLayout->setContentsMargins(0, 4, 0, 4);
-    sideLayout->setSpacing(4);
+    sideLayout->setContentsMargins(0, 2, 0, 2);
+    sideLayout->setSpacing(2);
 
     // Index Label
     int index;
@@ -60,13 +57,6 @@ void RoutingEntryWidget::setupUI() {
 
     sideLayout->addStretch(1);
     sidePanel->setLayout(sideLayout);
-
-    // Side panel style (darker, no border, rounded left)
-    sidePanel->setStyleSheet("QWidget#RoutingEntrySidePanel {"
-                             "background: #292b2e;"
-                             "border-top-left-radius: 8px;"
-                             "border-bottom-left-radius: 8px;"
-                             "}");
 
     // ----- Central UI -----
     // Combo column
@@ -91,6 +81,7 @@ void RoutingEntryWidget::setupUI() {
     track_combo = new QComboBox();
     connect(track_combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &RoutingEntryWidget::onTrackChanged);
+    track_combo->setMaximumWidth(300);
     track_row->addWidget(track_combo, 1);
     combo_col->addLayout(track_row);
 
@@ -109,6 +100,7 @@ void RoutingEntryWidget::setupUI() {
     device_row->addWidget(device_icon, Qt::AlignVCenter);
 
     output_combo = new QComboBox();
+    output_combo->setMaximumWidth(300);
     connect(output_combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &RoutingEntryWidget::onDeviceChanged);
     device_row->addWidget(output_combo, 1);
@@ -170,6 +162,7 @@ void RoutingEntryWidget::setupUI() {
     // Layout order: [panel][combo][stretch][dials]
     layout->addWidget(sidePanel);
     layout->addLayout(combo_col);
+    layout->addStretch(0);
     layout->addLayout(dials_layout);
     setLayout(layout);
 }
@@ -255,17 +248,20 @@ void RoutingEntryWidget::onOffsetChanged(float val) { entry->note_offset = int(v
 
 void RoutingEntryWidget::onGlobalPanChanged(float value) { entry->pan = value; }
 
-void RoutingEntryWidget::refresh_style(bool selected) {
+void RoutingEntryWidget::refreshStyle(bool selected, bool darker_bg) {
     QString base_style = R"(
         QFrame#RoutingEntryWidget {
             background: %1;
             border: 1px solid %2;
-            border-radius: 10px;
-            padding: 2px;
+        }
+        QWidget#RoutingEntrySidePanel {
+            background: %3;
         }
     )";
-    QString style = selected ? base_style.arg("#273a51", "#3477c0")
-                             : base_style.arg("#2F3139", "#494d56");
+    QString bg = darker_bg ? "#282930" : "#2F3139";
+    QString bg_side = darker_bg ? "#202224" : "#292b2e";
+    QString style = selected ? base_style.arg("#273a51", "#3477c0", "#1e2e46")
+                             : base_style.arg(bg, "#494d56", bg_side);
     setStyleSheet(style);
     update();
 }

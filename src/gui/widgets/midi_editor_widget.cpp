@@ -62,14 +62,21 @@ void MidiEditorWidget::initTitleUI() {
     QPushButton *btn_follow_none = create_small_button(
         ":/icons/follow-none.svg", "Don't Follow", "FollowNone");
         
-    QPushButton *btn_zoom_in = create_small_button(
-        ":/icons/zoom-in.svg", "Zoom In", "ZoomIn");
-    QPushButton *btn_zoom_out = create_small_button(
-        ":/icons/zoom-out.svg", "Zoom Out", "ZoomOut");  
+    QPushButton *btn_h_zoom_in = create_small_button(
+        ":/icons/zoom-in-horizontal.svg", "Horizontal Zoom In", "HZoomIn");
+    QPushButton *btn_h_zoom_out = create_small_button(
+        ":/icons/zoom-out-horizontal.svg", "Horizontal Zoom Out", "HZoomOut");
+
+    QPushButton *btn_v_zoom_in = create_small_button(
+        ":/icons/zoom-in-vertical.svg", "Vertical Zoom In", "VZoomIn");
+    QPushButton *btn_v_zoom_out = create_small_button(
+        ":/icons/zoom-out-vertical.svg", "Vertical Zoom Out", "VZoomOut");
 
 
-    layout->addWidget(btn_zoom_in, 0, Qt::AlignRight);
-    layout->addWidget(btn_zoom_out, 0, Qt::AlignRight);
+    layout->addWidget(btn_v_zoom_out, 0, Qt::AlignRight);
+    layout->addWidget(btn_v_zoom_in, 0, Qt::AlignRight);
+    layout->addWidget(btn_h_zoom_out, 0, Qt::AlignRight);
+    layout->addWidget(btn_h_zoom_in, 0, Qt::AlignRight);
     layout->addWidget(create_separator());
     layout->addWidget(btn_follow_center, 0, Qt::AlignRight);
     layout->addWidget(btn_follow_left, 0, Qt::AlignRight);

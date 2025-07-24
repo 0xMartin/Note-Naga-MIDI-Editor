@@ -44,8 +44,9 @@ public slots:
     /**
      * @brief Refreshes the style of the widget based on selection.
      * @param selected True if the widget is selected, false otherwise.
+     * @param darker_bg True if the background should be darker, false otherwise.
      */
-    void refresh_style(bool selected);
+    void refreshStyle(bool selected, bool darker_bg);
 
 signals:
     /**
