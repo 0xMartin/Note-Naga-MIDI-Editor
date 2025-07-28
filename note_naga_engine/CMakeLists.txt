@@ -36,7 +36,7 @@ set(PUBLIC_HEADER_FILES
     ./include/note_naga_engine/core/types.h
     ./include/note_naga_engine/core/lock_free_spsc_queue.h
     ./include/note_naga_engine/core/lock_free_mpmc_queue.h
-    ./include/note_naga_engine/core/note_naga_component.h
+    ./include/note_naga_engine/core/async_queue_component.h
     ./include/note_naga_engine/core/project_data.h
     ./include/note_naga_engine/core/note_naga_synthesizer.h
     # include/note_naga_engine/io
@@ -46,6 +46,7 @@ set(PUBLIC_HEADER_FILES
     ./include/note_naga_engine/module/playback_worker.h
     ./include/note_naga_engine/module/audio_worker.h
     ./include/note_naga_engine/module/dsp_engine.h
+    ./include/note_naga_engine/module/metronome.h
     # include/note_naga_engine/synth
     ./include/note_naga_engine/synth/synth_fluidsynth.h
 )
@@ -64,6 +65,7 @@ set(SOURCE_FILES
     ./module/playback_worker.cpp
     ./module/audio_worker.cpp
     ./module/dsp_engine.cpp
+    ./module/metronome.cpp
     # note_naga_engine/synth
     ./synth/synth_fluidsynth.cpp
 )

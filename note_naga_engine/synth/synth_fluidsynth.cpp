@@ -27,18 +27,12 @@ NoteNagaSynthFluidSynth::~NoteNagaSynthFluidSynth() {
     if (synth_settings_) delete_fluid_settings(synth_settings_);
 }
 
-void NoteNagaSynthFluidSynth::renderAudio(size_t num_frames, NN_AudioBuffer_t& left, NN_AudioBuffer_t& right) {
-    left.data.resize(num_frames);
-    right.data.resize(num_frames);
-    left.frames = right.frames = num_frames;
-    left.left_channel = true;
-    right.left_channel = false;
-
-    // FluidSynth render přímo do oddělených mono kanálů:
+void NoteNagaSynthFluidSynth::renderAudio(float* left, float* right, size_t num_frames) {
+    // render audio using FluidSynth
     fluid_synth_write_float(
-        fluidsynth_, num_frames,
-        left.data.data(), 0, 1,
-        right.data.data(), 0, 1
+        this->fluidsynth_, num_frames,
+        left, 0, 1,
+        right, 0, 1
     );
 }
 

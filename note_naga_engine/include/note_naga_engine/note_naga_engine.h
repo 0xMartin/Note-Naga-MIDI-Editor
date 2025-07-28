@@ -57,7 +57,9 @@ public:
      */
     ~NoteNagaEngine();
 
-    // --- Initialization ---
+    /*******************************************************************************************************/
+    // Initialization
+    /*******************************************************************************************************/
 
     /**
      * @brief Initializes the engine and its core components.
@@ -65,7 +67,15 @@ public:
      */
     bool initialize();
 
-    // --- Playback Control ---
+    /*******************************************************************************************************/
+    // Playback Control
+    /*******************************************************************************************************/
+
+    /**
+     * @brief Changes the current playback/project tempo.
+     * @param new_tempo New tempo in BPM.
+     */
+    void changeTempo(int new_tempo);
 
     /**
      * @brief Starts MIDI/audio playback.
@@ -81,6 +91,18 @@ public:
     bool stopPlayback();
 
     /**
+     * @brief Plays a single MIDI note immediately. Send note on.
+     * @param midi_note MIDI note to play.
+     */
+    void playSingleNote(const NN_Note_t &midi_note);
+
+    /**
+     * @brief Plays a single MIDI note immediately. Send note off.
+     * @param midi_note MIDI note to play.
+     */
+    void stopSingleNote(const NN_Note_t &midi_note);
+
+    /**
      * @brief Sets the playback position (tick).
      * @param tick Tick to set as new playback position.
      */
@@ -94,7 +116,9 @@ public:
         return playback_worker ? playback_worker->isPlaying() : false;
     }
 
-    // --- Project Control ---
+    /*******************************************************************************************************/
+    // Project Control
+    /*******************************************************************************************************/
 
     /**
      * @brief Loads a project from a MIDI file.
@@ -103,13 +127,9 @@ public:
      */
     bool loadProject(const std::string &midi_file_path);
 
-    /**
-     * @brief Changes the current playback/project tempo.
-     * @param new_tempo New tempo in BPM.
-     */
-    void changeTempo(int new_tempo);
-
-    // --- Mixer Control ---
+    /*******************************************************************************************************/
+    // Mixer Control
+    /*******************************************************************************************************/
 
     /**
      * @brief Mutes or unmutes a track in the mixer.
@@ -131,7 +151,47 @@ public:
      */
     void enableLooping(bool enabled);
 
-    // --- Getters for main components ---
+    /*******************************************************************************************************/
+    // Synthesizer Control
+    /*******************************************************************************************************/
+
+    /**
+     * @brief Gets the list of available synthesizers.
+     * @return Vector of pointers to NoteNagaSynthesizer instances.
+     */
+    std::vector<NoteNagaSynthesizer*> getSynthesizers() { return this->synthesizers; }
+
+    /**
+     * @brief Adds a synthesizer to the engine.
+     * @param synth Pointer to the NoteNagaSynthesizer to add.
+     */
+    void addSynthesizer(NoteNagaSynthesizer *synth);
+
+    /**
+     * @brief Removes a synthesizer from the engine.
+     * @param synth Pointer to the NoteNagaSynthesizer to remove.
+     */
+    void removeSynthesizer(NoteNagaSynthesizer *synth);
+
+    /*******************************************************************************************************/
+    // DSP Engine Control
+    /*******************************************************************************************************/
+
+    /**
+     * @brief Gets the DSP engine instance.
+     * @return Pointer to the NoteNagaDSPEngine.
+     */
+    void enableMetronome(bool enabled);
+
+    /**
+     * @brief Returns whether the metronome is enabled.
+     * @return True if metronome is enabled, false otherwise.
+     */
+    bool isMetronomeEnabled() const;
+
+    /*******************************************************************************************************/
+    // Getters for main components
+    /*******************************************************************************************************/
 
     /**
      * @brief Gets the current project.
@@ -152,22 +212,16 @@ public:
     NoteNagaPlaybackWorker *getPlaybackWorker() { return this->playback_worker; }
 
     /**
-     * @brief Gets the list of available synthesizers.
-     * @return Vector of pointers to NoteNagaSynthesizer instances.
+     * @brief Gets the DSP engine instance.
+     * @return Pointer to the NoteNagaDSPEngine.
      */
-    std::vector<NoteNagaSynthesizer*> getSynthesizers() { return this->synthesizers; }
+    NoteNagaDSPEngine *getDSPEngine() { return this->dsp_engine; }
 
     /**
-     * @brief Adds a synthesizer to the engine.
-     * @param synth Pointer to the NoteNagaSynthesizer to add.
+     * @brief Gets the audio worker instance.
+     * @return Pointer to the NoteNagaAudioWorker.
      */
-    void addSynthesizer(NoteNagaSynthesizer *synth);
-
-    /**
-     * @brief Removes a synthesizer from the engine.
-     * @param synth Pointer to the NoteNagaSynthesizer to remove.
-     */
-    void removeSynthesizer(NoteNagaSynthesizer *synth);
+    NoteNagaAudioWorker *getAudioWorker() { return this->audio_worker; }
 
 #ifndef QT_DEACTIVATED
 Q_SIGNALS:

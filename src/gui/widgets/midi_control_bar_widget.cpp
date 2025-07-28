@@ -13,7 +13,6 @@ MidiControlBarWidget::MidiControlBarWidget(NoteNagaEngine *engine_, QWidget *par
     this->ppq = 0;
     this->tempo = 0;
     this->max_tick = 0;
-    this->metronome_on = false;
 
     // Initialize UI components
     this->setObjectName("MidiControlBarWidget");
@@ -94,6 +93,7 @@ void MidiControlBarWidget::initUI() {
     metronome_btn = new QPushButton();
     metronome_btn->setObjectName("metronomeBtn");
     metronome_btn->setCheckable(true);
+    metronome_btn->setChecked(this->engine->isMetronomeEnabled());
     metronome_btn->setIcon(QIcon(":/icons/tempo.svg"));
     metronome_btn->setIconSize(QSize(21, 21));
     metronome_btn->setCursor(Qt::PointingHandCursor);
@@ -214,7 +214,8 @@ bool MidiControlBarWidget::eventFilter(QObject *obj, QEvent *event) {
 }
 
 void MidiControlBarWidget::metronomeBtnClicked() {
-    metronome_on = metronome_btn->isChecked();
+    bool metronome_on = metronome_btn->isChecked();
+    this->engine->enableMetronome(metronome_on);
     emit metronomeToggled(metronome_on);
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <note_naga_engine/core/note_naga_component.h>
+#include <note_naga_engine/core/async_queue_component.h>
 #include <note_naga_engine/core/note_naga_synthesizer.h>
 #include <note_naga_engine/core/project_data.h>
 #include <note_naga_engine/core/types.h>
@@ -67,10 +67,10 @@ struct NOTE_NAGA_ENGINE_API NoteNagaRoutingEntry {
  */
 #ifndef QT_DEACTIVATED
 class NOTE_NAGA_ENGINE_API NoteNagaMixer : public QObject,
-                                           public NoteNagaEngineComponent<NN_MixerMessage_t, 1024> {
+                                           public AsyncQueueComponent<NN_MixerMessage_t, 1024> {
     Q_OBJECT
 #else
-class NOTE_NAGA_ENGINE_API NoteNagaMixer : public NoteNagaEngineComponent<NN_MixerMessage_t, 1024> {
+class NOTE_NAGA_ENGINE_API NoteNagaMixer : public AsyncQueueComponent<NN_MixerMessage_t, 1024> {
 #endif
 
 public:

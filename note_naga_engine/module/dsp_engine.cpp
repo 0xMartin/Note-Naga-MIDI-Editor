@@ -3,6 +3,13 @@
 #include <algorithm>
 #include <cstring>
 
+NoteNagaDSPEngine::NoteNagaDSPEngine(NoteNagaProject *project){
+    this->project_ = project;
+    metronome_.setProject(project);
+    metronome_.setSampleRate(44100);
+    NOTE_NAGA_LOG_INFO("DSP Engine initialized");
+}
+
 void NoteNagaDSPEngine::addSynth(INoteNagaSoftSynth* synth) {
     std::lock_guard<std::mutex> lock(synths_mutex_);
     synths_.push_back(synth);
@@ -23,17 +30,18 @@ void NoteNagaDSPEngine::renderBlock(float* output, size_t num_frames) {
     // Render all synths and mix
     std::lock_guard<std::mutex> lock(synths_mutex_);
     for (auto* synth : synths_) {
-        NN_AudioBuffer_t left, right;
-        synth->renderAudio(num_frames, left, right);
-        for (size_t i = 0; i < num_frames; ++i) {
-            mix_left_[i] += left.data[i];
-            mix_right_[i] += right.data[i];
-        }
+        synth->renderAudio(mix_left_.data(), mix_right_.data(), num_frames);
     }
 
-    // Interleave and write to output buffer
+    // Metronome rendering
+    metronome_.render(mix_left_.data(), mix_right_.data(), num_frames);
+
+    // Interleave and write to output buffer efficiently
+    float* left = mix_left_.data();
+    float* right = mix_right_.data();
+    float* out = output;
     for (size_t i = 0; i < num_frames; ++i) {
-        output[2 * i] = mix_left_[i];
-        output[2 * i + 1] = mix_right_[i];
+        *out++ = left[i];
+        *out++ = right[i];
     }
 }

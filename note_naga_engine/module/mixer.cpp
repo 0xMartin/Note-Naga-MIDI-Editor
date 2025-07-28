@@ -6,10 +6,10 @@
 #ifndef QT_DEACTIVATED
 NoteNagaMixer::NoteNagaMixer(NoteNagaProject *project,
                              std::vector<NoteNagaSynthesizer *> *synthesizers)
-    : NoteNagaEngineComponent(), QObject(nullptr)
+    : QObject(nullptr), AsyncQueueComponent()
 #else
 NoteNagaMixer::NoteNagaMixer(NoteNagaProject *project, std::vector<NoteNagaSynthesizer *> *synthesizers)
-    : NoteNagaEngineComponent()
+    : AsyncQueueComponent()
 #endif
 {
     this->project = project;

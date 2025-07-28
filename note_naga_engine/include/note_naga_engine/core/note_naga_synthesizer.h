@@ -1,6 +1,6 @@
 #pragma once
 
-#include <note_naga_engine/core/note_naga_component.h>
+#include <note_naga_engine/core/async_queue_component.h>
 #include <note_naga_engine/core/types.h>
 #include <string>
 
@@ -27,7 +27,7 @@ struct NOTE_NAGA_ENGINE_API NN_SynthMessage_t {
  * This class defines the interface for synthesizers that can play MIDI notes.
  */
 class NOTE_NAGA_ENGINE_API NoteNagaSynthesizer
-    : public NoteNagaEngineComponent<NN_SynthMessage_t, 1024> {
+    : public AsyncQueueComponent<NN_SynthMessage_t, 1024> {
 public:
     NoteNagaSynthesizer(const std::string &name) : name(name) {}
     virtual ~NoteNagaSynthesizer() = default;
@@ -112,6 +112,6 @@ protected:
 /*******************************************************************************************************/
 
 class NOTE_NAGA_ENGINE_API INoteNagaSoftSynth {
-public: 
-    virtual void renderAudio(size_t num_frames, NN_AudioBuffer_t& left, NN_AudioBuffer_t& right) = 0;
+public:
+    virtual void renderAudio(float* left, float* right, size_t num_frames) = 0;
 };

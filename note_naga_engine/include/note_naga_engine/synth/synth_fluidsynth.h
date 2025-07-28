@@ -21,7 +21,7 @@ public:
     void stopNote(const NN_Note_t &note) override;
     void stopAllNotes(NoteNagaMidiSeq *seq = nullptr, NoteNagaTrack *track = nullptr) override;
 
-    void renderAudio(size_t num_frames, NN_AudioBuffer_t& left, NN_AudioBuffer_t& right) override;
+    void renderAudio(float* left, float* right, size_t num_frames) override;
 
 protected:
     void ensureFluidsynth();

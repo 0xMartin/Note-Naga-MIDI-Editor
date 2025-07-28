@@ -85,7 +85,6 @@ private:
     int ppq;
     int tempo;
     int max_tick;
-    bool metronome_on;
     bool was_playing;
 
     QLabel* tempo_label;

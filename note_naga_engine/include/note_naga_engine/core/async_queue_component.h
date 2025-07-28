@@ -25,7 +25,7 @@
  *    int sample;
  * };
  *
- * class MyAudioComponent : public NoteNagaEngineComponent<MyAudioData, 1024> {
+ * class MyAudioComponent : public AsyncQueueComponent<MyAudioData, 1024> {
  * public:
  *     void onItem(const MyAudioData& data) override {
  *         std::cout << "Processing sample: " << data.sample << std::endl;
@@ -42,11 +42,10 @@
  *     return 0;
  * }
  */
-// AsyncQueueComponent
 template <typename T, size_t QueueSize>
-class NOTE_NAGA_ENGINE_API NoteNagaEngineComponent {
+class NOTE_NAGA_ENGINE_API AsyncQueueComponent {
 public:
-    NoteNagaEngineComponent()
+    AsyncQueueComponent()
         : m_queue(std::make_unique<LockFreeMPMCQueue<T, QueueSize>>()),
           m_stopThread(false) {
         m_thread = std::thread([this]() { this->threadFunc(); });
@@ -55,10 +54,10 @@ public:
     }
 
     // Not copyable/movable
-    NoteNagaEngineComponent(const NoteNagaEngineComponent &) = delete;
-    NoteNagaEngineComponent &operator=(const NoteNagaEngineComponent &) = delete;
+    AsyncQueueComponent(const AsyncQueueComponent &) = delete;
+    AsyncQueueComponent &operator=(const AsyncQueueComponent &) = delete;
 
-    virtual ~NoteNagaEngineComponent() { killThread(); }
+    virtual ~AsyncQueueComponent() { killThread(); }
 
     /**
      * @brief Enqueues data into the queue (thread-safe, supports multiple producers).

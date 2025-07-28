@@ -692,12 +692,3 @@ NOTE_NAGA_ENGINE_API extern double nn_ticks_to_seconds(int ticks, int ppq, int t
 /*******************************************************************************************************/
 // Audio Buffer
 /*******************************************************************************************************/
-
-/**
- * @brief Audio buffer structure, always mono.
- */
-struct NN_AudioBuffer_t {
-    std::vector<float> data;     // Audio samples, mono
-    size_t frames = 0;           // Number of frames
-    bool left_channel = true;    // True=left, false=right
-};

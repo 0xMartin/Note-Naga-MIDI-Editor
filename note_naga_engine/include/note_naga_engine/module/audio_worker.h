@@ -14,10 +14,10 @@ public:
     void setDSPEngine(NoteNagaDSPEngine* dsp);
 
     // Startuje audio zařízení s daným sample rate a block size.
-    void start(unsigned int sampleRate, unsigned int blockSize);
+    bool start(unsigned int sampleRate, unsigned int blockSize);
 
     // Zastaví audio zařízení (stream). Lze volat opakovaně.
-    void stop();
+    bool stop();
 
     // Callback volaný RtAudio, naplňuje výstupní buffer audio daty.
     static int audioCallback(void* outputBuffer, void*, unsigned int nFrames,
