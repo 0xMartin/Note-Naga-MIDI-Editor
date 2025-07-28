@@ -210,14 +210,23 @@ void NoteNagaMixer::flushNotes() {
                 }
             }
         }
-
-        // clear the vector after pushing
-        vec.clear();
     }
+
+    // signals
+#ifndef QT_DEACTIVATED
+    for (auto &pair : note_buffer_) {
+        const std::string &synth_name = pair.first;
+        for (const NN_SynthMessage_t &msg : pair.second) {
+            NN_QT_EMIT(noteOutSignal(msg.note, synth_name, msg.channel));
+        }
+    }
+#endif
+
+    // Clear the buffer after flushing
     note_buffer_.clear();
 }
 
-void NoteNagaMixer::onItem(const NN_SynthMessage_t &value) {
+void NoteNagaMixer::onItem(const NN_MixerMessage_t &value) {
     // This method is called when a new item is dequeued from the component's queue.
     // It processes the MIDI note play/stop messages.
     if (value.play) {
@@ -227,6 +236,8 @@ void NoteNagaMixer::onItem(const NN_SynthMessage_t &value) {
         // Handle note stop
         stopNote(value.note);
     }
+    // flush notes if requested
+    if (value.flush) flushNotes();
 }
 
 void NoteNagaMixer::playNote(const NN_Note_t &midi_note) {
@@ -256,9 +267,10 @@ void NoteNagaMixer::playNote(const NN_Note_t &midi_note) {
         msg.note.note = note_num;
         msg.note.velocity = velocity;
         msg.pan = entry.pan + master_pan; 
+        msg.channel = entry.channel;
         msg.play = true;
 
-        // Ulož do bufferu podle jména výstupu (syntetizéru)
+        // store the message in the buffer for this output
         note_buffer_[entry.output].push_back(msg);
     }
 }

@@ -4,14 +4,23 @@
 #include <note_naga_engine/core/types.h>
 #include <string>
 
+/*******************************************************************************************************/
+// Synthesizer Queue Message
+/*******************************************************************************************************/
+
 /**
  * @brief Represents a message for the Note Naga Synthesizer queue.
  */
 struct NOTE_NAGA_ENGINE_API NN_SynthMessage_t {
     NN_Note_t note; /// <MIDI note to play or stop>
+    int channel;    ///< MIDI channel to use
     bool play;      /// <True to play note, false to stop>
     float pan;      /// <Stereo pan value (-1.0 left, 1.0 right)>
 };
+
+/*******************************************************************************************************/
+// Synthesizer Base Class
+/*******************************************************************************************************/
 
 /**
  * Abstract base class for Note Naga Synthesizers.
@@ -39,9 +48,10 @@ public:
     /**
      * @brief Plays a MIDI note.
      * @param note The note to play.
+     * @param channel MIDI channel to use.
      * @param pan Stereo pan value (-1.0 left, 1.0 right).
      */
-    virtual void playNote(const NN_Note_t &note, float pan = 0.0f) = 0;
+    virtual void playNote(const NN_Note_t &note, int channel = 0, float pan = 0.0f) = 0;
 
     /**
      * @brief Stops a MIDI note.
@@ -70,9 +80,28 @@ public:
 protected:
     std::string name; ///< Name of the synthesizer
 
+    // playing notes map: track -> note ID -> playing note
+    struct PlayedNote_t {
+        NN_Note_t note;
+        int channel;
+    };
+    typedef std::unordered_map<long, PlayedNote_t> TrackNotesMap;
+    std::unordered_map<NoteNagaTrack*, TrackNotesMap> playing_notes_;
+
+    // current channel programs
+    std::unordered_map<int, int> channel_programs_;
+
+    // curent channel pan values
+    std::unordered_map<int, float> channel_pan_;
+
+    /**
+     * @brief Called when a new item is dequeued from the component's queue.
+     * This method processes the MIDI note play/stop messages.
+     * @param value The message to process.
+     */
     void onItem(const NN_SynthMessage_t &value) override {
         if (value.play)
-            playNote(value.note, value.pan);
+            playNote(value.note, value.channel, value.pan);
         else
             stopNote(value.note);
     }

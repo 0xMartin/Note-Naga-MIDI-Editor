@@ -1,0 +1,182 @@
+2025-07-28 17:35:33 [INFO   ] note_naga_engine: Instance created. Version: 1.0.0
+2025-07-28 17:35:33 [INFO   ] note_naga_component: Engine Component initialized with queue size: 1024
+2025-07-28 17:35:34 [INFO   ] synth_fluidsynth: FluidSynth loaded sfid=1
+2025-07-28 17:35:34 [INFO   ] project_data: Project manager initialized
+2025-07-28 17:35:34 [INFO   ] note_naga_component: Engine Component initialized with queue size: 1024
+2025-07-28 17:35:34 [INFO   ] mixer: Default output device set on: FluidSynth 1
+2025-07-28 17:35:34 [INFO   ] mixer: Initialized successfully
+2025-07-28 17:35:34 [INFO   ] playback_worker: Initialized successfully with timer interval: 30.000000 ms
+2025-07-28 17:35:34 [INFO   ] playback_worker: Added finished callback with ID: 1
+2025-07-28 17:35:34 [INFO   ] note_naga_engine: Initialized successfully
+2025-07-28 17:35:40 [WARNING] playback_worker: Playback worker not currently playing
+2025-07-28 17:35:40 [WARNING] note_naga_engine: Failed to stop playback
+2025-07-28 17:35:40 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-07-28 17:35:40 [INFO   ] types: Loading MIDI file from: /Users/martin/Downloads/Pirates of the Caribbean - He's a Pirate (3).mid
+2025-07-28 17:35:40 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-07-28 17:35:40 [INFO   ] types: Loading Type 1 MIDI tracks
+2025-07-28 17:35:40 [INFO   ] types: Created Track with ID: 0 and name: Track
+2025-07-28 17:35:40 [INFO   ] types: Instrument changed for Track ID: 0 to: 0
+2025-07-28 17:35:40 [INFO   ] types: Created Track with ID: 1 and name: Track
+2025-07-28 17:35:40 [INFO   ] types: Channel changed for Track ID: 1 to: 0
+2025-07-28 17:35:40 [INFO   ] types: Instrument changed for Track ID: 1 to: 0
+2025-07-28 17:35:40 [INFO   ] types: Created Track with ID: 2 and name: Track
+2025-07-28 17:35:40 [INFO   ] types: Channel changed for Track ID: 2 to: 1
+2025-07-28 17:35:40 [INFO   ] types: Instrument changed for Track ID: 2 to: 0
+2025-07-28 17:35:40 [INFO   ] types: MIDI file loaded successfully. Num tracks: 3
+2025-07-28 17:35:40 [INFO   ] types: Track with ID: 0 set as active track for MIDI sequence ID: 1
+2025-07-28 17:35:40 [INFO   ] project_data: Added MIDI sequence with ID: 1
+2025-07-28 17:35:40 [INFO   ] mixer: Default routing created with 3 entries
+2025-07-28 17:35:40 [INFO   ] project_data: Project loaded from: /Users/martin/Downloads/Pirates of the Caribbean - He's a Pirate (3).mid
+2025-07-28 17:35:40 [INFO   ] playback_worker: Playback worker started
+2025-07-28 17:35:40 [INFO   ] playback_worker: Recalculated tempo: 200.000000 BPM, PPQ: 192, ms per tick: 1.562500
+2025-07-28 17:35:41 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:41 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:41 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:41 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:42 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:42 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:42 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:42 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:42 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:43 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:43 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:43 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:43 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:43 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:44 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:44 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:44 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:44 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:44 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 26 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:44 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 38 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:44 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:44 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:45 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:45 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:45 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 26 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:45 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 38 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:45 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:45 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:45 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 26 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:45 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 38 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 53 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 38 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 50 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 53 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 50 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 53 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:46 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 64 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 36 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 48 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 58 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 65 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 34 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 58 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 65 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 34 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 46 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 34 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 46 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 58 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 65 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 67 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 34 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:47 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 46 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 64 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 33 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 45 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 64 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 33 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 45 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 33 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 45 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 55 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 33 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 45 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:48 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 50 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 38 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 50 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 38 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 50 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 38 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 50 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 58 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 53 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 34 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:49 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 46 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 53 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 58 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 34 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 46 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 34 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 46 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 58 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 58 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 64 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 34 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 65 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 29 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:50 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 41 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 65 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 29 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 41 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 41 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 65 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 67 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 29 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 41 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 64 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 36 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:51 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 48 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 64 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 36 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 48 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 33 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 60 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 33 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 45 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 53 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 57 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 62 on channel 0 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 38 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 50 on channel 1 with velocity 110 pan: 0.000000
+2025-07-28 17:35:52 [INFO   ] synth_fluidsynth: >>> FluidSynth 1 playNote: 38 on channel 1 with velocity 110 pan: 0.000000

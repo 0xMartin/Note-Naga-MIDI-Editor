@@ -21,6 +21,19 @@
 #define TRACK_ROUTING_ENTRY_ANY_DEVICE "any"
 
 /*******************************************************************************************************/
+// Mixer Queue Message
+/*******************************************************************************************************/
+
+/**
+ * @brief Represents a message for the Note Naga Mixer queue.
+ */
+struct NOTE_NAGA_ENGINE_API NN_MixerMessage_t {
+    NN_Note_t note; /// <MIDI note to play or stop>
+    bool play;      /// <True to play note, false to stop>
+    bool flush;     /// <True to flush all notes from the queue.. including this one>
+};
+
+/*******************************************************************************************************/
 // Note Naga Routing Entry
 /*******************************************************************************************************/
 
@@ -54,10 +67,10 @@ struct NOTE_NAGA_ENGINE_API NoteNagaRoutingEntry {
  */
 #ifndef QT_DEACTIVATED
 class NOTE_NAGA_ENGINE_API NoteNagaMixer : public QObject,
-                                           public NoteNagaEngineComponent<NN_SynthMessage_t, 1024> {
+                                           public NoteNagaEngineComponent<NN_MixerMessage_t, 1024> {
     Q_OBJECT
 #else
-class NOTE_NAGA_ENGINE_API NoteNagaMixer : public NoteNagaEngineComponent<NN_SynthMessage_t, 1024> {
+class NOTE_NAGA_ENGINE_API NoteNagaMixer : public NoteNagaEngineComponent<NN_MixerMessage_t, 1024> {
 #endif
 
 public:
@@ -204,7 +217,7 @@ protected:
      * @brief Thread-safe method to handle a dequeued item.
      * @param value The item to process.
      */
-    void onItem(const NN_SynthMessage_t &value) override;
+    void onItem(const NN_MixerMessage_t &value) override;
 
 private:
     ///< Pointer to the associated project

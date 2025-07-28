@@ -245,6 +245,8 @@ void PlaybackThreadWorker::emitPositionChanged(int tick) {
         cb.second(tick);
 }
 
+void PlaybackThreadWorker::stop() { should_stop = true; }
+
 void PlaybackThreadWorker::run() {
     // Ensure we have a valid project and active sequence
     NoteNagaMidiSeq *active_sequence = this->project->getActiveSequence();
@@ -263,9 +265,13 @@ void PlaybackThreadWorker::run() {
     int current_tick = this->project->getCurrentTick();
     recalculateTempo();
 
-    // Playback loop
+    // start and end indices for each track
+    std::unordered_map<NoteNagaTrack*, size_t> trackNoteStartIndex;
+    for (auto* track : active_sequence->getTracks()) trackNoteStartIndex[track] = 0;
+
     using clock = std::chrono::high_resolution_clock;
     while (!should_stop) {
+        // Time management
         auto now = clock::now();
         double elapsed_ms =
             std::chrono::duration<double, std::milli>(now - start_time_point).count();
@@ -280,53 +286,81 @@ void PlaybackThreadWorker::run() {
             current_tick = active_sequence->getMaxTick();
             if (!this->looping) this->should_stop = true;
         }
+        
+        std::vector<NN_MixerMessage_t> buffer;
 
-        bool flush = false;
         if (active_sequence->getSoloTrack()) {
             // play soloed track only
             auto track = active_sequence->getSoloTrack();
             if (track) {
-                for (const auto &note : track->getNotes()) {
-                    if (note.start.has_value() && note.length.has_value()) {
-                        if (last_tick < note.start.value() && note.start.value() <= current_tick) {
-                            mixer->pushToQueue(NN_SynthMessage_t{note, true});
-                            flush = true;
-                        }
-                        if (last_tick < note.start.value() + note.length.value() &&
-                            note.start.value() + note.length.value() <= current_tick) {
-                            mixer->pushToQueue(NN_SynthMessage_t{note, false});
-                            flush = true;
-                        }
+                size_t &index = trackNoteStartIndex[track];
+                index = (index > 10) ? index - 10 : 0; // Start 10 before the last processed note
+
+                const std::vector<NN_Note_t>& notes = track->getNotes();
+                for (; index < notes.size(); ++index) {
+                    const NN_Note_t& note = notes[index];
+                    if (!note.start.has_value() || !note.length.has_value())
+                        continue;
+
+                    // Note ON
+                    if (last_tick < note.start.value() && note.start.value() <= current_tick) {
+                        buffer.push_back(NN_MixerMessage_t{note, true, false});
                     }
+                    // Note OFF
+                    int note_end = note.start.value() + note.length.value();
+                    if (last_tick < note_end && note_end <= current_tick) {
+                        buffer.push_back(NN_MixerMessage_t{note, false, false});
+                    }
+
+                    // If the note starts after the current tick, we can stop checking
+                    if (note.start.value() > current_tick)
+                        break;
                 }
             }
         } else {
             // play all tracks
-            for (const auto &track : active_sequence->getTracks()) {
+            for (auto* track : active_sequence->getTracks()) {
                 if (track->isMuted()) continue;
-                for (const auto &note : track->getNotes()) {
-                    if (note.start.has_value() && note.length.has_value()) {
-                        if (last_tick < note.start.value() && note.start.value() <= current_tick) {
-                            mixer->pushToQueue(NN_SynthMessage_t{note, true});
-                            flush = true;
-                        }
-                        if (last_tick < note.start.value() + note.length.value() &&
-                            note.start.value() + note.length.value() <= current_tick) {
-                            mixer->pushToQueue(NN_SynthMessage_t{note, false});
-                            flush = true;
-                        }
+                size_t& index = trackNoteStartIndex[track];
+                index = (index > 10) ? index - 10 : 0; // Start 10 before the last processed note
+
+                const std::vector<NN_Note_t>& notes = track->getNotes();
+                for (; index < notes.size(); ++index) {
+                    const NN_Note_t& note = notes[index];
+                    if (!note.start.has_value() || !note.length.has_value())
+                        continue;
+
+                    // Note ON
+                    if (last_tick < note.start.value() && note.start.value() <= current_tick) {
+                        buffer.push_back(NN_MixerMessage_t{note, true, false});
                     }
+                    // Note OFF
+                    int note_end = note.start.value() + note.length.value();
+                    if (last_tick < note_end && note_end <= current_tick) {
+                        buffer.push_back(NN_MixerMessage_t{note, false, false});
+                    }
+
+                    // If the note starts after the current tick, we can stop checking
+                    if (note.start.value() > current_tick)
+                        break;
                 }
             }
         }
-        // flush notes if needed
-        if (flush) mixer->flushNotes();
+
+        // push all buffered messages to the mixer queue
+        if (!buffer.empty()) {
+            buffer.back().flush = true;
+            for (const auto &message : buffer) {
+                mixer->pushToQueue(message);
+            }
+        }
 
         // Looping if enabled
         if (this->looping && current_tick >= active_sequence->getMaxTick()) {
             current_tick = 0; // Loop back to start
             this->project->setCurrentTick(current_tick);
             recalculateTempo();
+            for (auto* track : active_sequence->getTracks()) trackNoteStartIndex[track] = 0;
             NOTE_NAGA_LOG_INFO("Reached max tick, looping back to start");
         }
 
@@ -339,5 +373,3 @@ void PlaybackThreadWorker::run() {
     NOTE_NAGA_LOG_INFO("Playback thread finished");
     emitFinished();
 }
-
-void PlaybackThreadWorker::stop() { should_stop = true; }
