@@ -33,17 +33,20 @@ set(PUBLIC_HEADER_FILES
     ./include/note_naga_engine/note_naga_api.h
     ./include/note_naga_engine/note_naga_engine.h
     # include/note_naga_engine/core
+    ./include/note_naga_engine/core/types.h
+    ./include/note_naga_engine/core/audio_buffer.h
     ./include/note_naga_engine/core/lock_free_spsc_queue.h
     ./include/note_naga_engine/core/lock_free_mpmc_queue.h
     ./include/note_naga_engine/core/note_naga_component.h
     ./include/note_naga_engine/core/project_data.h
-    ./include/note_naga_engine/core/types.h
     ./include/note_naga_engine/core/note_naga_synthesizer.h
     # include/note_naga_engine/io
     ./include/note_naga_engine/io/midi_file.h
     # include/note_naga_engine/module
     ./include/note_naga_engine/module/mixer.h
     ./include/note_naga_engine/module/playback_worker.h
+    ./include/note_naga_engine/module/audio_worker.h
+    ./include/note_naga_engine/module/dsp_engine.h
     # include/note_naga_engine/synth
     ./include/note_naga_engine/synth/synth_fluidsynth.h
 )
@@ -60,6 +63,8 @@ set(SOURCE_FILES
     # module
     ./module/mixer.cpp
     ./module/playback_worker.cpp
+    ./module/audio_worker.cpp
+    ./module/dsp_engine.cpp
     # note_naga_engine/synth
     ./synth/synth_fluidsynth.cpp
 )
@@ -69,6 +74,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLIB2 REQUIRED IMPORTED_TARGET glib-2.0)
 pkg_check_modules(FLUIDSYNTH REQUIRED IMPORTED_TARGET fluidsynth)
 pkg_check_modules(RTMIDI REQUIRED IMPORTED_TARGET rtmidi)
+pkg_check_modules(RTAUDIO REQUIRED IMPORTED_TARGET rtaudio)
 
 # Qt dependencies (OPTIONAL)
 if(NOT QT_DEACTIVATED)
@@ -101,6 +107,7 @@ target_link_libraries(note_naga_engine
         PkgConfig::GLIB2
         PkgConfig::FLUIDSYNTH
         PkgConfig::RTMIDI
+        PkgConfig::RTAUDIO
 )
 else()
 target_link_libraries(note_naga_engine
