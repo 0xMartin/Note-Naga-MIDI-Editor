@@ -98,6 +98,6 @@ void DockIndicatorOverlay::applyDocking() {
     if (advDock) {
         advDock->dockToArea(static_cast<AdvancedDockWidget::Area>(highlightedArea));
         advDock->dragging = false;
-        advDock->dragOnTitleBar = false;
+        advDock->drag_on_title_bar = false;
     }
 }

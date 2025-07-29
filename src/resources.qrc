@@ -38,6 +38,7 @@
     <file>icons/midi.svg</file>
     <file>icons/step-forward.svg</file>
     <file>icons/loop.svg</file>
+    <file>icons/audio-signal.svg</file>
   </qresource>
   <qresource prefix="/">
     <file>instruments_icons/accordion.svg</file>

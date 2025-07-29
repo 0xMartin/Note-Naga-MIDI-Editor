@@ -10,36 +10,72 @@
 #include "dock_title_bar.h"
 
 AdvancedDockWidget::AdvancedDockWidget(const QString &title, const QIcon &icon,
-                                       QWidget *customButtonWidget, QWidget *parent)
+                                       QWidget *customButtonWidget, QWidget *parent,
+                                       TitleBarPosition titleBarPosition)
     : QDockWidget(title, parent) {
     setFeatures(DockWidgetMovable | DockWidgetFloatable | DockWidgetClosable);
-    titleBar = new CustomDockTitleBar(this, title, icon, customButtonWidget);
-    setTitleBarWidget(titleBar);
+
+    this->title_bar_position = titleBarPosition;
+    this->title_bar =
+        new CustomDockTitleBar(this, title, icon, customButtonWidget,
+                               title_bar_position == TitleTop);
+
+    if (titleBarPosition == TitleTop) {
+        QDockWidget::setTitleBarWidget(title_bar);
+    } else {
+        // Create a composite widget with layout: [titleBar][mainWidget]
+        composite_widget = new QWidget();
+        QHBoxLayout *hbox = new QHBoxLayout(composite_widget);
+        hbox->setContentsMargins(0, 0, 0, 0);
+        hbox->setSpacing(0);
+        hbox->addWidget(title_bar, 0);
+        QWidget *dummy = new QWidget();
+        hbox->addWidget(dummy, 1);
+        composite_widget->setLayout(hbox);
+        QDockWidget::setTitleBarWidget(nullptr);
+        QDockWidget::setWidget(composite_widget);
+    }
     setMouseTracking(true);
     setStyleSheet("QDockWidget { border: 1px solid #19191f; }");
 }
 
 void AdvancedDockWidget::setTitleText(const QString &text) {
-    if (titleBar) titleBar->setTitleText(text);
+    if (title_bar) title_bar->setTitleText(text);
 }
 
 void AdvancedDockWidget::setTitleIcon(const QIcon &icon) {
-    if (titleBar) titleBar->setTitleIcon(icon);
+    if (title_bar) title_bar->setTitleIcon(icon);
 }
 
 void AdvancedDockWidget::setCustomButtonWidget(QWidget *widget) {
-    if (titleBar) titleBar->setCustomButtonWidget(widget);
+    if (title_bar) title_bar->setCustomButtonWidget(widget);
 }
 
-void AdvancedDockWidget::startDragFromTitleBar(const QPoint &from,
-                                               const QPoint &current) {
+void AdvancedDockWidget::setWidget(QWidget *widget) {
+    if (this->title_bar_position == TitleTop) {
+        QDockWidget::setWidget(widget);
+    } else {
+        if (!composite_widget) return;
+        QHBoxLayout *hbox = qobject_cast<QHBoxLayout *>(composite_widget->layout());
+        if (!hbox) return;
+        QWidget *old = hbox->itemAt(1)->widget();
+        if (old) {
+            hbox->removeWidget(old);
+            old->deleteLater();
+        }
+        if (widget->parent() == composite_widget) { widget->setParent(nullptr); }
+        hbox->insertWidget(1, widget, 1);
+    }
+}
+
+void AdvancedDockWidget::startDragFromTitleBar(const QPoint &from, const QPoint &current) {
     if (!dragging) {
         dragging = true;
-        dragOnTitleBar = true;
-        dragStartPos = from;
+        drag_on_title_bar = true;
+        drag_start_pos = from;
     }
-    QMouseEvent fakeMove(QEvent::MouseMove, mapFromGlobal(current), current,
-                         Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent fakeMove(QEvent::MouseMove, mapFromGlobal(current), current, Qt::LeftButton,
+                         Qt::LeftButton, Qt::NoModifier);
     mouseMoveEvent(&fakeMove);
 }
 
@@ -52,7 +88,7 @@ void AdvancedDockWidget::endDragFromTitleBar() {
             dock->hideDockOverlay();
     }
     dragging = false;
-    dragOnTitleBar = false;
+    drag_on_title_bar = false;
 }
 
 void AdvancedDockWidget::mousePressEvent(QMouseEvent *event) {
@@ -60,7 +96,7 @@ void AdvancedDockWidget::mousePressEvent(QMouseEvent *event) {
 }
 
 void AdvancedDockWidget::mouseMoveEvent(QMouseEvent *event) {
-    if (dragging && dragOnTitleBar && (event->buttons() & Qt::LeftButton)) {
+    if (dragging && drag_on_title_bar && (event->buttons() & Qt::LeftButton)) {
         for (QWidget *w : QApplication::topLevelWidgets()) {
             QMainWindow *mw = qobject_cast<QMainWindow *>(w);
             if (!mw) continue;
@@ -104,11 +140,8 @@ void AdvancedDockWidget::setFloating(bool floating) {
     QDockWidget::setFloating(floating);
 
     if (floating) {
-        setWindowFlags(Qt::Window |
-                       Qt::WindowTitleHint |
-                       Qt::WindowSystemMenuHint |
-                       Qt::WindowMinMaxButtonsHint |
-                       Qt::WindowCloseButtonHint);
+        setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::WindowSystemMenuHint |
+                       Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint);
         show();
     } else {
         setWindowFlags(Qt::Widget);
@@ -159,13 +192,6 @@ void AdvancedDockWidget::dockToArea(AdvancedDockWidget::Area area) {
         }
     }
 
-    QString names[] = {"Center", "Top", "Bottom", "Left", "Right"};
-    QString msg = QString(">>>>>>> Mouse released at area %1")
-                      .arg(area >= 0 ? names[area] : "None");
-    qDebug() << msg;
-    qDebug() << "Dragged dock: " << dragged_dock->objectName();
-    qDebug() << "Area dock: " << this->objectName();
-
     if (!dragged_dock || dragged_dock == this) return;
 
     if (dragged_dock->isFloating()) { dragged_dock->setFloating(false); }
@@ -192,13 +218,13 @@ void AdvancedDockWidget::dockToArea(AdvancedDockWidget::Area area) {
 void AdvancedDockWidget::toggleMaximizeRestoreFloating() {
     if (!isFloating()) return;
     QWidget *floatWin = this->window();
-    if (!floatingMaximized) {
-        floatingRestoreGeometry = floatWin->geometry();
+    if (!floating_maximized) {
+        floating_restore_geometry = floatWin->geometry();
         auto screen = floatWin->screen()->availableGeometry();
         floatWin->setGeometry(screen);
-        floatingMaximized = true;
+        floating_maximized = true;
     } else {
-        floatWin->setGeometry(floatingRestoreGeometry);
-        floatingMaximized = false;
+        floatWin->setGeometry(floating_restore_geometry);
+        floating_maximized = false;
     }
 }

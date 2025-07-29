@@ -44,6 +44,7 @@ set(HEADER_FILES
     src/gui/components/separator.h
     src/gui/components/audio_vertical_slider.h
     src/gui/components/button_group_widget.h
+    src/gui/components/vertical_title_label.h
     # gui/dialogs
     src/gui/dialogs/instrument_selector_dialog.h
     # gui/widgets
@@ -55,6 +56,7 @@ set(HEADER_FILES
     src/gui/widgets/track_list_widget.h
     src/gui/widgets/track_mixer_widget.h
     src/gui/widgets/track_widget.h
+    src/gui/widgets/dsp_widget.h
 )
 
 set(SOURCE_FILES
@@ -77,6 +79,7 @@ set(SOURCE_FILES
     src/gui/components/separator.cpp
     src/gui/components/audio_vertical_slider.cpp
     src/gui/components/button_group_widget.cpp
+    src/gui/components/vertical_title_label.cpp
     # gui/dialogs
     src/gui/dialogs/instrument_selector_dialog.cpp
     # gui/widgets
@@ -88,6 +91,7 @@ set(SOURCE_FILES
     src/gui/widgets/track_list_widget.cpp
     src/gui/widgets/track_mixer_widget.cpp
     src/gui/widgets/track_widget.cpp
+    src/gui/widgets/dsp_widget.cpp
 )
 
 if(WIN32)

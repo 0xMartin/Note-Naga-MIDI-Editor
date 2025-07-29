@@ -27,6 +27,11 @@ public:
     enum Area { Center = 0, Top = 1, Bottom = 2, Left = 3, Right = 4, None = -1 };
 
     /**
+     * @brief TitleBarPosition enum defines the position of the title bar.
+     */
+    enum TitleBarPosition { TitleTop, TitleLeft };
+
+    /**
      * @brief Constructs an AdvancedDockWidget with a title, icon, and optional custom
      * button widget.
      * @param title The title of the dock widget.
@@ -35,10 +40,9 @@ public:
      * bar.
      * @param parent Parent widget.
      */
-    explicit AdvancedDockWidget(
-        const QString &title, const QIcon &icon = QIcon(),
-        QWidget *customButtonWidget = nullptr, // optional, can be nullptr
-        QWidget *parent = nullptr);
+    explicit AdvancedDockWidget(const QString &title, const QIcon &icon = QIcon(),
+                                QWidget *customButtonWidget = nullptr, QWidget *parent = nullptr,
+                                TitleBarPosition titleBarPosition = TitleBarPosition::TitleTop);
 
     /**
      * @brief Sets the title text of the dock widget.
@@ -59,10 +63,16 @@ public:
     void setCustomButtonWidget(QWidget *widget);
 
     /**
+     * @brief Sets the widget for the dock widget.
+     * @param widget The widget to set as the content of the dock.
+     */
+    void setWidget(QWidget *widget);
+
+    /**
      * @brief Gets the title bar widget.
      * @return Pointer to the CustomDockTitleBar.
      */
-    CustomDockTitleBar *getTitleBar() const { return titleBar; }
+    CustomDockTitleBar *getTitleBar() const { return title_bar; }
 
     /**
      * @brief Shows the dock overlay for docking.
@@ -93,8 +103,11 @@ public slots:
     void toggleMaximizeRestoreFloating();
 
 private:
-    bool floatingMaximized = false;
-    QRect floatingRestoreGeometry;
+    TitleBarPosition title_bar_position;
+    QWidget *composite_widget;
+
+    bool floating_maximized = false;
+    QRect floating_restore_geometry;
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -109,11 +122,11 @@ private:
 
     // Dragging state
     bool dragging = false;
-    bool dragOnTitleBar = false;
-    QPoint dragStartPos;
+    bool drag_on_title_bar = false;
+    QPoint drag_start_pos;
 
     // Title bar
-    CustomDockTitleBar *titleBar = nullptr;
+    CustomDockTitleBar *title_bar = nullptr;
 
     // Dragging support (for docking)
     void startDragFromTitleBar(const QPoint &from, const QPoint &current);

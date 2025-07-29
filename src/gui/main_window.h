@@ -6,6 +6,8 @@
 #include <QMainWindow>
 #include <QMenu>
 
+#include <note_naga_engine/note_naga_engine.h>
+
 #include "dock_system/advanced_dock_widget.h"
 #include "widgets/midi_control_bar_widget.h"
 #include "widgets/midi_editor_widget.h"
@@ -13,7 +15,8 @@
 #include "widgets/midi_tact_ruler.h"
 #include "widgets/track_list_widget.h"
 #include "widgets/track_mixer_widget.h"
-#include <note_naga_engine/note_naga_engine.h>
+#include "widgets/dsp_widget.h"
+
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -67,6 +70,7 @@ private:
 
     TrackListWidget *tracklist_widget;
     TrackMixerWidget *mixer_widget;
+    DSPWidget *dsp_widget;
 
     void setup_actions();
     void setup_menu_bar();
