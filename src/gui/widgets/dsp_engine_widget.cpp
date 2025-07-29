@@ -1,8 +1,8 @@
-#include "dsp_widget.h"
+#include "dsp_engine_widget.h"
 
 #include <note_naga_engine/dsp/dsp_factory.h>
-
 #include "../nn_gui_utils.h"
+#include "../dialogs/dsp_block_chooser_dialog.h"
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -14,15 +14,13 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-DSPWidget::DSPWidget(NoteNagaEngine *engine, QWidget *parent) : QWidget(parent) {
-    this->engine = engine;
-    this->title_widget = nullptr;
+DSPEngineWidget::DSPEngineWidget(NoteNagaEngine *engine, QWidget *parent)
+    : QWidget(parent), engine(engine), title_widget(nullptr), dsp_layout(nullptr) {
     initTitleUI();
     initUI();
 }
 
-void DSPWidget::initTitleUI() {
-    // Vertikální panel s tlačítky vlevo
+void DSPEngineWidget::initTitleUI() {
     if (this->title_widget) return;
     this->title_widget = new QWidget();
     QVBoxLayout *layout = new QVBoxLayout(title_widget);
@@ -30,33 +28,29 @@ void DSPWidget::initTitleUI() {
     layout->setSpacing(0);
 
     QPushButton *btn_add = create_small_button(":/icons/add.svg", "Add DSP module", "btn_add");
-    QPushButton *btn_remove =
-        create_small_button(":/icons/remove.svg", "Remove selected DSP", "btn_remove");
-    QPushButton *btn_clear =
-        create_small_button(":/icons/clear.svg", "Remove all DSP modules", "btn_clear");
+    QPushButton *btn_clear = create_small_button(":/icons/clear.svg", "Remove all DSP modules", "btn_clear");
 
     layout->addWidget(btn_add, 0, Qt::AlignBottom | Qt::AlignHCenter);
-    layout->addWidget(btn_remove, 0, Qt::AlignBottom | Qt::AlignHCenter);
     layout->addWidget(btn_clear, 0, Qt::AlignBottom | Qt::AlignHCenter);
 
-    connect(btn_add, &QPushButton::clicked, this, &DSPWidget::addDSPClicked);
-    connect(btn_remove, &QPushButton::clicked, this, &DSPWidget::removeDSPClicked);
-    connect(btn_clear, &QPushButton::clicked, this, &DSPWidget::removeAllDSPClicked);
+    connect(btn_add, &QPushButton::clicked, this, &DSPEngineWidget::addDSPClicked);
+    connect(btn_clear, &QPushButton::clicked, this, &DSPEngineWidget::removeAllDSPClicked);
 }
 
-void DSPWidget::initUI() {
+void DSPEngineWidget::initUI() {
     QHBoxLayout *main_layout = new QHBoxLayout(this);
     setLayout(main_layout);
     main_layout->setContentsMargins(5, 2, 5, 2);
-    main_layout->setSpacing(0);
+    main_layout->setSpacing(8);
 
-    // Horizontal scroll area for DSP modules
-    /////////////////////////////////////////////////////////////////////////////////////////
+    // Horizontal scroll area for DSP modules (stacked from right)
     QWidget *dsp_container = new QWidget();
     dsp_layout = new QHBoxLayout(dsp_container);
-    dsp_layout->setContentsMargins(0, 0, 0, 0);
+    dsp_layout->setContentsMargins(0, 0, 0, 2);
     dsp_layout->setSpacing(8);
-    dsp_layout->addStretch(1);
+
+    // DSP widgets will be added to the right, so insert from right
+    dsp_layout->addStretch(1); // left side: always spacer/stretch
 
     QScrollArea *dsp_scroll_area = new QScrollArea();
     dsp_scroll_area->setWidgetResizable(true);
@@ -67,10 +61,9 @@ void DSPWidget::initUI() {
     dsp_scroll_area->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     dsp_scroll_area->setWidget(dsp_container);
 
-    main_layout->addWidget(dsp_scroll_area, 1);
+    main_layout->addWidget(dsp_scroll_area, 2); // give more space to DSP modules
 
     // Right info panel with volume bar
-    /////////////////////////////////////////////////////////////////////////////////////////
     QFrame *info_panel = new QFrame();
     info_panel->setObjectName("InfoPanel");
     info_panel->setStyleSheet("QFrame#InfoPanel { background: #2F3139; border: 1px solid #494d56; "
@@ -87,14 +80,13 @@ void DSPWidget::initUI() {
     lbl_info->setStyleSheet("font-size: 13px; color: #ddd; font-weight: bold;");
     info_layout->addWidget(lbl_info);
 
-    // Horizontální sekce: slider vlevo, volume bar vpravo
     QWidget *center_section = new QWidget(info_panel);
     center_section->setStyleSheet("background: transparent;");
     QHBoxLayout *center_layout = new QHBoxLayout(center_section);
     center_layout->setContentsMargins(0, 0, 0, 0);
     center_layout->setSpacing(6);
+    center_layout->addStretch(1);
 
-    // Audio slider
     AudioVerticalSlider *volume_slider = new AudioVerticalSlider(center_section);
     volume_slider->setRange(0, 100.0f);
     volume_slider->setValue(100.0f);
@@ -108,16 +100,13 @@ void DSPWidget::initUI() {
     });
     center_layout->addWidget(volume_slider, 0, Qt::AlignLeft);
 
-    // Stereo volume bar
     StereoVolumeBarWidget *volume_bar = new StereoVolumeBarWidget(center_section);
     volume_bar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     center_layout->addWidget(volume_bar, 1);
 
-    // Přidat center_section do hlavního vertikálního layoutu
     info_layout->addWidget(center_section, 1);
 
     main_layout->addWidget(info_panel, 0);
-    setLayout(main_layout);
 
     // Timer pro aktualizaci hodnoty
     QTimer *timer = new QTimer(this);
@@ -130,24 +119,59 @@ void DSPWidget::initUI() {
     timer->start(50);
 }
 
-void DSPWidget::addDSPClicked() {
-    // Instantiate a new DSP block widget and add it to the layout
-    NoteNagaDSPBlockBase *new_block = nn_create_audio_gain_block(1.0f);
-    if (!new_block) {
-        return;
-    }
+void DSPEngineWidget::addDSPClicked() {
+    DSPBlockChooserDialog dlg(this);
+    if (dlg.exec() != QDialog::Accepted) return;
+
+    const DSPBlockFactoryEntry* selected = dlg.selectedFactory();
+    if (!selected || !selected->create) return;
+
+    NoteNagaDSPBlockBase *new_block = selected->create();
+    if (!new_block) return;
+
     engine->getDSPEngine()->addDSPBlock(new_block);
 
-    // Create UI for new DSP block
     DSPBlockWidget *dsp_widget = new DSPBlockWidget(new_block);
     dsp_widgets.push_back(dsp_widget);
-    dsp_layout->addWidget(dsp_widget);
+    dsp_layout->insertWidget(dsp_layout->count() - 1, dsp_widget);
+
+    connect(dsp_widget, &DSPBlockWidget::deleteRequested, this, [this, dsp_widget, new_block]() {
+        engine->getDSPEngine()->removeDSPBlock(new_block);
+        dsp_layout->removeWidget(dsp_widget);
+        dsp_widgets.erase(std::remove(dsp_widgets.begin(), dsp_widgets.end(), dsp_widget), dsp_widgets.end());
+        dsp_widget->deleteLater();
+        delete new_block;
+    });
+
+    // Move left/right signály (beze změny)
+    connect(dsp_widget, &DSPBlockWidget::moveLeftRequested, this, [this, dsp_widget, new_block]() {
+        int idx = std::distance(dsp_widgets.begin(), std::find(dsp_widgets.begin(), dsp_widgets.end(), dsp_widget));
+        if (idx > 0) {
+            engine->getDSPEngine()->reorderDSPBlock(idx, idx-1);
+            dsp_widgets.erase(dsp_widgets.begin() + idx);
+            dsp_widgets.insert(dsp_widgets.begin() + idx-1, dsp_widget);
+            dsp_layout->removeWidget(dsp_widget);
+            dsp_layout->insertWidget(idx-1, dsp_widget);
+        }
+    });
+    connect(dsp_widget, &DSPBlockWidget::moveRightRequested, this, [this, dsp_widget, new_block]() {
+        int idx = std::distance(dsp_widgets.begin(), std::find(dsp_widgets.begin(), dsp_widgets.end(), dsp_widget));
+        if (idx < int(dsp_widgets.size())-1) {
+            engine->getDSPEngine()->reorderDSPBlock(idx, idx+1);
+            dsp_widgets.erase(dsp_widgets.begin() + idx);
+            dsp_widgets.insert(dsp_widgets.begin() + idx+1, dsp_widget);
+            dsp_layout->removeWidget(dsp_widget);
+            dsp_layout->insertWidget(idx+1, dsp_widget);
+        }
+    });
 }
 
-void DSPWidget::removeDSPClicked() {
-
-}
-
-void DSPWidget::removeAllDSPClicked() {
-
+void DSPEngineWidget::removeAllDSPClicked() {
+    for (auto *dsp_widget : dsp_widgets) {
+        engine->getDSPEngine()->removeDSPBlock(dsp_widget->block());
+        dsp_layout->removeWidget(dsp_widget);
+        dsp_widget->deleteLater();
+        delete dsp_widget->block();
+    }
+    dsp_widgets.clear();
 }

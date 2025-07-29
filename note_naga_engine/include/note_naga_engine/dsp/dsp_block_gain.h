@@ -2,8 +2,16 @@
 
 #include <note_naga_engine/core/dsp_block_base.h>
 
+/** 
+ * @brief DSP Block for a gain effect.
+ */
 class DSPBlockGain : public NoteNagaDSPBlockBase {
 public:
+    /**
+     * @brief Constructor for the gain block.
+     *
+     * @param gain The gain value in dB.
+     */
     DSPBlockGain(float gain) : gain_(gain) {}
 
     void process(float* left, float* right, size_t numFrames) override;
@@ -14,5 +22,5 @@ public:
     std::string getBlockName() const override { return "Gain"; }
 
 private:
-    float gain_ = 1.0f;
+    float gain_ = 0.0f;
 };

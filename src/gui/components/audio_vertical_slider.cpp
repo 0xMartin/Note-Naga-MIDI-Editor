@@ -68,6 +68,7 @@ void AudioVerticalSlider::updateTextSizes() {
     update();
 }
 
+// --- pevné mapování handle: min je DOLNÍ střed, max je HORNÍ střed ---
 QRect AudioVerticalSlider::sliderGrooveRect() const {
     int labelH = m_labelVisible ? m_labelFontSize + 6 : 4;
     int valueH = m_valueVisible ? m_valueFontSize + 8 : 8;
@@ -90,31 +91,60 @@ QRect AudioVerticalSlider::handleRect() const {
     return QRect(groove.center().x() - handleW / 2, y - handleH / 2, handleW, handleH);
 }
 
+// --- PEVNÉ MAPOVÁNÍ: max je nahoře, min je dole ---
+// Pokud min < 0 < max, nula je uprostřed (specialita pro progress bar)
 int AudioVerticalSlider::positionFromValue(float value) const {
     QRect groove = sliderGrooveRect();
-    float f = 1.0f - (value - m_min) / (m_max - m_min);
-    int y = groove.top() + f * groove.height();
     int handleH = int(std::max(20.0, groove.width() * 1.4) * 1.3);
+    int minY = groove.top() + handleH / 2;
+    int maxY = groove.bottom() - handleH / 2;
+
+    if (m_min < 0.0f && m_max > 0.0f) {
+        // nula je uprostřed
+        float zeroFrac = (-m_min) / (m_max - m_min);
+        int zeroY = minY + zeroFrac * (maxY - minY);
+        float frac = (value - 0.0f) / (m_max - m_min);
+        int y = zeroY - frac * (maxY - minY);
+        return limitHandleY(y, handleH, groove);
+    }
+
+    float frac = (value - m_min) / (m_max - m_min);
+    int y = maxY - frac * (maxY - minY);
     return limitHandleY(y, handleH, groove);
 }
 
 float AudioVerticalSlider::valueFromPosition(int y) const {
     QRect groove = sliderGrooveRect();
     int handleH = int(std::max(20.0, groove.width() * 1.4) * 1.3);
-    if (y <= groove.top() + handleH / 2) return m_max;
-    if (y >= groove.bottom() - handleH / 2) return m_min;
-    float f = float(y - groove.top()) / groove.height();
-    float value = m_min + (1.0f - f) * (m_max - m_min);
+    int minY = groove.top() + handleH / 2;
+    int maxY = groove.bottom() - handleH / 2;
+
+    if (m_min < 0.0f && m_max > 0.0f) {
+        float zeroFrac = (-m_min) / (m_max - m_min);
+        int zeroY = minY + zeroFrac * (maxY - minY);
+        float frac = float(zeroY - y) / (maxY - minY);
+        float value = 0.0f + frac * (m_max - m_min);
+        return std::clamp(value, m_min, m_max);
+    }
+
+    float frac = float(maxY - y) / (maxY - minY);
+    float value = m_min + frac * (m_max - m_min);
     return std::clamp(value, m_min, m_max);
 }
 
 void AudioVerticalSlider::mousePressEvent(QMouseEvent *event) {
-    if (handleRect().contains(event->pos())) {
-        m_dragging = true;
-        m_dragOffset = event->pos().y() - handleRect().center().y();
-    } else {
-        setValue(valueFromPosition(event->pos().y()));
+    if (event->button() == Qt::LeftButton) {
+        if (handleRect().contains(event->pos())) {
+            m_dragging = true;
+            m_dragOffset = event->pos().y() - handleRect().center().y();
+        } else {
+            setValue(valueFromPosition(event->pos().y()));
+        }
+    } else if (event->button() == Qt::RightButton) {
+        // Right-click resets to default value
+        setValue(m_default_value);
     }
+    event->accept();
 }
 
 void AudioVerticalSlider::mouseMoveEvent(QMouseEvent *event) {
@@ -122,16 +152,21 @@ void AudioVerticalSlider::mouseMoveEvent(QMouseEvent *event) {
         QRect groove = sliderGrooveRect();
         int handleH = int(std::max(20.0, groove.width() * 1.4) * 1.3);
         int y = event->pos().y() - m_dragOffset;
-        if (y <= groove.top() + handleH / 2)
-            setValue(m_max);
-        else if (y >= groove.bottom() - handleH / 2)
-            setValue(m_min);
-        else
-            setValue(valueFromPosition(y));
+        y = limitHandleY(y, handleH, groove); // pevný doraz
+        setValue(valueFromPosition(y));
     }
 }
 
 void AudioVerticalSlider::mouseReleaseEvent(QMouseEvent *) { m_dragging = false; }
+
+void AudioVerticalSlider::wheelEvent(QWheelEvent *event) {
+    float step = (m_max - m_min) / 100.0f; // 1% step
+    if (event->angleDelta().y() > 0) {
+        setValue(value() + step);
+    } else {
+        setValue(value() - step);
+    }
+}
 
 void AudioVerticalSlider::paintEvent(QPaintEvent *) {
     QPainter p(this);
@@ -140,7 +175,7 @@ void AudioVerticalSlider::paintEvent(QPaintEvent *) {
     QRect groove = sliderGrooveRect();
     groove.setX(groove.left() - 1);
 
-    // --- DRAW LABEL ---
+    // --- LABEL ---
     if (m_labelVisible) {
         QFont font = p.font();
         font.setPointSize(m_labelFontSize);
@@ -151,7 +186,7 @@ void AudioVerticalSlider::paintEvent(QPaintEvent *) {
         p.drawText(labelRect, Qt::AlignHCenter | Qt::AlignVCenter, m_labelText);
     }
 
-    // --- DRAW VALUE ---
+    // --- VALUE ---
     if (m_valueVisible) {
         QFont font = p.font();
         font.setPointSize(m_valueFontSize);
@@ -166,59 +201,71 @@ void AudioVerticalSlider::paintEvent(QPaintEvent *) {
         p.drawText(valueRect, Qt::AlignHCenter | Qt::AlignVCenter, valueStr);
     }
 
-    // --- DRAW GROOVE BACKGROUND ---
+    // --- GROOVE ---
     p.setPen(Qt::NoPen);
     p.setBrush(grooveBgColor);
     int grooveRadius = 2;
     p.drawRoundedRect(groove, grooveRadius, grooveRadius);
 
-    // --- DRAW GROOVE OUTLINE ---
     QPen groovePen(grooveOutlineColor, 1, Qt::SolidLine, Qt::RoundCap);
     p.setPen(groovePen);
     p.setBrush(Qt::NoBrush);
     p.drawRoundedRect(groove, grooveRadius, grooveRadius);
 
-    // --- DRAW PROGRESS FILL ---
+    // --- PROGRESS FILL ---
     int valueY = positionFromValue(m_value);
-    QRect grooveFillRect(groove.left() + 2, valueY, groove.width() - 4, groove.bottom() - valueY);
-    QLinearGradient fillGrad(groove.left(), groove.top(), groove.left(), groove.bottom());
-    fillGrad.setColorAt(1.0, grooveGradientStart);
-    fillGrad.setColorAt(0.0, grooveGradientEnd);
-    p.setPen(Qt::NoPen);
-    p.setBrush(fillGrad);
-    QPainterPath fillPath;
-    fillPath.addRoundedRect(QRectF(grooveFillRect), grooveRadius, grooveRadius);
-    if (grooveFillRect.height() < groove.height()) {
-        fillPath = QPainterPath();
-        fillPath.moveTo(grooveFillRect.left(), grooveFillRect.top());
-        fillPath.lineTo(grooveFillRect.right() + 1, grooveFillRect.top());
-        fillPath.lineTo(grooveFillRect.right() + 1, grooveFillRect.bottom());
-        fillPath.lineTo(grooveFillRect.left(), grooveFillRect.bottom());
-        fillPath.lineTo(grooveFillRect.left(), grooveFillRect.top());
+    QRect grooveFillRect;
+    if (m_min < 0.0f && m_max > 0.0f) {
+        // progress od nuly
+        int zeroY = positionFromValue(0.0f);
+        if (m_value > 0.0f) {
+            grooveFillRect = QRect(groove.left() + 2, valueY,
+                                   groove.width() - 4, zeroY - valueY);
+        } else {
+            grooveFillRect = QRect(groove.left() + 2, zeroY,
+                                   groove.width() - 4, valueY - zeroY);
+        }
+        QLinearGradient fillGrad(groove.left(), groove.top(), groove.left(), groove.bottom());
+        float zeroFrac = float(zeroY - groove.top()) / groove.height();
+        fillGrad.setColorAt(zeroFrac, grooveGradientStart);
+        fillGrad.setColorAt(0.0, grooveGradientEnd);
+        fillGrad.setColorAt(1.0, grooveGradientEnd);
+        p.setPen(Qt::NoPen);
+        p.setBrush(fillGrad);
+        p.drawRect(grooveFillRect);
+    } else {
+        // standardní progress odspoda nahoru
+        grooveFillRect = QRect(groove.left() + 2, valueY,
+                               groove.width() - 4, groove.bottom() - valueY);
+        QLinearGradient fillGrad(groove.left(), groove.top(), groove.left(), groove.bottom());
+        fillGrad.setColorAt(1.0, grooveGradientStart);
+        fillGrad.setColorAt(0.0, grooveGradientEnd);
+        p.setPen(Qt::NoPen);
+        p.setBrush(fillGrad);
+        p.drawRect(grooveFillRect);
     }
-    p.drawPath(fillPath);
 
-    // --- DRAW SCALE ---
+    // --- SCALE TICKS ---
     int scaleX = groove.right() + 3;
     int tickLenMajor = 7, tickLenMinor = 3;
     int nTicks = 9;
     for (int i = 0; i < nTicks; ++i) {
-        double relY = double(i) / (nTicks - 1);
-        int y = groove.top() + relY * groove.height();
-        bool major = (i == 0 || i == nTicks - 1 || i == nTicks / 2);
+        float tickValue = m_min + (i / float(nTicks - 1)) * (m_max - m_min);
+        int y = positionFromValue(tickValue);
+        bool major = (i == 0 || i == nTicks - 1 || std::abs(tickValue) < 1e-6f);
         p.setPen(major ? scaleMajorColor : scaleMinorColor);
         int len = major ? tickLenMajor : tickLenMinor;
         p.drawLine(scaleX, y, scaleX + len, y);
     }
 
-    // --- DRAW HANDLE ---
+    // --- HANDLE ---
     QRect hRect = handleRect();
     int handleRadius = 3;
     p.setPen(handleOutlineColor);
     p.setBrush(handleFillColor);
     p.drawRoundedRect(hRect, handleRadius, handleRadius);
 
-    // --- DRAW GROOVE LINES ---
+    // --- GROOVE LINES ---
     p.setPen(handleGrooveColor);
     int nGrooves = 6;
     int grooveSpacing = hRect.height() / (nGrooves + 1);

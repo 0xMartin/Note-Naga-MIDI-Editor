@@ -48,6 +48,7 @@ set(HEADER_FILES
     src/gui/components/stereo_volume_bar_widget.h
     # gui/dialogs
     src/gui/dialogs/instrument_selector_dialog.h
+    src/gui/dialogs/dsp_block_chooser_dialog.h
     # gui/widgets
     src/gui/widgets/midi_control_bar_widget.h
     src/gui/widgets/midi_editor_widget.h
@@ -57,7 +58,7 @@ set(HEADER_FILES
     src/gui/widgets/track_list_widget.h
     src/gui/widgets/track_mixer_widget.h
     src/gui/widgets/track_widget.h
-    src/gui/widgets/dsp_widget.h
+    src/gui/widgets/dsp_engine_widget.h
     src/gui/widgets/dsp_block_widget.h
 )
 
@@ -85,6 +86,7 @@ set(SOURCE_FILES
     src/gui/components/stereo_volume_bar_widget.cpp
     # gui/dialogs
     src/gui/dialogs/instrument_selector_dialog.cpp
+    src/gui/dialogs/dsp_block_chooser_dialog.cpp
     # gui/widgets
     src/gui/widgets/midi_control_bar_widget.cpp
     src/gui/widgets/midi_editor_widget.cpp
@@ -94,7 +96,7 @@ set(SOURCE_FILES
     src/gui/widgets/track_list_widget.cpp
     src/gui/widgets/track_mixer_widget.cpp
     src/gui/widgets/track_widget.cpp
-    src/gui/widgets/dsp_widget.cpp
+    src/gui/widgets/dsp_engine_widget.cpp
     src/gui/widgets/dsp_block_widget.cpp
 )
 

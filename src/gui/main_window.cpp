@@ -201,7 +201,7 @@ void MainWindow::setup_dock_layout() {
     docks["mixer"] = mixer_dock;
 
     // === DSP dock ===
-    dsp_widget = new DSPWidget(this->engine, this);
+    dsp_widget = new DSPEngineWidget(this->engine, this);
     auto *dsp_dock = new AdvancedDockWidget("DSP", QIcon(":/icons/audio-signal.svg"),
                                             dsp_widget->getTitleWidget(), this,
                                             AdvancedDockWidget::TitleBarPosition::TitleLeft);

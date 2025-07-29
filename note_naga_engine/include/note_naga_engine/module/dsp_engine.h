@@ -53,6 +53,13 @@ public:
     void removeDSPBlock(NoteNagaDSPBlockBase* block);
 
     /**
+     * @brief Reorder DSP block in the processing chain.
+     * @param from_idx Index of block to move.
+     * @param to_idx Target index.
+     */
+    void reorderDSPBlock(int from_idx, int to_idx);
+
+    /**
      * @brief Get the current project.
      * @return Pointer to the NoteNagaProject instance.
      */

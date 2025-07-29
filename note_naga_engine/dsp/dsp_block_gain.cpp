@@ -2,8 +2,8 @@
 
 void DSPBlockGain::process(float *left, float *right, size_t numFrames) {
     if (!isActive()) return;
-    if (gain_ == 1.0f) return; // No change needed
-    float appliedGain = powf(10.0f, gain_ - 1.0f);
+    if (gain_ == 0.0f) return; // No change needed
+    float appliedGain = powf(10.0f, gain_);
     for (size_t i = 0; i < numFrames; ++i) {
         left[i] *= appliedGain;
         right[i] *= appliedGain;
@@ -11,7 +11,9 @@ void DSPBlockGain::process(float *left, float *right, size_t numFrames) {
 }
 
 std::vector<DSPParamDescriptor> DSPBlockGain::getParamDescriptors() {
-    return {DSPParamDescriptor{"Gain", DSPParamType::Float, 0.0f, 3.0f, 1.0f, DSP_UI_TYPE_SLIDER_VERTICAL}};
+    std::vector<DSPParamDescriptor> params;
+    params.push_back(DSPParamDescriptor{"Gain", DSPParamType::Float, DSControlType::SliderVertical, -2.0f, 2.0f, 0.0f});
+    return params;
 }
 
 float DSPBlockGain::getParamValue(size_t idx) const {

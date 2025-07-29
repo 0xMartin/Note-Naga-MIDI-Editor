@@ -15,7 +15,7 @@
 #include "widgets/midi_tact_ruler.h"
 #include "widgets/track_list_widget.h"
 #include "widgets/track_mixer_widget.h"
-#include "widgets/dsp_widget.h"
+#include "widgets/dsp_engine_widget.h"
 
 
 class MainWindow : public QMainWindow {
@@ -70,7 +70,7 @@ private:
 
     TrackListWidget *tracklist_widget;
     TrackMixerWidget *mixer_widget;
-    DSPWidget *dsp_widget;
+    DSPEngineWidget *dsp_widget;
 
     void setup_actions();
     void setup_menu_bar();

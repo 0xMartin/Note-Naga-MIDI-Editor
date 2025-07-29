@@ -23,10 +23,10 @@
  * It includes a title bar with buttons for adding, removing, and clearing DSP modules,
  * and a scrollable area to display the DSP modules.
  */
-class DSPWidget : public QWidget {
+class DSPEngineWidget : public QWidget {
     Q_OBJECT
 public:
-    explicit DSPWidget(NoteNagaEngine *engine, QWidget *parent = nullptr);
+    explicit DSPEngineWidget(NoteNagaEngine *engine, QWidget *parent = nullptr);
 
     QWidget *getTitleWidget() const { return this->title_widget; }
 
@@ -45,6 +45,5 @@ private:
 
 private slots:
     void addDSPClicked();
-    void removeDSPClicked();
     void removeAllDSPClicked();
 };

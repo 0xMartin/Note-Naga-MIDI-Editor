@@ -3,14 +3,14 @@
 #include <algorithm>
 #include <cstring>
 
-NoteNagaDSPEngine::NoteNagaDSPEngine(NoteNagaProject *project){
+NoteNagaDSPEngine::NoteNagaDSPEngine(NoteNagaProject *project) {
     this->project_ = project;
     metronome_.setProject(project);
     metronome_.setSampleRate(44100);
     NOTE_NAGA_LOG_INFO("DSP Engine initialized");
 }
 
-void NoteNagaDSPEngine::render(float* output, size_t num_frames) {
+void NoteNagaDSPEngine::render(float *output, size_t num_frames) {
     // Prepare mix buffers
     if (mix_left_.size() < num_frames) mix_left_.resize(num_frames, 0.0f);
     if (mix_right_.size() < num_frames) mix_right_.resize(num_frames, 0.0f);
@@ -19,12 +19,12 @@ void NoteNagaDSPEngine::render(float* output, size_t num_frames) {
 
     // Render all synths and mix
     std::lock_guard<std::mutex> lock(dsp_engine_mutex_);
-    for (INoteNagaSoftSynth* synth : this->synths_) {
+    for (INoteNagaSoftSynth *synth : this->synths_) {
         synth->renderAudio(mix_left_.data(), mix_right_.data(), num_frames);
     }
 
     // DSP blocks processing
-    for (NoteNagaDSPBlockBase* block : this->dsp_blocks_) {
+    for (NoteNagaDSPBlockBase *block : this->dsp_blocks_) {
         block->process(mix_left_.data(), mix_right_.data(), num_frames);
     }
 
@@ -45,9 +45,9 @@ void NoteNagaDSPEngine::render(float* output, size_t num_frames) {
     this->calculateRMS(mix_left_.data(), mix_right_.data(), num_frames);
 
     // Interleave left and right channels using pointer arithmetic for efficiency
-    float* left = mix_left_.data();
-    float* right = mix_right_.data();
-    float* out = output;
+    float *left = mix_left_.data();
+    float *right = mix_right_.data();
+    float *out = output;
     size_t i = 0;
     size_t n = num_frames;
     // Unroll loop for better performance
@@ -69,24 +69,36 @@ void NoteNagaDSPEngine::render(float* output, size_t num_frames) {
     }
 }
 
-void NoteNagaDSPEngine::addSynth(INoteNagaSoftSynth* synth) {
+void NoteNagaDSPEngine::addSynth(INoteNagaSoftSynth *synth) {
     std::lock_guard<std::mutex> lock(dsp_engine_mutex_);
     synths_.push_back(synth);
 }
 
-void NoteNagaDSPEngine::removeSynth(INoteNagaSoftSynth* synth) {
+void NoteNagaDSPEngine::removeSynth(INoteNagaSoftSynth *synth) {
     std::lock_guard<std::mutex> lock(dsp_engine_mutex_);
     synths_.erase(std::remove(synths_.begin(), synths_.end(), synth), synths_.end());
 }
 
-void NoteNagaDSPEngine::addDSPBlock(NoteNagaDSPBlockBase* block) {
+void NoteNagaDSPEngine::addDSPBlock(NoteNagaDSPBlockBase *block) {
     std::lock_guard<std::mutex> lock(dsp_engine_mutex_);
     dsp_blocks_.push_back(block);
 }
 
-void NoteNagaDSPEngine::removeDSPBlock(NoteNagaDSPBlockBase* block) {
+void NoteNagaDSPEngine::removeDSPBlock(NoteNagaDSPBlockBase *block) {
     std::lock_guard<std::mutex> lock(dsp_engine_mutex_);
-    dsp_blocks_.erase(std::remove(dsp_blocks_.begin(), dsp_blocks_.end(), block), dsp_blocks_.end());
+    dsp_blocks_.erase(std::remove(dsp_blocks_.begin(), dsp_blocks_.end(), block),
+                      dsp_blocks_.end());
+}
+
+void NoteNagaDSPEngine::reorderDSPBlock(int from_idx, int to_idx) {
+    std::lock_guard<std::mutex> lock(dsp_engine_mutex_);
+    if (from_idx < 0 || from_idx >= int(dsp_blocks_.size()) || to_idx < 0 ||
+        to_idx >= int(dsp_blocks_.size()) || from_idx == to_idx)
+        return;
+    auto it_from = dsp_blocks_.begin() + from_idx;
+    auto block = *it_from;
+    dsp_blocks_.erase(it_from);
+    dsp_blocks_.insert(dsp_blocks_.begin() + to_idx, block);
 }
 
 void NoteNagaDSPEngine::setOutputVolume(float volume) {
@@ -99,8 +111,8 @@ std::pair<float, float> NoteNagaDSPEngine::getCurrentVolumeDb() const {
     return {last_rms_left_, last_rms_right_};
 }
 
-void NoteNagaDSPEngine::calculateRMS(float* left, float* right, size_t numFrames) {
-        // Výpočet RMS pro left/right
+void NoteNagaDSPEngine::calculateRMS(float *left, float *right, size_t numFrames) {
+    // Výpočet RMS pro left/right
     double sum_left = 0.0, sum_right = 0.0;
     for (size_t i = 0; i < numFrames; ++i) {
         sum_left += left[i] * left[i];

@@ -53,6 +53,9 @@ set(PUBLIC_HEADER_FILES
     # include/note_naga_engine/dsp
     ./include/note_naga_engine/dsp/dsp_factory.h
     ./include/note_naga_engine/dsp/dsp_block_gain.h
+    ./include/note_naga_engine/dsp/dsp_block_pan.h
+    ./include/note_naga_engine/dsp/dsp_block_single_eq.h
+    ./include/note_naga_engine/dsp/dsp_block_compressor.h
 )
 
 set(SOURCE_FILES
@@ -75,6 +78,9 @@ set(SOURCE_FILES
     # dsp
     ./dsp/dsp_factory.cpp
     ./dsp/dsp_block_gain.cpp
+    ./dsp/dsp_block_pan.cpp
+    ./dsp/dsp_block_single_eq.cpp
+    ./dsp/dsp_block_compressor.cpp
 )
 
 # GLIB2, FluidSynth, and RtMidi dependencies (REQUIRED)

@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 #include <vector>
 #include <variant>
@@ -12,9 +13,16 @@ enum class DSPParamType {
     Bool
 };
 
-#define DSP_UI_TYPE_SLIDER_VERTICAL "slider_vertical"
-#define DSP_UI_TYPE_DIAL "dial"
-#define DSP_UI_TYPE_DIAL_CENTERED "dial_centered"
+/**
+ * @brief Control types for DSP parameters in the UI.
+ */
+enum class DSControlType {
+    Dial,
+    DialCentered,
+    SliderVertical,
+    PushButton,
+    ToogleButton
+};
 
 /**
  * @brief Structure for describing DSP block parameters.
@@ -22,10 +30,10 @@ enum class DSPParamType {
 struct DSPParamDescriptor {
     std::string name;
     DSPParamType type;
-    float minValue = 0.0f;
-    float maxValue = 1.0f;
-    float defaultValue = 0.0f;
-    std::string uiType; 
+    DSControlType control_type; 
+    float min_value = 0.0f;
+    float max_value = 1.0f;
+    float default_value = 0.0f;
 };
 
 /**

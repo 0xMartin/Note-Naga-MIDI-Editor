@@ -6,7 +6,7 @@
 
 StereoVolumeBarWidget::StereoVolumeBarWidget(QWidget* parent, int minDb, int maxDb, int barWidth)
     : QWidget(parent), minDb_(minDb), maxDb_(maxDb), barWidth_(barWidth) {
-    setMinimumWidth(48);
+    setMinimumWidth(72);
     setMinimumHeight(180);
     updateBoldTicks();
     leftPeakTimer_.start();
@@ -54,7 +54,7 @@ void StereoVolumeBarWidget::updatePeakValues(float leftDb, float rightDb) {
 }
 
 QSize StereoVolumeBarWidget::minimumSizeHint() const {
-    return QSize(48, 180);
+    return QSize(118, 180);
 }
 
 void StereoVolumeBarWidget::paintEvent(QPaintEvent* event) {
@@ -82,9 +82,9 @@ void StereoVolumeBarWidget::paintEvent(QPaintEvent* event) {
 
     // Gradient
     QLinearGradient grad(0, margin + bar_h, 0, margin);
-    grad.setColorAt(0.0, QColor("#28ff42"));
-    grad.setColorAt(0.7, QColor("#f7ff3c"));
-    grad.setColorAt(1.0, QColor("#ff2929"));
+    grad.setColorAt(1.0, QColor("#28ff42"));
+    grad.setColorAt(0.4, QColor("#f7ff3c"));
+    grad.setColorAt(0.1, QColor("#ff2929"));
 
     // dB scale
     int scale_x = width() - label_width + 2;

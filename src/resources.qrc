@@ -39,6 +39,10 @@
     <file>icons/step-forward.svg</file>
     <file>icons/loop.svg</file>
     <file>icons/audio-signal.svg</file>
+    <file>icons/inactive.svg</file>
+    <file>icons/active.svg</file>
+    <file>icons/left.svg</file>
+    <file>icons/right.svg</file>
   </qresource>
   <qresource prefix="/">
     <file>instruments_icons/accordion.svg</file>

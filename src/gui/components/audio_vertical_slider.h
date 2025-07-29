@@ -103,6 +103,12 @@ public:
      */
     void setValueDecimals(int decimals);
 
+    /**
+     * @brief Sets the default value of the slider.
+     * @param defaultValue The default value to set.
+     */
+    void setDefaultValue(float defaultValue) { this->m_default_value = defaultValue; }
+
     // --- PUBLIC COLORS ---
     QColor grooveBgColor = QColor("#232731");
     QColor grooveOutlineColor = QColor("#4a4d56");
@@ -124,6 +130,7 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 
 private:
@@ -136,6 +143,7 @@ private:
     float m_min = 0.0f;
     float m_max = 100.0f;
     float m_value = 50.0f;
+    float m_default_value = 50.0f;
 
     bool m_dragging = false;
     int m_dragOffset = 0;
