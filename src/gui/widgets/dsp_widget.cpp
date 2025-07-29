@@ -45,7 +45,7 @@ void DSPWidget::initTitleUI()
 void DSPWidget::initUI()
 {
     main_layout = new QHBoxLayout(this);
-    main_layout->setContentsMargins(5, 5, 5, 5);
+    main_layout->setContentsMargins(5, 2, 5, 2);
     main_layout->setSpacing(0);
 
     // Vertikální header vlevo
@@ -61,7 +61,7 @@ void DSPWidget::initUI()
     dsp_scroll_area = new QScrollArea();
     dsp_scroll_area->setWidgetResizable(true);
     dsp_scroll_area->setFrameShape(QFrame::NoFrame);
-    dsp_scroll_area->setStyleSheet("QScrollArea { background: transparent; padding: 0px; }");
+    dsp_scroll_area->setStyleSheet("QScrollArea { background: transparent; padding: 0px; border: none; }");
     dsp_scroll_area->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     dsp_scroll_area->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     dsp_scroll_area->setWidget(dsp_container);

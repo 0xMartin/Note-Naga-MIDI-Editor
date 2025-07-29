@@ -231,7 +231,7 @@ void TrackMixerWidget::initUI() {
     routing_scroll->setFrameShape(QFrame::NoFrame);
     routing_scroll->setMinimumHeight(250);
     routing_scroll->setStyleSheet(
-        "QScrollArea { background: transparent; padding: 0px; }");
+        "QScrollArea { background: transparent; padding: 0px; border: none; }");
     main_layout->addWidget(routing_scroll, 1);
 
     routing_entries_container = new QWidget();

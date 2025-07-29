@@ -48,7 +48,7 @@ void TrackListWidget::initUI() {
     scroll_area = new QScrollArea(this);
     scroll_area->setWidgetResizable(true);
     scroll_area->setFrameShape(QFrame::NoFrame);
-    scroll_area->setStyleSheet("QScrollArea { background: transparent; padding: 0px; }");
+    scroll_area->setStyleSheet("QScrollArea { background: transparent; padding: 0px; border: none; }");
 
     container = new QWidget();
     vbox = new QVBoxLayout(container);

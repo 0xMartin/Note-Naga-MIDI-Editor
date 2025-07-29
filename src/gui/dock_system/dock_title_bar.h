@@ -8,6 +8,8 @@
 #include <QPushButton>
 #include <QFrame>
 
+#include "../components/vertical_title_label.h"
+
 // Forward declaration of AdvancedDockWidget to avoid circular dependency
 class AdvancedDockWidget;
 
@@ -15,10 +17,10 @@ class AdvancedDockWidget;
  * @brief CustomDockTitleBar is a custom title bar for AdvancedDockWidget.
  * It includes the title, icon, and optional custom buttons.
  */
-class CustomDockTitleBar : public QFrame {
+class AdvancedDockTitleBar : public QFrame {
     Q_OBJECT
 public:
-    explicit CustomDockTitleBar(
+    explicit AdvancedDockTitleBar(
         AdvancedDockWidget* dock,
         const QString& title,
         const QIcon& icon,
@@ -29,7 +31,7 @@ public:
     void setTitleIcon(const QIcon& icon);
     void setCustomButtonWidget(QWidget* widget);
 
-    QString getTitleText() const { return titleLabel->text(); }
+    QString getTitleText() const { return horizontal ? horizontalTitleLabel->text() : verticalTitleLabel->text(); }
     QWidget* getCustomButtonWidget() const { return customButtons; }
 
 protected:
@@ -37,7 +39,6 @@ protected:
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
     void mouseDoubleClickEvent(QMouseEvent* event) override;
-    void paintEvent(QPaintEvent* event) override;
 
 private slots:
     void onFloatClicked();
@@ -46,7 +47,8 @@ private slots:
 private:
     AdvancedDockWidget* dockWidget = nullptr;
     QLabel* iconLabel = nullptr;
-    QLabel* titleLabel = nullptr;
+    QLabel* horizontalTitleLabel = nullptr;
+    VerticalTitleLabel* verticalTitleLabel = nullptr;
     QWidget* customButtons = nullptr;
     QWidget* defaultButtons = nullptr;
 

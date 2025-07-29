@@ -49,7 +49,7 @@ MidiControlBarWidget::MidiControlBarWidget(NoteNagaEngine *engine_, QWidget *par
 
 void MidiControlBarWidget::initUI() {
     QHBoxLayout *hbox = new QHBoxLayout(this);
-    hbox->setContentsMargins(8, 3, 8, 3);
+    hbox->setContentsMargins(6, 3, 6, 3);
     hbox->setSpacing(8);
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -108,6 +108,7 @@ void MidiControlBarWidget::initUI() {
     tempo_label->installEventFilter(this);
 
     QWidget *tempo_widget = new QWidget();
+    tempo_widget->setObjectName("tempoWidget");
     tempo_widget->setLayout(tempo_hbox);
     hbox->addWidget(tempo_widget);
 
@@ -115,6 +116,13 @@ void MidiControlBarWidget::initUI() {
     // styles
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     setStyleSheet(R"(
+        QFrame#MidiControlBarWidget {
+            border-top: 1px solid #19191f;
+            background-color: #373942;
+        }
+        QWidget#tempoWidget { 
+            background: transparent; 
+        }
         QPushButton#metronomeBtn {
             min-width: 32px;
             max-width: 32px;

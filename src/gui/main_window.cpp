@@ -151,7 +151,9 @@ void MainWindow::setup_dock_layout() {
     editor_layout->addWidget(editor_main, 1);
     control_bar = new MidiControlBarWidget(this->engine, this);
     editor_layout->addWidget(control_bar);
-    QWidget *editor_container = new QWidget();
+    QFrame *editor_container = new QFrame();
+    editor_container->setObjectName("EditorContainer");
+    editor_container->setStyleSheet("QFrame#EditorContainer { border: 1px solid #19191f; }");
     editor_container->setLayout(editor_layout);
 
     auto *editor_dock = new AdvancedDockWidget("MIDI Editor", QIcon(":/icons/midi.svg"),

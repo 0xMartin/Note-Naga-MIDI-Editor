@@ -11,7 +11,7 @@
 #include <QWidget>
 
 // ---------- Forward declarations ----------
-class CustomDockTitleBar;
+class AdvancedDockTitleBar;
 class DockIndicatorOverlay;
 
 /**
@@ -72,7 +72,7 @@ public:
      * @brief Gets the title bar widget.
      * @return Pointer to the CustomDockTitleBar.
      */
-    CustomDockTitleBar *getTitleBar() const { return title_bar; }
+    AdvancedDockTitleBar *getTitleBar() const { return title_bar; }
 
     /**
      * @brief Shows the dock overlay for docking.
@@ -104,7 +104,7 @@ public slots:
 
 private:
     TitleBarPosition title_bar_position;
-    QWidget *composite_widget;
+    QFrame *composite_widget;
 
     bool floating_maximized = false;
     QRect floating_restore_geometry;
@@ -117,7 +117,7 @@ protected:
 
 private:
     friend class DockIndicatorOverlay;
-    friend class CustomDockTitleBar;
+    friend class AdvancedDockTitleBar;
     DockIndicatorOverlay *overlay = nullptr;
 
     // Dragging state
@@ -126,7 +126,7 @@ private:
     QPoint drag_start_pos;
 
     // Title bar
-    CustomDockTitleBar *title_bar = nullptr;
+    AdvancedDockTitleBar *title_bar = nullptr;
 
     // Dragging support (for docking)
     void startDragFromTitleBar(const QPoint &from, const QPoint &current);

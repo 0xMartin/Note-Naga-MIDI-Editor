@@ -135,12 +135,12 @@ void MidiEditorWidget::initTitleUI() {
     QPushButton *btn_v_zoom_in = create_small_button(
         ":/icons/zoom-in-vertical.svg", "Vertical Zoom In", "VZoomIn");
     connect(btn_v_zoom_in, &QPushButton::clicked, this, [this]() {
-        setKeyHeight(config.key_height * 1.2);
+        setKeyHeight(ceil(config.key_height * 1.2));
     });
     QPushButton *btn_v_zoom_out = create_small_button(
         ":/icons/zoom-out-vertical.svg", "Vertical Zoom Out", "VZoomOut");
     connect(btn_v_zoom_out, &QPushButton::clicked, this, [this]() {
-        setKeyHeight(config.key_height / 1.2);
+        setKeyHeight(floor(config.key_height / 1.2));
     });
 
     // looping button
@@ -310,8 +310,25 @@ void MidiEditorWidget::setTimeScale(double scale) {
 }
 
 void MidiEditorWidget::setKeyHeight(int h) {
-    config.key_height = std::max(4, std::min(48, h));
+    int old_height = config.key_height;
+    int viewport_height = viewport()->height();
+    int old_scroll = verticalScrollBar()->value();
+
+    // Pozice key (index) ve středu viewportu
+    double center_key = (old_scroll + viewport_height / 2.0) / old_height;
+
+    config.key_height = std::max(5, std::min(30, h));
     emit keyHeightChanged(config.key_height);
+
+    // Aktualizuj obsah (pro novou výšku)
+    recalculateContentSize();
+
+    // Nastav scroll tak, ať střed zůstane na stejné klávese
+    int new_scroll = int(center_key * config.key_height - viewport_height / 2.0);
+    new_scroll = std::max(0, std::min(new_scroll, content_height - viewport_height));
+    verticalScrollBar()->setValue(new_scroll);
+    emit verticalScrollChanged(new_scroll);
+
     refreshAll();
 }
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QWidget>
-#include <QLabel>
 #include <QString>
 #include <QFont>
 
@@ -13,7 +12,9 @@ public:
     void setText(const QString& text);
     QString text() const { return m_text; }
     void setFont(const QFont& font);
+
     QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
 
 protected:
     void paintEvent(QPaintEvent* event) override;

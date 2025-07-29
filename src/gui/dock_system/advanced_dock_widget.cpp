@@ -13,18 +13,22 @@ AdvancedDockWidget::AdvancedDockWidget(const QString &title, const QIcon &icon,
                                        QWidget *customButtonWidget, QWidget *parent,
                                        TitleBarPosition titleBarPosition)
     : QDockWidget(title, parent) {
-    setFeatures(DockWidgetMovable | DockWidgetFloatable | DockWidgetClosable);
+        
+    this->setFeatures(DockWidgetMovable | DockWidgetFloatable | DockWidgetClosable);
+    this->setMouseTracking(true);
+    this->setStyleSheet("QDockWidget { border: 1px solid #19191f; }");
 
     this->title_bar_position = titleBarPosition;
-    this->title_bar =
-        new CustomDockTitleBar(this, title, icon, customButtonWidget,
-                               title_bar_position == TitleTop);
+    this->title_bar = new AdvancedDockTitleBar(this, title, icon, customButtonWidget,
+                                               title_bar_position == TitleTop);
 
     if (titleBarPosition == TitleTop) {
         QDockWidget::setTitleBarWidget(title_bar);
     } else {
         // Create a composite widget with layout: [titleBar][mainWidget]
-        composite_widget = new QWidget();
+        composite_widget = new QFrame();
+        composite_widget->setObjectName("CompositeWidget");
+        composite_widget->setStyleSheet("QFrame#CompositeWidget { border: 1px solid #19191f; }");
         QHBoxLayout *hbox = new QHBoxLayout(composite_widget);
         hbox->setContentsMargins(0, 0, 0, 0);
         hbox->setSpacing(0);
@@ -32,11 +36,13 @@ AdvancedDockWidget::AdvancedDockWidget(const QString &title, const QIcon &icon,
         QWidget *dummy = new QWidget();
         hbox->addWidget(dummy, 1);
         composite_widget->setLayout(hbox);
-        QDockWidget::setTitleBarWidget(nullptr);
         QDockWidget::setWidget(composite_widget);
+
+        // hide default title bar
+        QWidget *emptyTitleBar = new QWidget();
+        emptyTitleBar->setFixedHeight(0);
+        QDockWidget::setTitleBarWidget(emptyTitleBar);
     }
-    setMouseTracking(true);
-    setStyleSheet("QDockWidget { border: 1px solid #19191f; }");
 }
 
 void AdvancedDockWidget::setTitleText(const QString &text) {

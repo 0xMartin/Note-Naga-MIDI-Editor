@@ -8,50 +8,71 @@
 #include <QPainter>
 #include <QTransform>
 
-CustomDockTitleBar::CustomDockTitleBar(
+AdvancedDockTitleBar::AdvancedDockTitleBar(
     AdvancedDockWidget* dock, const QString& title, const QIcon& icon, QWidget* customButtonWidget,
     bool horizontal)
     : QFrame(dock), dockWidget(dock), horizontal(horizontal)
 {
-    setObjectName("CustomDockTitleBar");
-    setStyleSheet("QFrame#CustomDockTitleBar { background: #2b2f37; border: 1px solid #19191f; margin-bottom: 0px; }");
+    setObjectName("AdvancedDockTitleBar");
+    setStyleSheet(
+        "QFrame#AdvancedDockTitleBar {"
+        "  background: #2b2f37;"
+        "  border: 1px solid #19191f;"
+        "  margin-bottom: 0px; "
+        "}");
 
     if (horizontal) {
         // horizontal layout
-        QHBoxLayout* header_layout = new QHBoxLayout(this);
-        header_layout->setContentsMargins(10, 0, 0, 0);
-        header_layout->setSpacing(6);
+        QHBoxLayout* main_layout = new QHBoxLayout(this);
+        main_layout->setContentsMargins(10, 0, 0, 0);
+        main_layout->setSpacing(6);
 
         // title icon
         iconLabel = new QLabel(this);
         iconLabel->setPixmap(icon.pixmap(20, 20));
         iconLabel->setFixedSize(20, 20);
-        header_layout->addWidget(iconLabel, 0, Qt::AlignVCenter);
+        main_layout->addWidget(iconLabel, 0, Qt::AlignVCenter);
 
         // title label
-        titleLabel = new QLabel(title, this);
-        titleLabel->setStyleSheet("font-size: 18px; font-weight: bold; color: #79b8ff; letter-spacing: 1.2px;");
-        header_layout->addWidget(titleLabel, 0, Qt::AlignVCenter);
+        horizontalTitleLabel = new QLabel(title, this);
+        horizontalTitleLabel->setStyleSheet("font-size: 18px; font-weight: bold; color: #79b8ff; letter-spacing: 1.2px;");
+        main_layout->addWidget(horizontalTitleLabel, 0, Qt::AlignVCenter);
 
-        header_layout->addStretch(1);
+        main_layout->addStretch(1);
 
         // custom buttons
         customButtons = nullptr;
         setCustomButtonWidget(customButtonWidget);
         if (customButtons) {
-            header_layout->addWidget(customButtons, 0, Qt::AlignVCenter);
+            main_layout->addWidget(customButtons, 0, Qt::AlignVCenter);
+            main_layout->addSpacing(2);
         }
 
-        // default buttons
+        // Default control buttons
+        defaultButtons = new QFrame(this);
+        defaultButtons->setObjectName("DefaultDockButtonsFrame");
+        defaultButtons->setStyleSheet(
+            "QFrame#DefaultDockButtonsFrame {"
+            " background: #24272e;"
+            " padding-left: 0px; padding-right: 0px;"
+            "}");
+
+        QHBoxLayout* btnLayout = new QHBoxLayout(defaultButtons);
+        btnLayout->setContentsMargins(2, 2, 2, 2);
+        btnLayout->setSpacing(0);
+
         QPushButton* floatBtn = createDefaultButton(QIcon(":/icons/maximize.svg"), "Undock / Dock", SLOT(onFloatClicked()));
-        header_layout->addWidget(floatBtn, 0, Qt::AlignVCenter);
+        btnLayout->addWidget(floatBtn);
+
         QPushButton* closeBtn = createDefaultButton(QIcon(":/icons/close.svg"), "Close", SLOT(onCloseClicked()));
-        header_layout->addWidget(closeBtn, 0, Qt::AlignVCenter);
+        btnLayout->addWidget(closeBtn);
+
+        main_layout->addWidget(defaultButtons, 0, Qt::AlignVCenter);
 
     } else {
         // vertical layout
         QVBoxLayout* main_layout = new QVBoxLayout(this);
-        main_layout->setContentsMargins(0, 8, 0, 4);
+        main_layout->setContentsMargins(0, 8, 0, 0);
         main_layout->setSpacing(0);
 
         // title icon
@@ -65,12 +86,11 @@ CustomDockTitleBar::CustomDockTitleBar(
         iconLabel->setFixedSize(24, 24);
         main_layout->addWidget(iconLabel, 0, Qt::AlignHCenter | Qt::AlignTop);
 
+        main_layout->addSpacing(4);
+
         // title label
-        titleLabel = new QLabel(title, this);
-        titleLabel->setStyleSheet("font-size: 18px; font-weight: bold; color: #79b8ff; letter-spacing: 1.2px;");
-        titleLabel->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
-        titleLabel->setMinimumHeight(60);
-        main_layout->addWidget(titleLabel, 0, Qt::AlignHCenter | Qt::AlignTop);
+        verticalTitleLabel = new VerticalTitleLabel(title, this);
+        main_layout->addWidget(verticalTitleLabel, 1, Qt::AlignHCenter | Qt::AlignTop);
 
         main_layout->addSpacing(16);
 
@@ -79,22 +99,42 @@ CustomDockTitleBar::CustomDockTitleBar(
         setCustomButtonWidget(customButtonWidget);
         if (customButtons) {
             main_layout->addWidget(customButtons, 0, Qt::AlignHCenter | Qt::AlignBottom);
+            main_layout->addSpacing(2);
         }
 
-        // default buttons
+        // Default control buttons
+        defaultButtons = new QFrame(this);
+        defaultButtons->setObjectName("DefaultDockButtonsFrame");
+        defaultButtons->setStyleSheet(
+            "QFrame#DefaultDockButtonsFrame {"
+            " background: #24272e;"
+            " padding-left: 0px; padding-right: 0px;"
+            "}");
+
+        QVBoxLayout* btnLayout = new QVBoxLayout(defaultButtons);
+        btnLayout->setContentsMargins(2, 2, 2, 2);
+        btnLayout->setSpacing(0);
+
         QPushButton* floatBtn = createDefaultButton(QIcon(":/icons/maximize.svg"), "Undock / Dock", SLOT(onFloatClicked()));
-        main_layout->addWidget(floatBtn, 0, Qt::AlignHCenter);
+        btnLayout->addWidget(floatBtn);
+
         QPushButton* closeBtn = createDefaultButton(QIcon(":/icons/close.svg"), "Close", SLOT(onCloseClicked()));
-        main_layout->addWidget(closeBtn, 0, Qt::AlignHCenter);
+        btnLayout->addWidget(closeBtn);
+
+        main_layout->addWidget(defaultButtons, 0, Qt::AlignHCenter | Qt::AlignBottom);
     }
 }
 
-void CustomDockTitleBar::setTitleText(const QString& text) {
-    titleLabel->setText(text);
+void AdvancedDockTitleBar::setTitleText(const QString& text) {
+    if (horizontal) {
+        horizontalTitleLabel->setText(text);
+    } else {
+        verticalTitleLabel->setText(text);
+    }
     update();
 }
 
-void CustomDockTitleBar::setTitleIcon(const QIcon& icon) {
+void AdvancedDockTitleBar::setTitleIcon(const QIcon& icon) {
     if (horizontal) {
         iconLabel->setPixmap(icon.pixmap(23, 23));
     } else {
@@ -107,7 +147,7 @@ void CustomDockTitleBar::setTitleIcon(const QIcon& icon) {
     update();
 }
 
-void CustomDockTitleBar::setCustomButtonWidget(QWidget* widget) {
+void AdvancedDockTitleBar::setCustomButtonWidget(QWidget* widget) {
     if (customButtons && customButtons->parent() == this) {
         customButtons->hide();
         customButtons->deleteLater();
@@ -120,7 +160,7 @@ void CustomDockTitleBar::setCustomButtonWidget(QWidget* widget) {
     }
 }
 
-QPushButton* CustomDockTitleBar::createDefaultButton(const QIcon& icon, const QString& tooltip, const char* slotName) {
+QPushButton* AdvancedDockTitleBar::createDefaultButton(const QIcon& icon, const QString& tooltip, const char* slotName) {
     QPushButton* btn = new QPushButton(icon, "", this);
     btn->setToolTip(tooltip);
     btn->setFixedSize(24, 24);
@@ -131,15 +171,15 @@ QPushButton* CustomDockTitleBar::createDefaultButton(const QIcon& icon, const QS
     return btn;
 }
 
-void CustomDockTitleBar::onFloatClicked() {
+void AdvancedDockTitleBar::onFloatClicked() {
     if (dockWidget) dockWidget->setFloating(!dockWidget->isFloating());
 }
 
-void CustomDockTitleBar::onCloseClicked() {
+void AdvancedDockTitleBar::onCloseClicked() {
     if (dockWidget) dockWidget->close();
 }
 
-void CustomDockTitleBar::mousePressEvent(QMouseEvent* event) {
+void AdvancedDockTitleBar::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         setCursor(Qt::SizeAllCursor);
         dragging = true;
@@ -150,7 +190,7 @@ void CustomDockTitleBar::mousePressEvent(QMouseEvent* event) {
     }
 }
 
-void CustomDockTitleBar::mouseMoveEvent(QMouseEvent* event) {
+void AdvancedDockTitleBar::mouseMoveEvent(QMouseEvent* event) {
     if (dragging && (event->buttons() & Qt::LeftButton)) {
         if (dockWidget && dockWidget->isFloating()) {
             QPoint delta = event->globalPos() - dragStartPos;
@@ -164,7 +204,7 @@ void CustomDockTitleBar::mouseMoveEvent(QMouseEvent* event) {
     }
 }
 
-void CustomDockTitleBar::mouseReleaseEvent(QMouseEvent* event) {
+void AdvancedDockTitleBar::mouseReleaseEvent(QMouseEvent* event) {
     unsetCursor();
     if (dragging) {
         dragging = false;
@@ -173,49 +213,11 @@ void CustomDockTitleBar::mouseReleaseEvent(QMouseEvent* event) {
     }
 }
 
-void CustomDockTitleBar::mouseDoubleClickEvent(QMouseEvent* event) {
+void AdvancedDockTitleBar::mouseDoubleClickEvent(QMouseEvent* event) {
     if (dockWidget && dockWidget->isFloating()) {
         dockWidget->toggleMaximizeRestoreFloating();
         event->accept();
         return;
     }
     QFrame::mouseDoubleClickEvent(event);
-}
-
-void CustomDockTitleBar::paintEvent(QPaintEvent* event) {
-    QFrame::paintEvent(event);
-    if (!horizontal) {
-        // Vykreslení rotovaného textu přesně uprostřed titleLabel
-        QPainter p(this);
-
-        QRect labelRect = titleLabel->geometry();
-        QString text = titleLabel->text();
-
-        QFontMetrics fm(titleLabel->font());
-        int textWidth = fm.horizontalAdvance(text);
-        int textHeight = fm.height();
-
-        // Vypočítej střed labelu
-        int cx = labelRect.x() + labelRect.width() / 2;
-        int cy = labelRect.y() + labelRect.height() / 2;
-
-        p.save();
-
-        // Posuň na střed labelu
-        p.translate(cx, cy);
-        // Otoč o -90°
-        p.rotate(-90);
-
-        // Vykresli text centrovaně (center na rotated labelu)
-        QRect rotatedRect(-labelRect.height()/2, -labelRect.width()/2, labelRect.height(), labelRect.width());
-        p.setFont(titleLabel->font());
-        p.setPen(QColor("#79b8ff"));
-        p.drawText(rotatedRect, Qt::AlignCenter, text);
-
-        p.restore();
-
-        titleLabel->hide();
-    } else {
-        titleLabel->show();
-    }
 }
