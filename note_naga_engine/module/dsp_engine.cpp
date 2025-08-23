@@ -17,13 +17,28 @@ void NoteNagaDSPEngine::render(float *output, size_t num_frames) {
     // Prepare mix buffers
     if (mix_left_.size() < num_frames) mix_left_.resize(num_frames, 0.0f);
     if (mix_right_.size() < num_frames) mix_right_.resize(num_frames, 0.0f);
+    if (temp_left_.size() < num_frames) temp_left_.resize(num_frames, 0.0f);
+    if (temp_right_.size() < num_frames) temp_right_.resize(num_frames, 0.0f);
+    
     std::fill(mix_left_.begin(), mix_left_.begin() + num_frames, 0.0f);
     std::fill(mix_right_.begin(), mix_right_.begin() + num_frames, 0.0f);
+
 
     // Render all synths and mix
     std::lock_guard<std::mutex> lock(dsp_engine_mutex_);
     for (INoteNagaSoftSynth *synth : this->synths_) {
-        synth->renderAudio(mix_left_.data(), mix_right_.data(), num_frames);
+        // Clear temporary buffers
+        std::fill(temp_left_.begin(), temp_left_.begin() + num_frames, 0.0f);
+        std::fill(temp_right_.begin(), temp_right_.begin() + num_frames, 0.0f);
+        
+        // Render this synth to temporary buffers
+        synth->renderAudio(temp_left_.data(), temp_right_.data(), num_frames);
+        
+        // Add to mix buffers
+        for (size_t i = 0; i < num_frames; i++) {
+            mix_left_[i] += temp_left_[i];
+            mix_right_[i] += temp_right_[i];
+        }
     }
 
     // DSP blocks processing

@@ -1,6 +1,7 @@
 #include "track_mixer_widget.h"
 
 #include "../nn_gui_utils.h"
+#include "../dialogs/mixer_settings_dialog.h"
 #include <QIcon>
 
 TrackMixerWidget::TrackMixerWidget(NoteNagaEngine *engine_, QWidget *parent)
@@ -23,8 +24,13 @@ void TrackMixerWidget::initTitleUI() {
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
+    // mixer settings
     QPushButton *btn_settings = create_small_button(
         ":/icons/settings.svg", "Mixer Settings", "MixerSettingsButton");
+    connect(btn_settings, &QPushButton::clicked, this, [this]() {
+        MixerSettingsDialog dlg(engine, this);
+        dlg.exec();
+    });
 
     layout->addWidget(btn_settings, 0, Qt::AlignRight);
 }
@@ -242,9 +248,7 @@ void TrackMixerWidget::initUI() {
     routing_scroll->setWidget(routing_entries_container);
 
     setStyleSheet("QWidget#TrackMixerWidget { background: transparent; border: none; "
-                  "padding: 0px; }"
-                  "QPushButton { min-width: 24px; max-width: 24px; min-height: 24px; "
-                  "max-height: 24px; padding: 0px; }");
+                  "padding: 0px; }");
 
     refresh_routing_table();
 }

@@ -238,10 +238,14 @@ void NoteNagaEngine::enableLooping(bool enabled) {
 /*******************************************************************************************************/
 
 void NoteNagaEngine::addSynthesizer(NoteNagaSynthesizer *synth) {
+#ifndef QT_DEACTIVATED
+    connect(synth, &NoteNagaSynthesizer::synthUpdated, this, &NoteNagaEngine::synthUpdated);
+#endif
     this->synthesizers.push_back(synth);
     this->mixer->detectOutputs();
     if (auto *softSynth = dynamic_cast<INoteNagaSoftSynth *>(synth)) {
         this->dsp_engine->addSynth(softSynth);
+        NN_QT_EMIT(this->synthAdded(synth));
     }
 }
 
@@ -252,6 +256,7 @@ void NoteNagaEngine::removeSynthesizer(NoteNagaSynthesizer *synth) {
         this->mixer->detectOutputs();
         if (auto *softSynth = dynamic_cast<INoteNagaSoftSynth *>(synth)) {
             this->dsp_engine->removeSynth(softSynth);
+            NN_QT_EMIT(this->synthRemoved(synth));
         }
     }
 }

@@ -1,29 +1,15 @@
 ## Build 
 
-implementovat metronome
-
-----
-
-bug: kdyz minimalizuji a maximalizuji okno tak se ztrati vsechny dock window
-
-midi editor optimalizace
-   -> moznost menit pocet kroku v jednom taktu (1, 2, 4, 8, 16, 32, 64)
-
-----
-
-nastaveni editoru + gui dialog
-
-velocity editor
-   -> pro aktivni track
-   -> moznost editace hlasitosti kazde noty
-   -> dynamicky hlasitost pomoci krivek?
-
-implementace editor modu:
-   -> select tool
-   -> manaipulation tool: move, delete, copy, shift, move to track, ...
-   -> verist vecit ohledne ppq (velikost nejmensiho bloku/noty)
-   -> add new note, note lenght editing
-   -> velocity editing
+1. Engine add RTI MIDI support
+2. Mixer settings (synth management)
+3. Mixer UI (routing table = mozne preminat comboboxem dany synth)
+4. add dsp support for all and individual synths
+5. U DSP (mozne prepinat dsp pro dany synth nebo all)
+6. midi editor
+7. project load / save
+8. velocity editor
+9. edit tools and effects: humanizer, quantizer, ...
+10. metronome
 
 
 

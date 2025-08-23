@@ -51,6 +51,7 @@ set(HEADER_FILES
     # gui/dialogs
     src/gui/dialogs/instrument_selector_dialog.h
     src/gui/dialogs/dsp_block_chooser_dialog.h
+    src/gui/dialogs/mixer_settings_dialog.h
     # gui/widgets
     src/gui/widgets/midi_control_bar_widget.h
     src/gui/widgets/midi_editor_widget.h
@@ -91,6 +92,7 @@ set(SOURCE_FILES
     # gui/dialogs
     src/gui/dialogs/instrument_selector_dialog.cpp
     src/gui/dialogs/dsp_block_chooser_dialog.cpp
+    src/gui/dialogs/mixer_settings_dialog.cpp
     # gui/widgets
     src/gui/widgets/midi_control_bar_widget.cpp
     src/gui/widgets/midi_editor_widget.cpp

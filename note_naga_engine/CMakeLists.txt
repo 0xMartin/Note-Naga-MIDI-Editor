@@ -51,6 +51,7 @@ set(PUBLIC_HEADER_FILES
     ./include/note_naga_engine/module/spectrum_analyzer.h
     # include/note_naga_engine/synth
     ./include/note_naga_engine/synth/synth_fluidsynth.h
+    ./include/note_naga_engine/synth/synth_external_midi.h
     # include/note_naga_engine/dsp
     ./include/note_naga_engine/dsp/dsp_block_gain.h
     ./include/note_naga_engine/dsp/dsp_block_pan.h
@@ -90,6 +91,7 @@ set(SOURCE_FILES
     ./module/spectrum_analyzer.cpp
     # synth
     ./synth/synth_fluidsynth.cpp
+    ./synth/synth_external_midi.cpp
     # dsp
     ./dsp/dsp_block_gain.cpp
     ./dsp/dsp_block_pan.cpp

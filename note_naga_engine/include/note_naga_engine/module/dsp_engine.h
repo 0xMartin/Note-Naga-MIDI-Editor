@@ -102,6 +102,9 @@ private:
     std::vector<float> mix_left_;
     std::vector<float> mix_right_;
 
+    std::vector<float> temp_left_;   // Temporary buffer for left channel
+    std::vector<float> temp_right_;  // Temporary buffer for right channel
+
     // Last RMS values for visualization
     float last_rms_left_ = -100.0f;
     float last_rms_right_ = -100.0f;

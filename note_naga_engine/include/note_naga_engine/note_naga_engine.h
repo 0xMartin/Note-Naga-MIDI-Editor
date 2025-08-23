@@ -247,10 +247,26 @@ Q_SIGNALS:
      * @brief Signal emitted when playback starts.
      */
     void playbackStarted();
+
     /**
      * @brief Signal emitted when playback stops.
      */
     void playbackStopped();
+
+    /**
+     * @brief Signal emitted when a synthesizer is added.
+     */
+    void synthAdded(NoteNagaSynthesizer *synth);
+
+    /**
+     * @brief Signal emitted when a synthesizer is removed.
+     */
+    void synthRemoved(NoteNagaSynthesizer *synth);
+
+    /**
+     * @brief Signal emitted when a synthesizer is updated.
+     */
+    void synthUpdated(NoteNagaSynthesizer *synth);
 #endif
 
 protected:
