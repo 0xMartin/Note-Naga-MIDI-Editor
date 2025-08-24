@@ -1,21 +1,31 @@
 ## Build 
 
-1. zprovoznit tlacitka v track panelu (add, remove track ...)
+1. midi editor
 
-2. thread safe (mutex) synth = config X play tone
+2. edit tools and effects: humanizer, quantizer, ...
 
-3. project load / save
-4. export as mp3, wav, ...
-   
-5. midi editor
+3. velocity editor
 
-6. edit tools and effects: humanizer, quantizer, ...
 
-7. velocity editor
+open project
+save project
 
-8.  metronome
+export as
+    -> midi
+    -> wav
+    -> mp3
 
-9.  export jako mp4 video??
+import as:
+    -> midi
+
+1. project load / save
+2. export as mp3, wav, ...
+3. view toggle view dsp engine dock
+ 
+
+5. metronome
+
+6. export jako mp4 video??
 
 
 

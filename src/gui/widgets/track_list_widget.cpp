@@ -2,6 +2,7 @@
 
 #include "../dialogs/instrument_selector_dialog.h"
 #include "../nn_gui_utils.h"
+#include "note_naga_engine/core/types.h"
 #include <QMessageBox>
 #include <QMouseEvent>
 
@@ -176,6 +177,11 @@ void TrackListWidget::onRemoveTrack() {
 
   if (selected_row < 0 || selected_row >= (int)track_widgets.size())
     return;
+
+  NoteNagaTrack *track = seq->getTracks()[selected_row];
+  if (track) {
+    engine->getMixer()->removeRoutingEntryForTrack(track);
+  }
   seq->removeTrack(selected_row);
 }
 

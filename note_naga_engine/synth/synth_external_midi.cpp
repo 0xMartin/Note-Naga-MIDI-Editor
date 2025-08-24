@@ -40,6 +40,8 @@ NoteNagaSynthExternalMidi::NoteNagaSynthExternalMidi(const std::string &name,
 }
 
 NoteNagaSynthExternalMidi::~NoteNagaSynthExternalMidi() {
+    std::lock_guard<std::mutex> lock(synth_mutex_);
+    
     // Stop all sounds before terminating
     stopAllNotes();
     
@@ -148,6 +150,8 @@ void NoteNagaSynthExternalMidi::sendProgramChange(int channel, int program) {
 }
 
 void NoteNagaSynthExternalMidi::playNote(const NN_Note_t &note, int channel, float pan) {
+    std::lock_guard<std::mutex> lock(synth_mutex_);
+
     if (!note.velocity.has_value() || note.velocity.value() <= 0) return;
     
     NoteNagaTrack *track = note.parent;
@@ -287,6 +291,8 @@ std::string NoteNagaSynthExternalMidi::getConfig(const std::string &key) const {
 }
 
 bool NoteNagaSynthExternalMidi::setConfig(const std::string &key, const std::string &value) {
+    std::lock_guard<std::mutex> lock(synth_mutex_);
+
     if (key == "port") {
         NN_QT_EMIT(synthUpdated(this));
         return setMidiOutputPort(value);

@@ -5,6 +5,7 @@
 #include <RtMidi.h>
 #include <string>
 #include <vector>
+#include <mutex>
 #include <memory>
 
 /**
@@ -71,6 +72,9 @@ protected:
     void sendProgramChange(int channel, int program);
 
 private:
+    // Mutex for thread-safe access to the synthesizer
+    std::mutex synth_mutex_;
+
     std::unique_ptr<RtMidiOut> midi_out_; ///< RtMidi output interface
     bool is_connected_;                   ///< Connection status to MIDI port
     std::string current_port_name_;       ///< Currently used MIDI port

@@ -26,6 +26,8 @@ NoteNagaSynthFluidSynth::NoteNagaSynthFluidSynth(const std::string &name,
 }
 
 NoteNagaSynthFluidSynth::~NoteNagaSynthFluidSynth() {
+  std::lock_guard<std::mutex> lock(synth_mutex_);
+
   if (fluidsynth_)
     delete_fluid_synth(fluidsynth_);
   if (synth_settings_)
@@ -34,6 +36,8 @@ NoteNagaSynthFluidSynth::~NoteNagaSynthFluidSynth() {
 
 void NoteNagaSynthFluidSynth::renderAudio(float *left, float *right,
                                           size_t num_frames) {
+  std::lock_guard<std::mutex> lock(synth_mutex_);
+
   // render audio using FluidSynth
   fluid_synth_write_float(this->fluidsynth_, num_frames, left, 0, 1, right, 0,
                           1);
@@ -126,6 +130,8 @@ std::string NoteNagaSynthFluidSynth::getConfig(const std::string &key) const {
 
 bool NoteNagaSynthFluidSynth::setConfig(const std::string &key,
                                         const std::string &value) {
+  std::lock_guard<std::mutex> lock(synth_mutex_);
+
   if (key == "soundfont") {
     NN_QT_EMIT(synthUpdated(this));
     return setSoundFont(value);

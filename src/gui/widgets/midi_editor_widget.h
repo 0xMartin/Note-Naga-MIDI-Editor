@@ -7,7 +7,6 @@
 #include <QGraphicsView>
 #include <QPushButton>
 #include <QMap>
-#include <memory>
 #include <note_naga_engine/note_naga_engine.h>
 #include <vector>
 

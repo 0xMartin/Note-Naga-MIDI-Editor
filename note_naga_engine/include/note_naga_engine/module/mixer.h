@@ -133,6 +133,13 @@ public:
     bool removeRoutingEntry(int index);
 
     /**
+     * @brief Removes a routing entry from the routing table for a specific track.
+     * @param track Pointer to the track whose routing entry should be removed.
+     * @return Index of the removed routing entry, or -1 if not found.
+     */
+    int removeRoutingEntryForTrack(NoteNagaTrack *track);
+
+    /**
      * @brief Clears the routing table.
      */
     void clearRoutingTable();

@@ -348,12 +348,12 @@ bool NoteNagaMidiSeq::addTrack(int instrument_index) {
   return true;
 }
 
-bool NoteNagaMidiSeq::removeTrack(int track_id_or_index) {
-  if (track_id_or_index < 0 || track_id_or_index >= this->tracks.size())
+bool NoteNagaMidiSeq::removeTrack(int track_index) {
+  if (track_index < 0 || track_index >= this->tracks.size())
     return false;
 
-  delete this->tracks[track_id_or_index];
-  this->tracks.erase(this->tracks.begin() + track_id_or_index);
+  delete this->tracks[track_index];
+  this->tracks.erase(this->tracks.begin() + track_index);
   NN_QT_EMIT(trackListChanged());
   return true;
 }

@@ -469,10 +469,10 @@ public:
 
     /**
      * @brief Removes a track from the sequence.
-     * @param track_id_or_index ID or index of the track to remove.
+     * @param track_index Index of the track to remove.
      * @return True if the track was removed successfully, false otherwise.
      */
-    bool removeTrack(int track_id_or_index);
+    bool removeTrack(int track_index);
 
     /**
      * @brief Loads a MIDI file into the sequence from the specified path.

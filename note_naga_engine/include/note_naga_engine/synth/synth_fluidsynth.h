@@ -3,6 +3,7 @@
 #include <note_naga_engine/core/note_naga_synthesizer.h>
 #include <note_naga_engine/core/types.h>
 #include <fluidsynth.h>
+#include <mutex>
 #include <string>
 
 class DSPEngine;
@@ -43,7 +44,8 @@ public:
     bool setSoundFont(const std::string &sf2_path);
 
 protected:
-    void ensureFluidsynth();
+    // Mutex for thread-safe access to the synthesizer
+    std::mutex synth_mutex_;
 
     // FluidSynth interní struktury
     fluid_settings_t *synth_settings_;
@@ -51,4 +53,6 @@ protected:
 
     // Store the current SoundFont path
     std::string sf2_path_;  
+
+    void ensureFluidsynth();
 };

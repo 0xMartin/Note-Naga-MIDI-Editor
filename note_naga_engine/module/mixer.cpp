@@ -148,6 +148,24 @@ bool NoteNagaMixer::removeRoutingEntry(int index) {
     return false;
 }
 
+int NoteNagaMixer::removeRoutingEntryForTrack(NoteNagaTrack *track) {
+    if (!track) return -1;
+
+    // remove all entries for track
+    int cnt = 0;
+    for (auto it = routing_entries.begin(); it != routing_entries.end();) {
+        if (it->track == track) {
+            it = routing_entries.erase(it);
+            NOTE_NAGA_LOG_INFO("Removed routing entry for track Id: " + std::to_string(track->getId()));
+            ++cnt;
+        } else {
+            ++it;
+        }
+    }
+    NN_QT_EMIT(routingEntryStackChanged());
+    return cnt;
+}
+
 void NoteNagaMixer::clearRoutingTable() {
     routing_entries.clear();
     NOTE_NAGA_LOG_INFO("Routing table cleared");
