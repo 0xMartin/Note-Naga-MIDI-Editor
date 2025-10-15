@@ -16,6 +16,7 @@
 #include "widgets/track_list_widget.h"
 #include "widgets/track_mixer_widget.h"
 #include "widgets/dsp_engine_widget.h"
+#include "../video_export/export_dialog.h"
 
 
 class MainWindow : public QMainWindow {
@@ -40,6 +41,7 @@ private slots:
     void about_dialog();
     void reset_layout();
     void show_hide_dock(const QString &name, bool checked);
+    void export_video();
 
     // === Nové sloty pro MIDI utility ===
     void util_quantize();
@@ -66,6 +68,7 @@ private:
     // Původní akce
     QAction *action_open;
     QAction *action_export;
+    QAction *action_export_video;
     QAction *action_quit;
     QAction *action_auto_follow;
     QAction *action_reset_colors;

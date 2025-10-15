@@ -20,16 +20,22 @@ else()
     find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Concurrent Svg)
 endif()
 
+find_package(OpenCV REQUIRED)
+
 set(RESOURCES src/resources.qrc)
 qt6_add_resources(RESOURCES_RCC ${RESOURCES})
 
-# --- Přidej note_naga_engine knihovnu ---
+# Engine
 add_subdirectory(note_naga_engine)
 
 set(HEADER_FILES
     # gui
     src/gui/main_window.h
     src/gui/nn_gui_utils.h
+    # video export
+    src/video_export/export_dialog.h
+    src/video_export/video_exporter.h
+    src/video_export/video_renderer.h
     # gui/components
     src/gui/components/audio_dial.h
     src/gui/components/audio_dial_centered.h
@@ -70,6 +76,10 @@ set(HEADER_FILES
 set(SOURCE_FILES
     # src
     src/main.cpp
+    # video export
+    src/video_export/export_dialog.cpp
+    src/video_export/video_exporter.cpp
+    src/video_export/video_renderer.cpp
     # gui
     src/gui/main_window.cpp
     src/gui/nn_gui_utils.cpp
@@ -135,6 +145,7 @@ target_link_libraries(NoteNaga PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Concurrent
     Qt${QT_VERSION_MAJOR}::Svg
+    ${OpenCV_LIBS}
     note_naga_engine
 )
 

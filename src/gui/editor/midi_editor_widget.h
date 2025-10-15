@@ -1,5 +1,6 @@
 #pragma once
 
+#include <note_naga_engine/note_naga_engine.h>
 #include <QColor>
 #include <QGraphicsRectItem>
 #include <QGraphicsScene>
@@ -10,7 +11,6 @@
 #include <QRubberBand>
 #include <QComboBox>
 #include <QLabel>
-#include <note_naga_engine/note_naga_engine.h>
 #include <vector>
 
 /** MIDI editor follow modes */

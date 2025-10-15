@@ -39,6 +39,8 @@ void MainWindow::setup_actions() {
     connect(action_open, &QAction::triggered, this, &MainWindow::open_midi);
     action_export = new QAction(QIcon(":/icons/save.svg"), "Save MIDI", this);
     connect(action_export, &QAction::triggered, this, &MainWindow::export_midi);
+    action_export_video = new QAction(QIcon(":/icons/video.svg"), "Export as Video...", this);
+    connect(action_export_video, &QAction::triggered, this, &MainWindow::export_video);
     action_quit = new QAction("Quit", this);
     connect(action_quit, &QAction::triggered, this, &MainWindow::close);
 
@@ -131,6 +133,7 @@ void MainWindow::setup_menu_bar() {
     QMenu *file_menu = menubar->addMenu("File");
     file_menu->addAction(action_open);
     file_menu->addAction(action_export);
+    file_menu->addAction(action_export_video);
     file_menu->addSeparator();
     file_menu->addAction(action_quit);
 
@@ -320,6 +323,26 @@ void MainWindow::show_hide_dock(const QString &name, bool checked) {
     } else {
         dock->hide();
     }
+}
+
+void MainWindow::export_video() {
+    // Získej aktivní sekvenci z enginu
+    NoteNagaMidiSeq *active_sequence = this->engine->getProject()->getActiveSequence();
+
+    // Zkontroluj, zda je nějaká sekvence načtená
+    if (!active_sequence) {
+        QMessageBox::warning(this, "No Sequence", "Nejdříve otevřete MIDI soubor.");
+        return;
+    }
+
+    // Vytvoř a zobraz dialog. 'this' zajistí, že bude dialog nad hlavním oknem.
+    ExportDialog *dialog = new ExportDialog(active_sequence, this->engine, this);
+    
+    // Zajistí, že se dialog po zavření automaticky smaže z paměti
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    
+    // Zobraz dialog nemodálně, aby aplikace v pozadí stále běžela
+    dialog->open();
 }
 
 void MainWindow::reset_layout() {
