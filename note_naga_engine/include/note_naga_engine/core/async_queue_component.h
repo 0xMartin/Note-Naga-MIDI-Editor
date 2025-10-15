@@ -80,6 +80,16 @@ public:
     }
 
     /**
+     * @brief Manually processes all items currently in the queue.
+     */
+    void processQueue() {
+        std::optional<T> value;
+        while ((value = m_queue->dequeue())) {
+            onItem(*value);
+        }
+    }
+
+    /**
      * @brief Cleanly terminates the worker thread (blocking).
      */
     void killThread() {
