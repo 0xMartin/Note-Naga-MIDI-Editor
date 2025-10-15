@@ -190,11 +190,14 @@ private:
     void applyNoteChanges();
     
     // --- Coordinate conversion helpers ---
+    QMap<NoteGraphics*, NN_Note_t> dragStartNoteStates; 
     int sceneXToTick(qreal x) const;
     int sceneYToNote(qreal y) const;
     qreal tickToSceneX(int tick) const;
     qreal noteToSceneY(int note) const;
     QRectF getRealNoteRect(const NoteGraphics *ng) const;
+    int snapTickToGrid(int tick) const;
+    int snapTickToGridNearest(int tick) const;
 
 /*******************************************************************************************************/
 // Signal and Slots

@@ -54,7 +54,6 @@ set(HEADER_FILES
     src/gui/dock_system/dock_indicator_overlay.h
     src/gui/dock_system/dock_title_bar.h
     # gui/editor
-    src/gui/editor/midi_editor_command.h
     src/gui/editor/midi_editor_widget.h
     # gui/widgets
     src/gui/widgets/dsp_block_widget.h
@@ -98,7 +97,6 @@ set(SOURCE_FILES
     src/gui/dock_system/dock_indicator_overlay.cpp
     src/gui/dock_system/dock_title_bar.cpp
     # gui/editor
-    src/gui/editor/midi_editor_command.cpp
     src/gui/editor/midi_editor_widget.cpp
     # gui/widgets
     src/gui/widgets/dsp_block_widget.cpp

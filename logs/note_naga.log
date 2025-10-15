@@ -435,3 +435,119 @@
 2025-08-24 11:43:38 [INFO   ] project_data: Project loaded from: /Users/martin/Downloads/midi/Victory_-_Two_Steps_From_Hell_Orchestra.mid
 2025-08-24 11:43:39 [INFO   ] types: Loading MIDI file from: /Users/martin/Downloads/midi/Victory_-_Two_Steps_From_Hell_Orchestra.mid
 2025-08-24 11:43:39 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-15 13:57:02 [INFO   ] note_naga_engine: Instance created. Version: 1.0.0
+2025-10-15 13:57:02 [INFO   ] soundfont_finder: Found SoundFont: /Users/martin/Library/Audio/Sounds/Banks/FluidR3_GM.sf2
+2025-10-15 13:57:02 [INFO   ] async_queue_component: Engine Component initialized with queue size: 1024
+2025-10-15 13:57:02 [INFO   ] synth_fluidsynth: FluidSynth loaded sfid=1
+2025-10-15 13:57:02 [INFO   ] async_queue_component: Engine Component initialized with queue size: 16
+2025-10-15 13:57:02 [INFO   ] project_data: Project manager initialized
+2025-10-15 13:57:02 [INFO   ] async_queue_component: Engine Component initialized with queue size: 1024
+2025-10-15 13:57:02 [INFO   ] mixer: Default output device set on: FluidSynth 1
+2025-10-15 13:57:02 [INFO   ] mixer: Initialized successfully
+2025-10-15 13:57:02 [INFO   ] playback_worker: Initialized successfully with timer interval: 30.000000 ms
+2025-10-15 13:57:02 [INFO   ] playback_worker: Added finished callback with ID: 1
+2025-10-15 13:57:02 [INFO   ] dsp_engine: DSP Engine initialized
+2025-10-15 13:57:02 [INFO   ] audio_worker: Audio worker initialized
+2025-10-15 13:57:03 [INFO   ] audio_worker: Audio worker started
+2025-10-15 13:57:03 [INFO   ] note_naga_engine: Initialized successfully
+2025-10-15 13:57:09 [WARNING] playback_worker: Playback worker not currently playing
+2025-10-15 13:57:09 [WARNING] note_naga_engine: Failed to stop playback
+2025-10-15 13:57:09 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-15 13:57:09 [INFO   ] types: Loading MIDI file from: /Users/martin/Downloads/midi/Alice Cooper - Poison.mid
+2025-10-15 13:57:09 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-15 13:57:09 [INFO   ] types: Loading Type 1 MIDI tracks
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 0 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 0 to: 0
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 1 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 1 to: 9
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 1 to: 0
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 2 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 2 to: 0
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 2 to: 33
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 3 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 3 to: 1
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 3 to: 30
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 4 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 4 to: 2
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 4 to: 30
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 5 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 5 to: 3
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 5 to: 94
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 6 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 6 to: 4
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 6 to: 85
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 7 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 7 to: 8
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 7 to: 85
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 8 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 8 to: 5
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 8 to: 30
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 9 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 9 to: 12
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 9 to: 30
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 10 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 10 to: 6
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 10 to: 62
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 11 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 11 to: 7
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 11 to: 31
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 12 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 12 to: 10
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 12 to: 48
+2025-10-15 13:57:09 [INFO   ] types: Created Track with ID: 13 and name: Track
+2025-10-15 13:57:09 [INFO   ] types: Channel changed for Track ID: 13 to: 11
+2025-10-15 13:57:09 [INFO   ] types: Instrument changed for Track ID: 13 to: 48
+2025-10-15 13:57:09 [INFO   ] types: MIDI file loaded successfully. Num tracks: 14
+2025-10-15 13:57:10 [INFO   ] types: Track with ID: 0 set as active track for MIDI sequence ID: 1
+2025-10-15 13:57:10 [INFO   ] project_data: Added MIDI sequence with ID: 1
+2025-10-15 13:57:10 [INFO   ] mixer: Default routing created with 14 entries
+2025-10-15 13:57:10 [INFO   ] project_data: Project loaded from: /Users/martin/Downloads/midi/Alice Cooper - Poison.mid
+2025-10-15 14:36:26 [INFO   ] note_naga_engine: Instance created. Version: 1.0.0
+2025-10-15 14:36:26 [INFO   ] soundfont_finder: Found SoundFont: /Users/martin/Library/Audio/Sounds/Banks/FluidR3_GM.sf2
+2025-10-15 14:36:26 [INFO   ] async_queue_component: Engine Component initialized with queue size: 1024
+2025-10-15 14:36:26 [INFO   ] synth_fluidsynth: FluidSynth loaded sfid=1
+2025-10-15 14:36:26 [INFO   ] async_queue_component: Engine Component initialized with queue size: 16
+2025-10-15 14:36:26 [INFO   ] project_data: Project manager initialized
+2025-10-15 14:36:26 [INFO   ] async_queue_component: Engine Component initialized with queue size: 1024
+2025-10-15 14:36:26 [INFO   ] mixer: Default output device set on: FluidSynth 1
+2025-10-15 14:36:26 [INFO   ] mixer: Initialized successfully
+2025-10-15 14:36:26 [INFO   ] playback_worker: Initialized successfully with timer interval: 30.000000 ms
+2025-10-15 14:36:26 [INFO   ] playback_worker: Added finished callback with ID: 1
+2025-10-15 14:36:26 [INFO   ] dsp_engine: DSP Engine initialized
+2025-10-15 14:36:26 [INFO   ] audio_worker: Audio worker initialized
+2025-10-15 14:36:26 [INFO   ] audio_worker: Audio worker started
+2025-10-15 14:36:26 [INFO   ] note_naga_engine: Initialized successfully
+2025-10-15 14:36:33 [WARNING] playback_worker: Playback worker not currently playing
+2025-10-15 14:36:33 [WARNING] note_naga_engine: Failed to stop playback
+2025-10-15 14:36:33 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-15 14:36:33 [INFO   ] types: Loading MIDI file from: /Users/martin/Downloads/midi/gloryhammer-hootsforce-20231123172205-nonstop2k.com.mid
+2025-10-15 14:36:33 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-15 14:36:33 [INFO   ] types: Loading Type 1 MIDI tracks
+2025-10-15 14:36:33 [INFO   ] types: Created Track with ID: 0 and name: Track
+2025-10-15 14:36:33 [INFO   ] types: Instrument changed for Track ID: 0 to: 0
+2025-10-15 14:36:33 [INFO   ] types: Created Track with ID: 1 and name: Track
+2025-10-15 14:36:33 [INFO   ] types: Channel changed for Track ID: 1 to: 0
+2025-10-15 14:36:33 [INFO   ] types: Instrument changed for Track ID: 1 to: 85
+2025-10-15 14:36:33 [INFO   ] types: Created Track with ID: 2 and name: Track
+2025-10-15 14:36:33 [INFO   ] types: Channel changed for Track ID: 2 to: 8
+2025-10-15 14:36:33 [INFO   ] types: Instrument changed for Track ID: 2 to: 80
+2025-10-15 14:36:33 [INFO   ] types: Created Track with ID: 3 and name: Track
+2025-10-15 14:36:33 [INFO   ] types: Channel changed for Track ID: 3 to: 6
+2025-10-15 14:36:33 [INFO   ] types: Instrument changed for Track ID: 3 to: 48
+2025-10-15 14:36:33 [INFO   ] types: Created Track with ID: 4 and name: Track
+2025-10-15 14:36:33 [INFO   ] types: Channel changed for Track ID: 4 to: 11
+2025-10-15 14:36:33 [INFO   ] types: Instrument changed for Track ID: 4 to: 30
+2025-10-15 14:36:33 [INFO   ] types: Created Track with ID: 5 and name: Track
+2025-10-15 14:36:33 [INFO   ] types: Channel changed for Track ID: 5 to: 4
+2025-10-15 14:36:33 [INFO   ] types: Instrument changed for Track ID: 5 to: 30
+2025-10-15 14:36:33 [INFO   ] types: Created Track with ID: 6 and name: Track
+2025-10-15 14:36:33 [INFO   ] types: Channel changed for Track ID: 6 to: 2
+2025-10-15 14:36:33 [INFO   ] types: Instrument changed for Track ID: 6 to: 34
+2025-10-15 14:36:33 [INFO   ] types: Created Track with ID: 7 and name: Track
+2025-10-15 14:36:33 [INFO   ] types: Channel changed for Track ID: 7 to: 9
+2025-10-15 14:36:33 [INFO   ] types: Instrument changed for Track ID: 7 to: 0
+2025-10-15 14:36:33 [INFO   ] types: MIDI file loaded successfully. Num tracks: 8
+2025-10-15 14:36:33 [INFO   ] types: Track with ID: 0 set as active track for MIDI sequence ID: 1
+2025-10-15 14:36:33 [INFO   ] project_data: Added MIDI sequence with ID: 1
+2025-10-15 14:36:33 [INFO   ] mixer: Default routing created with 8 entries
+2025-10-15 14:36:33 [INFO   ] project_data: Project loaded from: /Users/martin/Downloads/midi/gloryhammer-hootsforce-20231123172205-nonstop2k.com.mid

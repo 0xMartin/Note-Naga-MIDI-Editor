@@ -139,6 +139,7 @@ void MidiEditorWidget::initTitleUI() {
     combo_grid_resolution->addItem("1/32", static_cast<int>(GridResolution::ThirtySecond));
     combo_grid_resolution->addItem("Off", static_cast<int>(GridResolution::Off));
     combo_grid_resolution->setCurrentIndex(2); // 1/4 default
+    connect(combo_grid_resolution, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MidiEditorWidget::refreshAll);
 
     // follow mode buttons
     this->btn_follow_center = create_small_button(
@@ -502,34 +503,36 @@ bool MidiEditorWidget::isNoteEdge(NoteGraphics *ng, const QPointF &scenePos) {
 void MidiEditorWidget::addNewNote(const QPointF &scenePos) {
     if (!last_seq) return;
     
-    // Získáme aktivní stopu
     NoteNagaTrack *activeTrack = last_seq->getActiveTrack();
     if (!activeTrack) return;
     
-    // Převedeme pozici na tick a hodnotu noty
     int tick = sceneXToTick(scenePos.x());
     int noteValue = sceneYToNote(scenePos.y());
-    
-    // Omezíme rozsah noty
     noteValue = std::max(MIN_NOTE, std::min(MAX_NOTE, noteValue));
     
-    // Vytvoříme novou notu
     NN_Note_t newNote;
     newNote.note = noteValue;
-    newNote.start = tick;
+    newNote.start = this->snapTickToGrid(tick);
     
-    // Výchozí délka noty - nejlépe na další dělení taktu
     int ppq = last_seq->getPPQ();
-    int noteDuration = ppq; // výchozí: jedna doba (1/4)
-    newNote.length = noteDuration;
-    
-    // Přidáme notu do stopy
+    NoteDuration duration = static_cast<NoteDuration>(combo_note_duration->currentData().toInt());
+    int noteLength = ppq; // Výchozí je 1/4
+
+    switch (duration) {
+        case NoteDuration::Whole:       noteLength = ppq * 4; break;
+        case NoteDuration::Half:        noteLength = ppq * 2; break;
+        case NoteDuration::Quarter:     noteLength = ppq; break;
+        case NoteDuration::Eighth:      noteLength = ppq / 2; break;
+        case NoteDuration::Sixteenth:   noteLength = ppq / 4; break;
+        case NoteDuration::ThirtySecond:noteLength = ppq / 8; break;
+    }
+    newNote.length = std::max(1, noteLength); // Zajistíme minimální délku 1
+
     activeTrack->addNote(newNote);
+    last_seq->computeMaxTick();
     
-    // Informujeme o změně
     emit notesModified();
     
-    // Přefrešujeme UI
     refreshTrack(activeTrack);
 }
 
@@ -541,7 +544,7 @@ void MidiEditorWidget::moveSelectedNotes(const QPointF &delta) {
     int deltaNotes = -delta.y() / config.key_height; // záporné, protože y je invertované
     
     // Pokud není žádná změna, ukončíme
-    if (deltaTicks == 0 && deltaNotes == 0) return;
+    //if (deltaTicks == 0 && deltaNotes == 0) return;
     
     // Upravíme pozice všech vybraných not
     for (NoteGraphics *ng : selectedNotes) {
@@ -582,36 +585,81 @@ void MidiEditorWidget::resizeSelectedNotes(const QPointF &delta) {
 }
 
 void MidiEditorWidget::applyNoteChanges() {
-    if (selectedNotes.isEmpty()) return;
-    
+    // 1. Ujistíme se, že máme co měnit a že máme uložený původní stav
+    if (selectedNotes.isEmpty() || dragStartNoteStates.isEmpty()) {
+        return;
+    }
+
+    QPointF totalDelta = lastDragPos - dragStartPos;
     QSet<NoteNagaTrack*> affectedTracks;
-    
-    // Upravíme všechny vybrané noty podle jejich aktuální grafické pozice
+    QList<QPair<NoteGraphics*, NN_Note_t>> changesToApply;
+
+    // --- Fáze 1: Výpočet změn ---
+    // V této fázi se nic nemění, zůstává stejná
     for (NoteGraphics *ng : selectedNotes) {
-        // Nejprve odstraníme původní notu
-        ng->track->removeNote(ng->note);
-        
-        // Získáme aktuální pozici a velikost noty z grafiky
-        QRectF rect = getRealNoteRect(ng);
-        
-        // Vytvoříme novou notu s aktualizovanou pozicí a délkou
-        NN_Note_t newNote = ng->note;
-        newNote.start = sceneXToTick(rect.x());
-        newNote.note = sceneYToNote(rect.y());
-        
-        // Pro bubny (kruhové noty) délka zůstává stejná
-        // Pro obdélníkové noty upravíme délku podle šířky
-        if (qgraphicsitem_cast<QGraphicsRectItem*>(ng->item)) {
-            newNote.length = std::max(1, (int)(rect.width() / config.time_scale));
+        if (!dragStartNoteStates.contains(ng)) continue;
+
+        NN_Note_t originalNote = dragStartNoteStates.value(ng);
+        NN_Note_t newNote = originalNote;
+
+        if (dragMode == DragMode::Move) {
+            int deltaTicks = totalDelta.x() / config.time_scale;
+            int deltaNotes = -round(totalDelta.y() / config.key_height);
+            if (newNote.start.has_value()) {
+                newNote.start = snapTickToGrid(originalNote.start.value() + deltaTicks);
+            }
+            newNote.note = originalNote.note + deltaNotes;
+            newNote.note = std::max(MIN_NOTE, std::min(MAX_NOTE, newNote.note));
+        } else if (dragMode == DragMode::Resize) {
+            int deltaLength = totalDelta.x() / config.time_scale;
+            if (newNote.length.has_value() && newNote.start.has_value()) {
+                int originalEndTick = originalNote.start.value() + originalNote.length.value();
+                int snappedEndTick = snapTickToGridNearest(originalEndTick + deltaLength);
+                newNote.length = std::max(1, snappedEndTick - originalNote.start.value());
+            }
         }
+        changesToApply.append({ng, newNote});
+    }
+
+    // --- Fáze 2: Aplikace změn (s blokováním signálů) ---
+    
+    // Zablokujeme signály, aby se uprostřed cyklu nespustilo překreslení
+    auto project = engine->getProject();
+    bool signalsWereBlocked = project->signalsBlocked();
+    project->blockSignals(true);
+
+    for (const auto& change : changesToApply) {
+        NoteGraphics* ng = change.first;
+        NN_Note_t newNote = change.second;
+        NN_Note_t originalNote = dragStartNoteStates.value(ng);
         
-        // Přidáme aktualizovanou notu
+        ng->track->removeNote(originalNote);
         ng->track->addNote(newNote);
-        ng->note = newNote; // Aktualizujeme referenci na notu
+        
         affectedTracks.insert(ng->track);
     }
     
+    // Aktualizujeme interní data grafických objektů (teď už je to bezpečné)
+    for (const auto& change : changesToApply) {
+        change.first->note = change.second;
+    }
+
+    // Odblokujeme signály
+    project->blockSignals(signalsWereBlocked);
+    
+    dragStartNoteStates.clear();
+    last_seq->computeMaxTick();
+
+    // Signál o změně not emitujeme až teď, když je vše hotovo
     emit notesModified();
+
+    // --- Fáze 3: Překreslení a vyčištění ---
+    for (NoteNagaTrack* track : affectedTracks) {
+        refreshTrack(track);
+    }
+
+    // Vyčistíme výběr, protože ukazatele v něm jsou po překreslení neplatné
+    clearSelection();
 }
 
 QRectF MidiEditorWidget::getRealNoteRect(const NoteGraphics *ng) const {
@@ -674,24 +722,23 @@ void MidiEditorWidget::mousePressEvent(QMouseEvent *event) {
         
         // Pokud je pod kurzorem nota
         if (noteUnderCursor) {
-            // Zkontrolujeme, zda je nota už vybraná
             bool isSelected = selectedNotes.contains(noteUnderCursor);
             
-            // Pokud nota není vybraná, vybereme ji
             if (!isSelected) {
                 selectNote(noteUnderCursor, !(event->modifiers() & Qt::ControlModifier));
-                dragMode = DragMode::None; // Zatím žádné přetahování, jen výběr
-            }
-            // Pokud nota je už vybraná, zahájíme přetahování nebo změnu velikosti
-            else {
-                // Kontrola, jestli jsme na okraji noty
+                dragMode = DragMode::None;
+            } else {
+                // FIX: Uložíme si původní stav VŠECH vybraných not
+                dragStartNoteStates.clear();
+                for (NoteGraphics *note : selectedNotes) {
+                    dragStartNoteStates[note] = note->note;
+                }
+
                 if (isNoteEdge(noteUnderCursor, scenePos)) {
                     dragMode = DragMode::Resize;
-                    // Změna kurzoru na resize
                     QApplication::setOverrideCursor(Qt::SizeHorCursor);
                 } else {
                     dragMode = DragMode::Move;
-                    // Změna kurzoru na přesun
                     QApplication::setOverrideCursor(Qt::SizeAllCursor);
                 }
                 
@@ -700,7 +747,12 @@ void MidiEditorWidget::mousePressEvent(QMouseEvent *event) {
             }
         }
         // Jinak zahájíme výběr obdélníkem nebo přesuneme kurzor
-        else {
+        else { 
+            // Zrušíme výběr, pokud uživatel nezačíná výběr s držením Ctrl
+            if (!(event->modifiers() & Qt::ControlModifier)) {
+                clearSelection();
+            }
+
             // Nastavíme novou pozici kurzoru
             int tick = sceneXToTick(scenePos.x());
             engine->getProject()->setCurrentTick(tick);
@@ -812,32 +864,42 @@ void MidiEditorWidget::keyPressEvent(QKeyEvent *event) {
         return;
     }
     
-    // Klávesa Delete - odstranění vybraných not
-    if (event->key() == Qt::Key_Delete && !selectedNotes.isEmpty()) {
-        // Odstraníme všechny vybrané noty
+    // Mazání vybraných not (Delete nebo Backspace)
+    if ((event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) && !selectedNotes.isEmpty()) {
+        
         QSet<NoteNagaTrack*> affectedTracks;
+        
+        // Zablokujeme signály, aby se předešlo pádům při hromadných změnách
+        auto project = engine->getProject();
+        bool signalsWereBlocked = project->signalsBlocked();
+        project->blockSignals(true);
         
         for (NoteGraphics *ng : selectedNotes) {
             ng->track->removeNote(ng->note);
             affectedTracks.insert(ng->track);
         }
         
-        // Informujeme o změnách
+        // Odblokujeme signály
+        project->blockSignals(signalsWereBlocked);
         
+        // Uložíme si, které stopy překreslit, a vyčistíme výběr
+        // Důležité: clearSelection() musí být před refreshTrack()
+        clearSelection();
+        
+        last_seq->computeMaxTick();
         emit notesModified();
         
-        // Zrušíme výběr a překreslíme UI
-        clearSelection();
+        // Překreslíme jen ovlivněné stopy
         for (NoteNagaTrack *track : affectedTracks) {
             refreshTrack(track);
         }
     }
-    // Klávesa Escape - zrušení výběru
+    // Zrušení výběru klávesou Escape
     else if (event->key() == Qt::Key_Escape) {
         clearSelection();
+    } else {
+        QGraphicsView::keyPressEvent(event);
     }
-    
-    QGraphicsView::keyPressEvent(event);
 }
 
 /*******************************************************************************************************/
@@ -893,27 +955,30 @@ void MidiEditorWidget::updateGrid() {
 void MidiEditorWidget::updateBarGrid() {
     if (!last_seq)
         return;
+
     int ppq = last_seq->getPPQ();
-    int bar_length = ppq * 4;
+    int bar_length = ppq * 4; // Délka jednoho taktu v ticích
     int first_bar = 0;
     int last_bar = (last_seq->getMaxTick() / bar_length) + 2;
+
     int visible_x0 = horizontalScrollBar()->value();
     int visible_x1 = visible_x0 + viewport()->width();
     int visible_y0 = verticalScrollBar()->value();
 
     double px_per_bar = config.time_scale * bar_length;
+
+    // --- Vykreslení hlavních taktových čar (modré) ---
     int bar_skip = 1;
-    double min_bar_dist_px = 58;
-    while (px_per_bar * bar_skip < min_bar_dist_px)
+    double min_bar_dist_px = 58; // Minimální mezera mezi popisky taktů
+    while (px_per_bar * bar_skip < min_bar_dist_px) {
         bar_skip *= 2;
+    }
 
     QFont label_font("Arial", 11, QFont::Bold);
-
     for (int bar = first_bar; bar < last_bar; bar += bar_skip) {
-        int tick = bar * bar_length;
-        int x = tick * config.time_scale;
-        if (x < visible_x0 - 200 || x > visible_x1 + 200)
-            continue;
+        int x = tickToSceneX(bar * bar_length);
+        if (x < visible_x0 - 200 || x > visible_x1 + 200) continue;
+
         auto l = scene->addLine(x, 0, x, content_height, QPen(grid_bar_color, 1.5));
         l->setZValue(2);
         bar_grid_lines.push_back(l);
@@ -926,22 +991,42 @@ void MidiEditorWidget::updateBarGrid() {
             label->setZValue(9999);
             bar_grid_labels.push_back(label);
         }
+    }
 
-        int subdiv_skip = 1;
-        double px_per_div = px_per_bar / config.tact_subdiv;
-        while (px_per_div * subdiv_skip < 18.0 && subdiv_skip < config.tact_subdiv)
-            subdiv_skip *= 2;
-        for (int sub = 1; sub < config.tact_subdiv; ++sub) {
-            if (sub % subdiv_skip != 0)
-                continue;
-            int sub_tick = tick + (bar_length * sub) / config.tact_subdiv;
-            int sub_x = sub_tick * config.time_scale;
-            if (sub_x < visible_x0 - 200 || sub_x > visible_x1 + 200)
-                continue;
-            auto lsub = scene->addLine(sub_x, 0, sub_x, content_height,
-                                       QPen(grid_subdiv_color, 1));
-            lsub->setZValue(1);
-        }
+    // --- Vykreslení podružných čar (šedé) podle gridu a zoomu ---
+    GridResolution resolution = static_cast<GridResolution>(combo_grid_resolution->currentData().toInt());
+    if (resolution == GridResolution::Off) return; // Pokud je mřížka vypnutá, nic nekreslíme
+
+    int grid_step_ticks = ppq; // Výchozí hodnota (1/4)
+    switch (resolution) {
+        case GridResolution::Whole:       grid_step_ticks = ppq * 4; break;
+        case GridResolution::Half:        grid_step_ticks = ppq * 2; break;
+        case GridResolution::Quarter:     grid_step_ticks = ppq; break;
+        case GridResolution::Eighth:      grid_step_ticks = ppq / 2; break;
+        case GridResolution::Sixteenth:   grid_step_ticks = ppq / 4; break;
+        case GridResolution::ThirtySecond:grid_step_ticks = ppq / 8; break;
+        default: break;
+    }
+
+    if (grid_step_ticks == 0) return;
+
+    // Optimalizace, aby se čáry nevykreslovaly příliš hustě
+    double px_per_grid_step = config.time_scale * grid_step_ticks;
+    int grid_skip = 1;
+    while (px_per_grid_step * grid_skip < 8.0) { // Minimální mezera mezi čarami 8 pixelů
+        grid_skip *= 2;
+    }
+
+    int total_ticks = last_bar * bar_length;
+    for (int tick = 0; tick < total_ticks; tick += grid_step_ticks * grid_skip) {
+        // Přeskočíme hlavní taktové čáry, aby se nepřekrývaly
+        if (tick % bar_length == 0) continue;
+
+        int x = tickToSceneX(tick);
+        if (x < visible_x0 - 200 || x > visible_x1 + 200) continue;
+        
+        auto lsub = scene->addLine(x, 0, x, content_height, QPen(grid_subdiv_color, 1));
+        lsub->setZValue(1);
     }
 }
 
@@ -1123,4 +1208,53 @@ void MidiEditorWidget::clearTrackNotes(int track_id) {
         }
         note_items.erase(it);
     }
+}
+
+int MidiEditorWidget::snapTickToGrid(int tick) const {
+    GridResolution resolution = static_cast<GridResolution>(combo_grid_resolution->currentData().toInt());
+    if (resolution == GridResolution::Off || !last_seq) {
+        return tick;
+    }
+
+    int ppq = last_seq->getPPQ();
+    int grid_step = ppq; // Default Quarter
+
+    switch (resolution) {
+        case GridResolution::Whole:       grid_step = ppq * 4; break;
+        case GridResolution::Half:        grid_step = ppq * 2; break;
+        case GridResolution::Quarter:     grid_step = ppq; break;
+        case GridResolution::Eighth:      grid_step = ppq / 2; break;
+        case GridResolution::Sixteenth:   grid_step = ppq / 4; break;
+        case GridResolution::ThirtySecond:grid_step = ppq / 8; break;
+        default: break;
+    }
+
+    if (grid_step == 0) return tick; // Ochrana před dělením nulou
+
+    return (tick / grid_step) * grid_step;
+}
+
+int MidiEditorWidget::snapTickToGridNearest(int tick) const {
+    GridResolution resolution = static_cast<GridResolution>(combo_grid_resolution->currentData().toInt());
+    if (resolution == GridResolution::Off || !last_seq) {
+        return tick;
+    }
+
+    int ppq = last_seq->getPPQ();
+    int grid_step = ppq; // Default Quarter
+
+    switch (resolution) {
+        case GridResolution::Whole:       grid_step = ppq * 4; break;
+        case GridResolution::Half:        grid_step = ppq * 2; break;
+        case GridResolution::Quarter:     grid_step = ppq; break;
+        case GridResolution::Eighth:      grid_step = ppq / 2; break;
+        case GridResolution::Sixteenth:   grid_step = ppq / 4; break;
+        case GridResolution::ThirtySecond:grid_step = ppq / 8; break;
+        default: break;
+    }
+
+    if (grid_step == 0) return tick; // Ochrana před dělením nulou
+
+    // Použijeme zaokrouhlení, aby se konec noty přichytil k nejbližší čáře gridu
+    return static_cast<int>(round(static_cast<double>(tick) / grid_step)) * grid_step;
 }

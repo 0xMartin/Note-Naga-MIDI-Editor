@@ -1,0 +1,6 @@
+#pragma once
+
+#define NOTE_NAGA_VERSION_MAJOR 1
+#define NOTE_NAGA_VERSION_MINOR 0
+#define NOTE_NAGA_VERSION_PATCH 0
+#define NOTE_NAGA_VERSION_STR "1.0.0"
