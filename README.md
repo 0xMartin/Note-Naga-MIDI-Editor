@@ -1,9 +1,11 @@
 ## Build 
 
-1. velocity editor
+fix: sig fault after app closing
+fix: nove pridane noty se neprehravaji
+fix: vyladit audio chyby v exportu
 
-2. fix: sig fault after app closing
-3. fix: nove pridane noty se neprehravaji
+1. vylepsit desing exportovaneho videa
+2. pridat moznost exportu ciste audia
 
 -------------
 1. project load / save
@@ -21,6 +23,8 @@ export as
     -> mp3
 
 5. project info: show opened file,...
+
+5. velocity editor
 
 5. step sequencer   
 
