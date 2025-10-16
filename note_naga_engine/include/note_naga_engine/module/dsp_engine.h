@@ -32,8 +32,9 @@ public:
      * 
      * @param output Pointer to the output buffer.
      * @param num_frames Number of frames to render.
+     * @param compute_rms Whether to compute RMS levels for volume metering.
      */
-    void render(float *output, size_t num_frames);
+    void render(float *output, size_t num_frames, bool compute_rms = true);
 
     /**
      * @brief Add a synthesizer to the DSP engine.

@@ -9,48 +9,48 @@ NoteNagaAudioWorker::NoteNagaAudioWorker(NoteNagaDSPEngine *dsp) {
 
 NoteNagaAudioWorker::~NoteNagaAudioWorker() { stop(); }
 
-void NoteNagaAudioWorker::setDSPEngine(NoteNagaDSPEngine *dsp) { dspEngine_ = dsp; }
+void NoteNagaAudioWorker::setDSPEngine(NoteNagaDSPEngine *dsp) { this->dsp_engine = dsp; }
 
 bool NoteNagaAudioWorker::start(unsigned int sampleRate, unsigned int blockSize) {
-    if (stream_open_) {
+    if (this->stream_open) {
         NOTE_NAGA_LOG_WARNING("Audio worker is already running");
         return false;
     }
 
-    sampleRate_ = sampleRate;
-    blockSize_ = blockSize;
+    this->sample_rate = sampleRate;
+    this->block_size = blockSize;
 
     RtAudio::StreamParameters params;
-    params.deviceId = audio_.getDefaultOutputDevice();
+    params.deviceId = this->audio.getDefaultOutputDevice();
     params.nChannels = 2;
     params.firstChannel = 0;
 
-    audio_.openStream(&params, nullptr, RTAUDIO_FLOAT32, sampleRate_, &blockSize_,
+    this->audio.openStream(&params, nullptr, RTAUDIO_FLOAT32, this->sample_rate, &this->block_size,
                       &NoteNagaAudioWorker::audioCallback, this);
-    audio_.startStream();
-    stream_open_ = true;
+    this->audio.startStream();
+    this->stream_open = true;
 
     NOTE_NAGA_LOG_INFO("Audio worker started");
     return true;
 }
 
 bool NoteNagaAudioWorker::stop() {
-    if (stream_open_) {
+    if (this->stream_open) {
         try {
-            if (audio_.isStreamRunning()) {
-                audio_.stopStream();
+            if (this->audio.isStreamRunning()) {
+                this->audio.stopStream();
                 NOTE_NAGA_LOG_INFO("Audio stream stopped");
             } else {
                 NOTE_NAGA_LOG_WARNING("Audio stream was not running");
             }
-            if (audio_.isStreamOpen()) {
-                audio_.closeStream();
+            if (this->audio.isStreamOpen()) {
+                this->audio.closeStream();
                 NOTE_NAGA_LOG_INFO("Audio stream closed");
             } else {
                 NOTE_NAGA_LOG_WARNING("Audio stream was not running or already closed");
             }
         } catch (const std::exception &e) { NOTE_NAGA_LOG_ERROR(e.what()); }
-        stream_open_ = false;
+        this->stream_open = false;
         NOTE_NAGA_LOG_INFO("Audio worker stopped");
         return true;
     } else {
@@ -65,10 +65,26 @@ int NoteNagaAudioWorker::audioCallback(void *outputBuffer, void *, unsigned int 
     NoteNagaAudioWorker *self = static_cast<NoteNagaAudioWorker *>(userData);
     float *out = static_cast<float *>(outputBuffer);
 
-    if (self->dspEngine_) {
-        self->dspEngine_->render(out, nFrames);
+    // Zkontrolujeme, zda je worker ztlumený (muted) nebo nemá DSP engine.
+    // .load() bezpečně přečte hodnotu z atomické proměnné.
+    if (self->is_muted.load(std::memory_order_relaxed) || !self->dsp_engine) {
+        // Pokud ano, vyplníme buffer tichem (nulami).
+        std::memset(out, 0, sizeof(float) * nFrames * 2); // 2 pro stereo
     } else {
-        std::memset(out, 0, sizeof(float) * nFrames * 2);
+        // Pokud není ztlumený, renderujeme normálně.
+        self->dsp_engine->render(out, nFrames, true);
     }
     return 0;
+}
+
+void NoteNagaAudioWorker::mute() {
+    this->is_muted.store(true, std::memory_order_relaxed);
+}
+
+void NoteNagaAudioWorker::unmute() {
+    this->is_muted.store(false, std::memory_order_relaxed);
+}
+
+bool NoteNagaAudioWorker::isMuted() const {
+    return this->is_muted.load(std::memory_order_relaxed);
 }

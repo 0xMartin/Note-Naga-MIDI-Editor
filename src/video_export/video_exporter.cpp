@@ -19,6 +19,7 @@ public:
             for (auto* synth : m_engine->getSynthesizers()) {
                 synth->enterManualMode();
             }
+            m_engine->getAudioWorker()->mute();
         }
     }
     ~ManualModeGuard() {
@@ -27,6 +28,7 @@ public:
             for (auto* synth : m_engine->getSynthesizers()) {
                 synth->exitManualMode();
             }
+            m_engine->getAudioWorker()->unmute();
         }
     }
 private:
@@ -84,7 +86,7 @@ bool VideoExporter::exportAudio(const QString &outputPath)
     // --- Inicializace ---
     const int sampleRate = 44100;
     const int numChannels = 2;
-    const double totalDuration = nn_ticks_to_seconds(m_engine->getProject()->getActiveSequence()->getMaxTick(), m_engine->getProject()->getPPQ(), m_engine->getProject()->getTempo()) + 2.0; // Přidáme rezervu
+    const double totalDuration = nn_ticks_to_seconds(m_engine->getProject()->getActiveSequence()->getMaxTick(), m_engine->getProject()->getPPQ(), m_engine->getProject()->getTempo()) + 2.0; // Přidáme 2s rezervu na dojezd
     const int totalSamples = static_cast<int>(totalDuration * sampleRate);
 
     std::vector<float> audioBuffer(totalSamples * numChannels, 0.0f);
@@ -113,58 +115,58 @@ bool VideoExporter::exportAudio(const QString &outputPath)
         }
     }
 
-    // Seřadíme všechny události chronologicky podle času (ticku)
     std::sort(allEvents.begin(), allEvents.end(), [](const MidiEvent &a, const MidiEvent &b) {
         return a.tick < b.tick;
     });
 
     // --- Krok 2: Renderování řízené událostmi ---
-    mixer->stopAllNotes(); 
-    project->setCurrentTick(0);
+    mixer->stopAllNotes();
     int last_tick = 0;
     int totalSamplesRendered = 0;
 
     for (const auto& event : allEvents) {
-        // Vypočítáme, kolik ticků uplynulo od poslední události
+        // Vypočítáme, kolik samplů se má vyrenderovat MEZI poslední a touto událostí
         int ticksToProcess = event.tick - last_tick;
         if (ticksToProcess > 0) {
-            // Převedeme ticky na samply a vyrenderujeme "ticho" nebo dojezd not
             double durationToRender = nn_ticks_to_seconds(ticksToProcess, project->getPPQ(), project->getTempo());
             int samplesToRender = static_cast<int>(durationToRender * sampleRate);
 
-            // Ujistíme se, že nepřetečeme buffer
             if (totalSamplesRendered + samplesToRender > totalSamples) {
                 samplesToRender = totalSamples - totalSamplesRendered;
             }
 
             if (samplesToRender > 0) {
-                dspEngine->render(audioBuffer.data() + totalSamplesRendered * numChannels, samplesToRender);
+                // Renderujeme zvuk s "starým" stavem syntezátorů (dojezd not atd.)
+                dspEngine->render(audioBuffer.data() + totalSamplesRendered * numChannels, samplesToRender, false);
                 totalSamplesRendered += samplesToRender;
             }
         }
         
-        // Zpracujeme aktuální MIDI událost (Note On nebo Note Off)
+        // Pošleme aktuální MIDI událost do mixéru
         if (event.isNoteOn) {
             mixer->playNote(event.note);
         } else {
             mixer->stopNote(event.note);
         }
+
+        // ======================== KLÍČOVÁ OPRAVA ========================
+        // Zpracování front se musí provést IHNED po odeslání události,
+        // aby se stav syntezátorů aktualizoval PŘED dalším renderováním.
+        mixer->flushNotes();
+        mixer->processQueue();
+        for (auto* synth : synthesizers) {
+            synth->processQueue();
+        }
+        // ================================================================
         
         last_tick = event.tick;
         emit progressUpdated((int)((double)totalSamplesRendered / totalSamples * 100), tr("Rendering audio..."));
     }
 
-    // Zpracování front po každé události je klíčové
-    mixer->flushNotes();
-    mixer->processQueue();
-    for (auto* synth : synthesizers) {
-        synth->processQueue();
-    }
-
     // Drenderujeme zbytek do konce (dojezd posledních not)
     int remainingSamples = totalSamples - totalSamplesRendered;
     if (remainingSamples > 0) {
-        dspEngine->render(audioBuffer.data() + totalSamplesRendered * numChannels, remainingSamples);
+        dspEngine->render(audioBuffer.data() + totalSamplesRendered * numChannels, remainingSamples, false);
     }
 
     // --- Krok 3: Uložení do .wav souboru ---

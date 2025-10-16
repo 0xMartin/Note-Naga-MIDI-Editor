@@ -13,7 +13,7 @@ NoteNagaDSPEngine::NoteNagaDSPEngine(NoteNagaMetronome* metronome, NoteNagaSpect
     NOTE_NAGA_LOG_INFO("DSP Engine initialized");
 }
 
-void NoteNagaDSPEngine::render(float *output, size_t num_frames) {
+void NoteNagaDSPEngine::render(float *output, size_t num_frames, bool compute_rms) {
     // Prepare mix buffers
     if (mix_left_.size() < num_frames) mix_left_.resize(num_frames, 0.0f);
     if (mix_right_.size() < num_frames) mix_right_.resize(num_frames, 0.0f);
@@ -77,7 +77,12 @@ void NoteNagaDSPEngine::render(float *output, size_t num_frames) {
     }
 
     // Calculate RMS for visualization
-    this->calculateRMS(mix_left_.data(), mix_right_.data(), num_frames);
+    if (compute_rms) {
+        this->calculateRMS(mix_left_.data(), mix_right_.data(), num_frames);
+    } else {
+        this->last_rms_left_ = -100.0f;
+        this->last_rms_right_ = -100.0f;
+    }
 
     // push to spectrum analyzer
     if (this->spectrum_analyzer_) {
