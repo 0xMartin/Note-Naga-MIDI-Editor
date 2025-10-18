@@ -4,6 +4,10 @@ fix: sig fault after app closing
 fix: nove pridane noty se neprehravaji
 
 video export desing: particle settings sekce se nemusi nachazet interne v sekci render.. chtel bych aby byla pod 
+    -> moznost nastavit opacity (start + end) pro noty, moznost nastavit bg image / barvu
+    -> predelovy efekt na hrane klaviru (nejaky blesk)
+    -> spliter pro oddleneni leve a prave casti
+    -> asspect ration nahledu bude presne odpovidat zvolene vystupni velikosti videa
 
 1. pridat moznost exportu ciste audia (dialog)
 2. pridat moznost exportovat jako midi
