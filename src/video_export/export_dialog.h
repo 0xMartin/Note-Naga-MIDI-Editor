@@ -4,8 +4,11 @@
 #include <QColor>
 #include <note_naga_engine/core/types.h>
 #include <note_naga_engine/note_naga_engine.h>
-#include "video_renderer.h"
+#include "video_renderer.h" 
 #include "../gui/components/midi_seq_progress_bar.h" 
+
+// --- New include ---
+#include "preview_worker.h" 
 
 QT_BEGIN_NAMESPACE
 class QLabel;
@@ -31,12 +34,6 @@ class ExportDialog : public QDialog
     Q_OBJECT
 
 public:
-    /**
-     * @brief Constructs the ExportDialog.
-     * @param sequence The MIDI sequence to export.
-     * @param engine The NoteNagaEngine for playback control.
-     * @param parent The parent widget.
-     */
     explicit ExportDialog(NoteNagaMidiSeq *sequence, NoteNagaEngine *engine, QWidget *parent = nullptr);
     ~ExportDialog();
 
@@ -63,39 +60,33 @@ private slots:
     void onSelectBgImage();
     void onClearBg();
     void updateBgLabels();
+    
+    // --- New slot to receive the finished preview frame ---
+    /**
+     * @brief Receives the finished frame from the PreviewWorker thread and displays it.
+     */
+    void onPreviewFrameReady(const QImage& frame);
 
 private:
-    /**
-     * @brief Gathers all current settings from the UI into a struct.
-     * @return A VideoRenderer::RenderSettings struct.
-     */
     VideoRenderer::RenderSettings getCurrentRenderSettings();
-    
-    /**
-     * @brief Creates and lays out all UI components.
-     */
     void setupUi();
-    
-    /**
-     * @brief Connects signals from the NoteNagaEngine to this dialog's slots.
-     */
     void connectEngineSignals();
-    
-    /**
-     * @brief Enables or disables UI controls during the export process.
-     * @param enabled True to enable controls, false to disable.
-     */
     void setControlsEnabled(bool enabled);
-
-    /**
-     * @brief Gets the target resolution QSize from the UI.
-    */
     QSize getTargetResolution();
+    
+    // --- New method to update the preview render size ---
+    void updatePreviewRenderSize();
 
     // Engine and data
     NoteNagaEngine *m_engine;
     NoteNagaMidiSeq *m_sequence;
-    VideoRenderer *m_renderer;
+    
+    // --- Removed ---
+    // VideoRenderer *m_renderer; (Now in PreviewWorker)
+
+    // --- Added for Preview thread ---
+    QThread* m_previewThread;
+    PreviewWorker* m_previewWorker;
 
     // --- UI Components ---
     QSplitter *m_mainSplitter;
@@ -161,8 +152,13 @@ private:
     QString m_backgroundImagePath;
     double m_currentTime;
     double m_totalDuration;
+    QSize m_lastRenderSize; // Size for rendering the preview
 
     // Export threading
     QThread *m_exportThread;
     VideoExporter *m_exporter;
+    
+protected:
+    // --- Catching resize events ---
+    virtual void resizeEvent(QResizeEvent *event) override;
 };

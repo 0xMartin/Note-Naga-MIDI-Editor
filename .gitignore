@@ -21,3 +21,6 @@ vcpkg_installed
 .vcpkg
 FluidR3_GM.sf2
 Timbres_of_Heaven.sf2
+
+NoteNaga.app/
+NoteNaga_autogen/

@@ -4,7 +4,7 @@
 #include <cmath>
 #include <QLinearGradient>
 
-// Konstanty pro rozsah klaviatury
+// Constants for keyboard range
 const int FIRST_MIDI_NOTE = 21; // A0
 const int LAST_MIDI_NOTE = 108; // C8
 
@@ -12,11 +12,22 @@ VideoRenderer::VideoRenderer(NoteNagaMidiSeq* sequence)
     : m_sequence(sequence), m_lastLayoutSize(0, 0) 
 {
     prepareNoteData();
-    // Načteme výchozí pixmapu
+    // Load the default particle pixmap
     m_resourceParticlePixmapCache.load(":/images/sparkle.png");
 }
 
+void VideoRenderer::setRenderSettings(const RenderSettings& settings)
+{
+    // If the custom particle image changes, we must invalidate the cache
+    if (m_settings.customParticleImage.cacheKey() != settings.customParticleImage.cacheKey()) {
+        m_customParticlePixmapCache = QPixmap(); // Invalidates cache
+    }
+    m_settings = settings;
+}
+
+
 void VideoRenderer::prepareNoteData() {
+    // ... (unchanged) ...
     for (const auto& track : m_sequence->getTracks()) {
         QColor trackColor = track->getColor().toQColor();
         for (const auto& note : track->getNotes()) {
@@ -33,6 +44,7 @@ void VideoRenderer::prepareNoteData() {
 }
 
 void VideoRenderer::prepareKeyboardLayout(const QSize& size) {
+    // ... (unchanged) ...
     if (size == m_lastLayoutSize) return;
 
     m_keyboardLayout.clear();
@@ -70,31 +82,148 @@ void VideoRenderer::prepareKeyboardLayout(const QSize& size) {
     m_lastLayoutSize = size;
 }
 
-// Metoda přijímá 'resolutionScale' 
-void VideoRenderer::spawnParticles(const NoteInfo& note, double resolutionScale) {
-    // Ověření, zda je nota v layoutu (prevence pádu)
+void VideoRenderer::resetSimulation()
+{
+    m_currentState.particles.clear();
+    m_currentState.activeNotes.clear();
+    m_lastFrameTime = -1.0;
+}
+
+// =========================================================================
+// Stateful version for PREVIEW
+// =========================================================================
+
+QImage VideoRenderer::renderFrame(double currentTime, const QSize& size) 
+{
+    // Detect backward time travel (scrubbing)
+    if (m_lastFrameTime >= 0 && currentTime < m_lastFrameTime) {
+        resetSimulation();
+    }
+    
+    double deltaTime = (m_lastFrameTime < 0) ? 0.0 : currentTime - m_lastFrameTime;
+    m_lastFrameTime = currentTime;
+
+    // 1. Calculate the new state
+    FrameState nextState = calculateNextState(m_currentState, currentTime, deltaTime);
+    m_currentState = nextState; // Store the new state
+    
+    // 2. Render the state
+    return renderFrame(currentTime, size, m_currentState);
+}
+
+
+// =========================================================================
+// Simulation Logic (Stateless)
+// =========================================================================
+
+VideoRenderer::FrameState VideoRenderer::calculateNextState(const FrameState& previousState, double currentTime, double deltaTime)
+{
+    // Create a copy of the *previous* state to modify
+    FrameState newState = previousState;
+    
+    std::map<int, bool> currentActiveNotes;
+    
+    // 1. Find active notes (for keyboard and particles)
+    for (const auto& note : m_notes) {
+        if (currentTime >= note.start_time && currentTime < note.end_time) {
+             currentActiveNotes[note.note_val] = true;
+        }
+    }
+    
+    // 2. Spawn new particles (if enabled)
+    if (m_settings.renderParticles) {
+        double resolutionScale = (double)m_lastLayoutSize.height() / 720.0;
+        
+        for(const auto& pair : currentActiveNotes) {
+            // Was this note active in the previous state?
+            bool wasActive = previousState.activeNotes.find(pair.first) != previousState.activeNotes.end();
+            if (!wasActive) 
+            {
+                // Note just started playing, find its data
+                for(const auto& noteInfo : m_notes) {
+                    if(noteInfo.note_val == pair.first) {
+                         // Check if it's the "real" start of the note
+                         if (std::abs(noteInfo.start_time - currentTime) < (deltaTime + 0.01)) {
+                             if (m_keyboardLayout.find(noteInfo.note_val) != m_keyboardLayout.end()) {
+                                // Add particles to the *new* state
+                                spawnParticles(noteInfo, resolutionScale, newState.particles);
+                             }
+                            break;
+                         }
+                    }
+                }
+            }
+        }
+    }
+    
+    // 3. Update existing particles
+    if (m_settings.renderParticles) {
+        updateParticles(deltaTime, newState.particles);
+    }
+    
+    // 4. Store active notes for the next frame
+    newState.activeNotes = currentActiveNotes;
+    return newState;
+}
+
+
+// =========================================================================
+// Stateless version for EXPORT
+// =========================================================================
+
+QImage VideoRenderer::renderFrame(double currentTime, const QSize& size, const FrameState& state) {
+    
+    prepareKeyboardLayout(size);
+    QImage frame(size, QImage::Format_ARGB32);
+
+    // 1. Draw background
+    if (!m_settings.backgroundImage.isNull()) {
+        QPainter bgPainter(&frame);
+        bgPainter.drawImage(frame.rect(), m_settings.backgroundImage);
+        bgPainter.end();
+    } else {
+        frame.fill(m_settings.backgroundColor);
+    }
+    
+    QPainter painter(&frame);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    // 2. Draw notes and keyboard
+    // Use the active notes state from 'state'
+    drawNotesAndKeyboard(painter, currentTime, size, state.activeNotes);
+
+    // 3. Draw particles
+    if (m_settings.renderParticles) {
+        double resolutionScale = (double)size.height() / 720.0;
+        // Use the particle state from 'state'
+        drawParticles(painter, state.particles, resolutionScale);
+    }
+
+    painter.end();
+    return frame;
+}
+
+// =========================================================================
+// Helper Methods (Simulation)
+// =========================================================================
+
+void VideoRenderer::spawnParticles(const NoteInfo& note, double resolutionScale, std::vector<Particle>& particles) {
     if (m_keyboardLayout.find(note.note_val) == m_keyboardLayout.end()) return;
     const KeyInfo& key = m_keyboardLayout.at(note.note_val);
     QPointF spawn_pos = QPointF(key.rect.center().x(), key.rect.top());
 
-    // Použijeme nastavení z m_settings 
     int particle_count = m_settings.particleCount;
     
     for (int i = 0; i < particle_count; ++i) {
-        // Mírná náhodnost úhlu
-        double angle_deg = (rand() % 160) + 10; // Mezi 10 a 170 stupni (nahoru)
+        double angle_deg = (rand() % 160) + 10; // Between 10 and 170 degrees (upwards)
         double angle_rad = angle_deg * M_PI / 180.0;
-
-        // Škálování rychlosti
         double speed_base = m_settings.particleSpeed * resolutionScale;
         double speed_rand = speed_base * 0.5;
-        double speed = speed_base - (speed_rand / 2) + (rand() % (int)(speed_rand + 1)); // +1 pro zamezení dělení nulou
-
-        // Nastavení délky života
-        qreal lifetime = m_settings.particleLifetime + (rand() % 50) / 100.0 - 0.25; // +- 0.25s
+        double speed = speed_base - (speed_rand / 2) + (rand() % (int)(speed_rand + 1)); 
+        qreal lifetime = m_settings.particleLifetime + (rand() % 50) / 100.0 - 0.25; // +/- 0.25s
         if (lifetime < 0.1) lifetime = 0.1;
 
-        m_particles.push_back({
+        particles.push_back({
             spawn_pos,
             QPointF(cos(angle_rad) * speed, -sin(angle_rad) * speed),
             lifetime,
@@ -104,160 +233,42 @@ void VideoRenderer::spawnParticles(const NoteInfo& note, double resolutionScale)
     }
 }
 
-// Metoda přijímá 'resolutionScale'
-void VideoRenderer::updateAndDrawParticles(double deltaTime, QPainter& painter, double resolutionScale) {
+void VideoRenderer::updateParticles(double deltaTime, std::vector<Particle>& particles) 
+{
+    double resolutionScale = (double)m_lastLayoutSize.height() / 720.0;
     
-    // Pro kruhy a pixmapy
-    painter.setRenderHint(QPainter::Antialiasing, true); 
-    
-    for (auto it = m_particles.begin(); it != m_particles.end(); ) {
+    for (auto it = particles.begin(); it != particles.end(); ) {
         it->pos += it->vel * deltaTime;
-        
-        // Škálování gravitace
+        // Scale gravity
         it->vel.ry() += m_settings.particleGravity * resolutionScale * deltaTime; 
         it->lifetime -= deltaTime;
 
         if (it->lifetime <= 0) {
-            it = m_particles.erase(it);
+            it = particles.erase(it);
         } else {
-            qreal opacity = it->lifetime / it->initial_lifetime;
-            qreal scale = 1.0 - opacity; // 0 (start života) -> 1 (konec života)
-
-            // Výběr typu částice
-            if (m_settings.particleType == RenderSettings::Circle)
-            {
-                QColor particleColor = it->color;
-                particleColor.setAlphaF(opacity * 0.8);
-                painter.setBrush(particleColor);
-                painter.setPen(Qt::NoPen);
-
-                // --- ZMĚNĚNÁ LOGIKA VELIKOSTI ---
-                qreal radiusMultiplier = m_settings.particleStartSize + (m_settings.particleEndSize - m_settings.particleStartSize) * scale;
-                qreal baseRadius = 10.0 * resolutionScale; 
-                qreal radius = baseRadius * radiusMultiplier;
-                if (radius < 1.0) radius = 1.0; // Zajistíme minimální velikost
-                
-                painter.drawEllipse(it->pos, radius, radius);
-            }
-            else // Resource nebo Custom
-            {
-                // --- Oprava chyby vláken ---
-                QPixmap* pixmap = &m_resourceParticlePixmapCache;
-
-                if (m_settings.particleType == RenderSettings::Custom && !m_settings.customParticleImage.isNull()) {
-                    if (m_customParticlePixmapCache.isNull() || m_customParticlePixmapCache.cacheKey() != m_settings.customParticleImage.cacheKey()) {
-                         m_customParticlePixmapCache = QPixmap::fromImage(m_settings.customParticleImage);
-                    }
-                    pixmap = &m_customParticlePixmapCache;
-                }
-
-                if (!pixmap || pixmap->isNull()) {
-                    ++it;
-                    continue; // Přeskočíme kreslení, pokud pixmapa není platná
-                }
-                
-                // Nastavíme celkovou průhlednost pro fade-out
-                painter.setOpacity(opacity);
-
-                // --- ZMĚNĚNÁ LOGIKA VELIKOSTI ---
-                qreal baseSize = 32.0 * resolutionScale; // Základní velikost
-                // Lineární interpolace velikosti
-                qreal sizeMultiplier = m_settings.particleStartSize + (m_settings.particleEndSize - m_settings.particleStartSize) * scale;
-                qreal size = baseSize * sizeMultiplier;
-                if (size < 1.0) size = 1.0; // Minimální velikost
-                
-                QRectF targetRect(it->pos.x() - size/2, it->pos.y() - size/2, size, size);
-                
-                // =================================================================
-                // ---          FINÁLNÍ OPRAVENÁ LOGIKA TINTU (DESTINATION IN)     ---
-                // =================================================================
-                
-                if (m_settings.tintParticles) {
-                    // 1. Vytvoříme dočasný buffer (mimo obrazovku)
-                    // Musíme použít QImage pro podporu alfa kanálu při fill
-                    QSize bufferSize = targetRect.size().toSize();
-                    if (bufferSize.width() < 1 || bufferSize.height() < 1) {
-                        ++it;
-                        continue; 
-                    }
-                    
-                    // Vytvoříme buffer jako QImage pro správnou práci s alfou
-                    QImage bufferImage(bufferSize, QImage::Format_ARGB32);
-                    bufferImage.fill(Qt::transparent); // Začneme s průhledným plátnem
-
-                    // 2. Vytvoříme painter pro tento buffer
-                    QPainter p(&bufferImage);
-                    p.setRenderHint(QPainter::Antialiasing, true);
-
-                    // 3. Vykreslíme CÍL (Destination): plný obdélník v barvě noty
-                    p.fillRect(bufferImage.rect(), it->color); 
-
-                    // 4. Nastavíme režim "Cíl Dovnitř Zdroje"
-                    // (Zachová Cíl [barvu] pouze tam, kde Zdroj [pixmapa] má alfu)
-                    p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-
-                    // 5. Vykreslíme ZDROJ (Source): naši pixmapu jako masku
-                    p.drawPixmap(bufferImage.rect(), *pixmap, pixmap->rect());
-                    
-                    // 6. Ukončíme painter bufferu
-                    p.end();
-
-                    // 7. Vykreslíme finální (zabarvený) QImage na hlavní plátno
-                    painter.drawImage(targetRect, bufferImage, bufferImage.rect());
-
-                } else {
-                    // Pokud je tint vypnutý, kreslíme přímo originální pixmapu
-                    painter.drawPixmap(targetRect, *pixmap, pixmap->rect());
-                }
-                
-                painter.setOpacity(1.0); // Vrátíme opacitu pro další kreslení
-            }
-            
             ++it;
         }
     }
 }
 
-QImage VideoRenderer::renderFrame(double currentTime, const QSize& size) {
-    prepareKeyboardLayout(size);
 
-    QImage frame(size, QImage::Format_ARGB32);
+// =========================================================================
+// Helper Methods (Drawing)
+// =========================================================================
 
-    // --- Kreslení pozadí (Bod 1) ---
-    if (!m_settings.backgroundImage.isNull()) {
-        // Vykreslíme obrázek na pozadí (roztažený na celou plochu)
-        QPainter bgPainter(&frame);
-        bgPainter.drawImage(frame.rect(), m_settings.backgroundImage);
-        bgPainter.end();
-    } else {
-        // Vyplníme barvou pozadí
-        frame.fill(m_settings.backgroundColor);
-    }
-    // --- Konec pozadí ---
-
-    QPainter painter(&frame);
-    painter.setRenderHint(QPainter::Antialiasing);
-
-    double deltaTime = (m_lastFrameTime < 0) ? 0.0 : currentTime - m_lastFrameTime;
-    m_lastFrameTime = currentTime;
-
+void VideoRenderer::drawNotesAndKeyboard(QPainter& painter, double currentTime, const QSize& size, const std::map<int, bool>& activeNotes)
+{
     double resolutionScale = (double)size.height() / 720.0;
-
     const float keyboardHeight = size.height() * 0.25f;
     const float render_area_height = size.height() - keyboardHeight;
     const float pixels_per_second = render_area_height / m_secondsVisible;
-
-    std::map<int, bool> currentActiveNotes;
-
-    // --- Kreslení padajících not (Bod 5) ---
+    
+    // --- Draw falling notes ---
     if (m_settings.renderNotes) {
         for (const auto& note : m_notes) {
             if (note.end_time < currentTime - 1.0 || note.start_time > currentTime + m_secondsVisible) continue;
             
-            bool isActive = (currentTime >= note.start_time && currentTime < note.end_time);
-            if (isActive) {
-                currentActiveNotes[note.note_val] = true;
-            }
+            bool isActive = (activeNotes.find(note.note_val) != activeNotes.end());
 
             if (m_keyboardLayout.find(note.note_val) == m_keyboardLayout.end()) continue;
             const KeyInfo& key = m_keyboardLayout.at(note.note_val);
@@ -266,71 +277,52 @@ QImage VideoRenderer::renderFrame(double currentTime, const QSize& size) {
             float y_end = render_area_height - (float)(note.end_time - currentTime) * pixels_per_second;
             QRectF note_rect(key.rect.x(), y_end, key.rect.width(), y_start - y_end);
             
-            // Omezení kreslení na oblast nad klávesnicí
+            // Clip drawing to the area above the keyboard
             note_rect = note_rect.intersected(QRectF(0, 0, size.width(), render_area_height));
             if (note_rect.isEmpty()) continue;
 
             QColor note_color = note.color;
-
-            // --- Výpočet opacity noty (Bod 2) ---
-            // 'progress' = 0.0 nahoře (y=0), 1.0 dole (y=render_area_height)
+            // Calculate opacity
             float progress = std::clamp(y_start / render_area_height, 0.0f, 1.0f); 
             qreal opacity = m_settings.noteStartOpacity + (m_settings.noteEndOpacity - m_settings.noteStartOpacity) * progress;
             note_color.setAlphaF(std::clamp(opacity, 0.0, 1.0));
-            // --- Konec výpočtu opacity ---
 
+            // --- FIX 1: Note Glow ---
+            // Define a "glow zone" just above the keyboard
+            float glow_zone_height = 30.0f * resolutionScale;
+            float glow_zone_top = render_area_height - glow_zone_height;
+            QRectF glow_zone_rect(0, glow_zone_top, size.width(), glow_zone_height);
+            
+            // The glow is the intersection of the note and the glow zone
+            QRectF glow_rect = note_rect.intersected(glow_zone_rect);
 
-            if (isActive) {
+            if (isActive && !glow_rect.isEmpty()) {
                 painter.setPen(Qt::NoPen);
                 for (int i = 0; i < 10; ++i) {
                     QColor glow_color = note_color;
-                    // Opacita záře je závislá na opacitě noty
+                    // Glow opacity depends on note opacity
                     glow_color.setAlphaF(note_color.alphaF() * 0.05); 
                     painter.setBrush(glow_color);
-                    painter.drawRect(note_rect.adjusted(-i, -i, i, i));
+                    // Apply glow ONLY to the intersected rectangle
+                    painter.drawRect(glow_rect.adjusted(-i, -i, i, i));
                 }
             }
             
+            // Draw the note rectangle
             painter.setBrush(note_color);
             QColor penColor = note_color.darker(120);
-            penColor.setAlphaF(note_color.alphaF()); // Pero má stejnou opacitu
+            penColor.setAlphaF(note_color.alphaF()); // Pen has same opacity
             painter.setPen(penColor);
             painter.drawRect(note_rect);
         }
-    } else {
-         for (const auto& note : m_notes) {
-            if (currentTime >= note.start_time && currentTime < note.end_time) {
-                 currentActiveNotes[note.note_val] = true;
-            }
-         }
     }
-    
-    // ... (část pro spouštění částic beze změny) ...
-    for(const auto& pair : currentActiveNotes) {
-        if (m_activeNotesState.find(pair.first) == m_activeNotesState.end() || !m_activeNotesState[pair.first]) 
-        {
-            for(const auto& noteInfo : m_notes) {
-                if(noteInfo.note_val == pair.first) {
-                     if (std::abs(noteInfo.start_time - currentTime) < 0.05) {
-                        if (m_settings.renderParticles) {
-                             if (m_keyboardLayout.find(noteInfo.note_val) != m_keyboardLayout.end()) {
-                                spawnParticles(noteInfo, resolutionScale);
-                             }
-                        }
-                        break;
-                     }
-                }
-            }
-        }
-    }
-    m_activeNotesState = currentActiveNotes;
 
-    // --- Kreslení klávesnice ---
+    // --- Draw Keyboard ---
     if (m_settings.renderKeyboard) {
-        // ... (kreslení bílých a černých kláves beze změny) ...
+        // Draw white keys
         for (const auto& pair : m_keyboardLayout) {
             if (pair.second.is_white) {
-                bool isActive = (currentActiveNotes.find(pair.first) != currentActiveNotes.end());
+                bool isActive = (activeNotes.find(pair.first) != activeNotes.end());
                 if (isActive) {
                     QColor activeColor = QColor(150, 150, 255);
                     for (const auto& note : m_notes) {
@@ -348,9 +340,10 @@ QImage VideoRenderer::renderFrame(double currentTime, const QSize& size) {
                 painter.drawRect(pair.second.rect);
             }
         }
+        // Draw black keys
         for (const auto& pair : m_keyboardLayout) {
             if (!pair.second.is_white) {
-                 bool isActive = (currentActiveNotes.find(pair.first) != currentActiveNotes.end());
+                 bool isActive = (activeNotes.find(pair.first) != activeNotes.end());
                  if (isActive) {
                     QColor activeColor = QColor(150, 150, 255);
                     for (const auto& note : m_notes) {
@@ -369,9 +362,9 @@ QImage VideoRenderer::renderFrame(double currentTime, const QSize& size) {
             }
         }
 
-        // --- Kreslení "Piano Glow" efektu (Bod 3) ---
+        // --- Draw "Piano Glow" effect ---
         if (m_settings.renderPianoGlow) {
-            float glowHeight = 25.0f * resolutionScale; // Výška záře
+            float glowHeight = 25.0f * resolutionScale; // Glow height
             QRectF glowRect(0, render_area_height - glowHeight, size.width(), glowHeight);
             
             QLinearGradient glow(0, render_area_height - glowHeight, 0, render_area_height);
@@ -379,18 +372,108 @@ QImage VideoRenderer::renderFrame(double currentTime, const QSize& size) {
             glow.setColorAt(0.8, QColor(255, 255, 255, 70));
             glow.setColorAt(1.0, QColor(255, 255, 255, 100));
             
-            painter.setCompositionMode(QPainter::CompositionMode_Plus); // Aditivní míchání
+            painter.setCompositionMode(QPainter::CompositionMode_Plus); // Additive blending
             painter.fillRect(glowRect, glow);
-            painter.setCompositionMode(QPainter::CompositionMode_SourceOver); // Vrátit zpět
+            painter.setCompositionMode(QPainter::CompositionMode_SourceOver); // Reset
         }
-        // --- Konec "Piano Glow" ---
     }
+}
 
-    // --- Kreslení částic (Bod 5) ---
-    if (m_settings.renderParticles) {
-        updateAndDrawParticles(deltaTime, painter, resolutionScale);
+
+void VideoRenderer::drawParticles(QPainter& painter, const std::vector<Particle>& particles, double resolutionScale)
+{
+    painter.setRenderHint(QPainter::Antialiasing, true); 
+    
+    for (const auto& particle : particles) {
+        
+        qreal opacity = particle.lifetime / particle.initial_lifetime;
+        qreal scale = 1.0 - opacity; // 0 (start of life) -> 1 (end of life)
+
+        // Select particle type
+        if (m_settings.particleType == RenderSettings::Circle)
+        {
+            QColor particleColor = particle.color;
+            particleColor.setAlphaF(opacity * 0.8);
+            painter.setBrush(particleColor);
+            painter.setPen(Qt::NoPen);
+
+            // --- Size logic ---
+            qreal radiusMultiplier = m_settings.particleStartSize + (m_settings.particleEndSize - m_settings.particleStartSize) * scale;
+            qreal baseRadius = 10.0 * resolutionScale; 
+            qreal radius = baseRadius * radiusMultiplier;
+            if (radius < 1.0) radius = 1.0; // Ensure minimum size
+            
+            painter.drawEllipse(particle.pos, radius, radius);
+        }
+        else // Resource or Custom
+        {
+            // --- Thread-safe pixmap caching ---
+            QPixmap* pixmap = &m_resourceParticlePixmapCache;
+
+            if (m_settings.particleType == RenderSettings::Custom && !m_settings.customParticleImage.isNull()) {
+                if (m_customParticlePixmapCache.isNull()) {
+                     m_customParticlePixmapCache = QPixmap::fromImage(m_settings.customParticleImage);
+                }
+                pixmap = &m_customParticlePixmapCache;
+            }
+
+            if (!pixmap || pixmap->isNull()) {
+                continue; // Skip drawing if pixmap isn't valid
+            }
+            
+            // Set global opacity for fade-out
+            painter.setOpacity(opacity);
+
+            // --- Size logic ---
+            qreal baseSize = 32.0 * resolutionScale; // Base size
+            // Linear size interpolation
+            qreal sizeMultiplier = m_settings.particleStartSize + (m_settings.particleEndSize - m_settings.particleStartSize) * scale;
+            qreal size = baseSize * sizeMultiplier;
+            if (size < 1.0) size = 1.0; // Minimum size
+            
+            QRectF targetRect(particle.pos.x() - size/2, particle.pos.y() - size/2, size, size);
+            
+            // =================================================================
+            // ---          Tinting Logic (Destination In)                   ---
+            // =================================================================
+            
+            if (m_settings.tintParticles) {
+                // 1. Create a temporary buffer (off-screen)
+                QSize bufferSize = targetRect.size().toSize();
+                if (bufferSize.width() < 1 || bufferSize.height() < 1) {
+                    continue; 
+                }
+                
+                // Use QImage for buffer to support alpha fill
+                QImage bufferImage(bufferSize, QImage::Format_ARGB32);
+                bufferImage.fill(Qt::transparent); // Start with a transparent canvas
+
+                // 2. Create a painter for this buffer
+                QPainter p(&bufferImage);
+                p.setRenderHint(QPainter::Antialiasing, true);
+
+                // 3. Draw the DESTINATION: a solid rectangle of the note color
+                p.fillRect(bufferImage.rect(), particle.color); 
+
+                // 4. Set "Destination In" mode
+                // (Keeps the Destination [color] only where the Source [pixmap] has alpha)
+                p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+
+                // 5. Draw the SOURCE: our pixmap as a mask
+                p.drawPixmap(bufferImage.rect(), *pixmap, pixmap->rect());
+                
+                // 6. End the buffer painter
+                p.end();
+
+                // 7. Draw the final (tinted) QImage onto the main canvas
+                painter.drawImage(targetRect, bufferImage, bufferImage.rect());
+
+            } else {
+                // If tint is off, just draw the original pixmap
+                painter.drawPixmap(targetRect, *pixmap, pixmap->rect());
+            }
+            
+            painter.setOpacity(1.0); // Reset opacity for other drawing
+        }
     }
-
-    painter.end();
-    return frame;
 }

@@ -1,16 +1,15 @@
 #include "export_dialog.h"
-
-#include "video_renderer.h"
 #include "video_exporter.h"
 #include <QtWidgets>
 #include <QScrollArea> 
 #include <QColorDialog>
+#include <QThread>
 
 #include "../gui/components/midi_seq_progress_bar.h" 
 
 ExportDialog::ExportDialog(NoteNagaMidiSeq* sequence, NoteNagaEngine* engine, QWidget* parent)
     : QDialog(parent), m_engine(engine), m_sequence(sequence),
-      m_renderer(new VideoRenderer(sequence)),
+      m_previewThread(new QThread(this)),
       m_backgroundColor(QColor(25, 25, 35)),
       m_currentTime(0.0), m_exportThread(nullptr), m_exporter(nullptr)
 {
@@ -22,6 +21,21 @@ ExportDialog::ExportDialog(NoteNagaMidiSeq* sequence, NoteNagaEngine* engine, QW
     m_progressBar->setMidiSequence(m_sequence);
     m_progressBar->updateMaxTime(); 
 
+    // --- Create and start the PreviewWorker thread ---
+    m_previewWorker = new PreviewWorker(m_sequence);
+    m_previewWorker->moveToThread(m_previewThread);
+
+    // Connect signals for communication
+    // 1. GUI -> Worker (requests)
+    connect(this, &ExportDialog::destroyed, m_previewWorker, &PreviewWorker::deleteLater);
+    connect(m_previewThread, &QThread::started, m_previewWorker, &PreviewWorker::init);
+    
+    // 2. Worker -> GUI (results)
+    connect(m_previewWorker, &PreviewWorker::frameReady, this, &ExportDialog::onPreviewFrameReady, Qt::QueuedConnection);
+    
+    // Start the thread
+    m_previewThread->start();
+
     // --- Connect Signals ---
     connect(m_playPauseButton, &QPushButton::clicked, this, &ExportDialog::onPlayPauseClicked);
     
@@ -31,7 +45,7 @@ ExportDialog::ExportDialog(NoteNagaMidiSeq* sequence, NoteNagaEngine* engine, QW
     
     connect(m_exportButton, &QPushButton::clicked, this, &ExportDialog::onExportClicked);
     
-    // Settings
+    // Settings (now call updatePreviewSettings)
     connect(m_resolutionCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ExportDialog::updatePreviewSettings);
     connect(m_scaleSpinBox, &QDoubleSpinBox::valueChanged, this, &ExportDialog::updatePreviewSettings);
 
@@ -63,13 +77,18 @@ ExportDialog::ExportDialog(NoteNagaMidiSeq* sequence, NoteNagaEngine* engine, QW
     // --- Initial State ---
     onParticleTypeChanged(m_particleTypeCombo->currentIndex());
     updateBgLabels();
-    updatePreviewSettings(); 
+    
+    // Initial settings are sent after a short delay to allow the worker to initialize
+    QTimer::singleShot(10, this, &ExportDialog::updatePreviewSettings);
     onPlaybackTickChanged(m_engine->getProject()->getCurrentTick());
 }
 
 ExportDialog::~ExportDialog()
 {
-    delete m_renderer;
+    // Cleanly shut down threads
+    m_previewThread->quit();
+    m_previewThread->wait();
+    
     if (m_exportThread && m_exportThread->isRunning())
     {
         m_exportThread->quit();
@@ -77,23 +96,30 @@ ExportDialog::~ExportDialog()
     }
 }
 
+void ExportDialog::resizeEvent(QResizeEvent *event)
+{
+    QDialog::resizeEvent(event);
+    // When the window resizes, update the preview rendering size
+    updatePreviewRenderSize();
+}
+
+
 QSize ExportDialog::getTargetResolution()
 {
     return (m_resolutionCombo->currentIndex() == 0) ? QSize(1280, 720) : QSize(1920, 1080);
 }
-
 
 void ExportDialog::setupUi()
 {
     setWindowTitle(tr("Export Video"));
     setMinimumSize(900, 700); 
 
-    // Hlavní layout je nyní horizontální a drží splitter
+    // Main layout is now horizontal and holds the splitter
     QHBoxLayout* mainLayout = new QHBoxLayout(this);
     m_mainSplitter = new QSplitter(Qt::Horizontal);
     mainLayout->addWidget(m_mainSplitter);
 
-    // --- Levá strana (Náhled) ---
+    // --- Left Side (Preview) ---
     m_leftWidget = new QWidget;
     QVBoxLayout *leftLayout = new QVBoxLayout(m_leftWidget);
     leftLayout->setContentsMargins(0,0,0,0);
@@ -105,7 +131,7 @@ void ExportDialog::setupUi()
     m_previewLabel->setStyleSheet("background-color: black; border: 1px solid #444;");
     m_previewLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
-    previewLayout->addWidget(m_previewLabel, 1); // 1 = roztahovat vertikálně
+    previewLayout->addWidget(m_previewLabel, 1); // 1 = stretch vertically
     
     QHBoxLayout *timelineLayout = new QHBoxLayout;
     timelineLayout->setSpacing(6);
@@ -140,7 +166,7 @@ void ExportDialog::setupUi()
     m_progressBar->setFixedHeight(btnSize * 1.6); 
 
     timelineLayout->addWidget(m_playPauseButton);
-    timelineLayout->addWidget(m_progressBar, 1); // 1 = roztahovat horizontálně
+    timelineLayout->addWidget(m_progressBar, 1); // 1 = stretch horizontally
 
     previewLayout->addLayout(timelineLayout); 
     m_previewGroup->setLayout(previewLayout);
@@ -148,12 +174,12 @@ void ExportDialog::setupUi()
     
     m_mainSplitter->addWidget(m_leftWidget);
 
-    // --- Pravá strana (Nastavení a Export) ---
+    // --- Right Side (Settings and Export) ---
     m_rightWidget = new QWidget;
     QGridLayout *rightLayout = new QGridLayout(m_rightWidget);
     rightLayout->setContentsMargins(0,0,0,0);
 
-    // --- ScrollArea pro nastavení ---
+    // --- ScrollArea for settings ---
     m_settingsScrollArea = new QScrollArea;
     m_settingsScrollArea->setWidgetResizable(true);
     m_settingsScrollArea->setFrameShape(QFrame::NoFrame);
@@ -163,7 +189,7 @@ void ExportDialog::setupUi()
     QVBoxLayout *settingsLayout = new QVBoxLayout(m_settingsWidget);
     settingsLayout->setContentsMargins(5, 5, 5, 5); 
     
-    // --- Skupina 1: Export Settings ---
+    // --- Group 1: Export Settings ---
     QGroupBox *exportGroup = new QGroupBox(tr("Export Settings"));
     QFormLayout *exportFormLayout = new QFormLayout(exportGroup);
     
@@ -183,7 +209,7 @@ void ExportDialog::setupUi()
 
     settingsLayout->addWidget(exportGroup);
 
-    // --- Skupina 2: Background Settings ---
+    // --- Group 2: Background Settings ---
     QGroupBox *bgGroup = new QGroupBox(tr("Background Settings"));
     QGridLayout *bgLayout = new QGridLayout(bgGroup);
     
@@ -208,7 +234,7 @@ void ExportDialog::setupUi()
     settingsLayout->addWidget(bgGroup);
 
 
-    // --- Skupina 3: Render Settings ---
+    // --- Group 3: Render Settings ---
     QGroupBox *renderGroup = new QGroupBox(tr("Render Settings"));
     QVBoxLayout *renderLayout = new QVBoxLayout(renderGroup);
     
@@ -242,7 +268,7 @@ void ExportDialog::setupUi()
 
     settingsLayout->addWidget(renderGroup); 
 
-    // --- Skupina 4: Particle Settings (přesunuta sem) ---
+    // --- Group 4: Particle Settings ---
     m_particleSettingsGroup = new QGroupBox(tr("Particle Settings"));
     QFormLayout *particleForm = new QFormLayout(m_particleSettingsGroup);
     
@@ -307,9 +333,9 @@ void ExportDialog::setupUi()
     settingsLayout->addStretch(1); 
 
     m_settingsScrollArea->setWidget(m_settingsWidget); 
-    rightLayout->addWidget(m_settingsScrollArea, 0, 0); // (řádek 0, sloupec 0)
+    rightLayout->addWidget(m_settingsScrollArea, 0, 0); // (row 0, col 0)
 
-    // --- Sekce pro export a progress (vpravo dole) ---
+    // --- Section for export and progress (bottom right) ---
     QVBoxLayout* exportLayout = new QVBoxLayout;
     exportLayout->setContentsMargins(10, 10, 10, 10);
     
@@ -339,16 +365,17 @@ void ExportDialog::setupUi()
     exportLayout->addWidget(m_statusLabel);
     exportLayout->addStretch(1); 
 
-    rightLayout->addLayout(exportLayout, 1, 0); // (řádek 1, sloupec 0)
+    rightLayout->addLayout(exportLayout, 1, 0); // (row 1, col 0)
 
-    rightLayout->setRowStretch(0, 1); // ScrollArea se roztahuje
-    rightLayout->setRowStretch(1, 0); // Export sekce se neroztahuje
+    rightLayout->setRowStretch(0, 1); // ScrollArea stretches
+    rightLayout->setRowStretch(1, 0); // Export section does not
 
     m_mainSplitter->addWidget(m_rightWidget);
-    m_mainSplitter->setSizes({600, 300}); // Počáteční rozdělení
+    m_mainSplitter->setSizes({600, 300}); // Initial split
 
     m_progressWidget->setVisible(false);
 }
+
 
 void ExportDialog::connectEngineSignals() {
     connect(m_engine->getPlaybackWorker(), &NoteNagaPlaybackWorker::currentTickChanged, this, &ExportDialog::onPlaybackTickChanged);
@@ -376,28 +403,24 @@ void ExportDialog::seek(float seconds) {
     m_currentTime = (double)seconds;
     int tick = nn_seconds_to_ticks(m_currentTime, m_sequence->getPPQ(), m_sequence->getTempo());
     m_engine->setPlaybackPosition(tick);
+    
+    // Just update the time, don't re-render here
     onPlaybackTickChanged(tick); 
 }
 
 VideoRenderer::RenderSettings ExportDialog::getCurrentRenderSettings()
 {
     VideoRenderer::RenderSettings settings;
-
-    // Background
     settings.backgroundColor = m_backgroundColor;
     if (!m_backgroundImagePath.isEmpty()) {
         settings.backgroundImage = QImage(m_backgroundImagePath);
     }
-
-    // Render
     settings.renderNotes = m_renderNotesCheck->isChecked();
     settings.renderKeyboard = m_renderKeyboardCheck->isChecked();
     settings.renderParticles = m_renderParticlesCheck->isChecked();
     settings.renderPianoGlow = m_pianoGlowCheck->isChecked();
     settings.noteStartOpacity = m_noteStartOpacitySpin->value();
     settings.noteEndOpacity = m_noteEndOpacitySpin->value();
-
-    // Particles
     settings.particleType = (VideoRenderer::RenderSettings::ParticleType)m_particleTypeCombo->currentIndex();
     if (settings.particleType == VideoRenderer::RenderSettings::Custom && !m_particleFilePath.isEmpty()) {
         settings.customParticleImage = QImage(m_particleFilePath);
@@ -409,22 +432,50 @@ VideoRenderer::RenderSettings ExportDialog::getCurrentRenderSettings()
     settings.tintParticles = m_particleTintCheck->isChecked();
     settings.particleStartSize = m_particleStartSizeSpin->value();
     settings.particleEndSize = m_particleEndSizeSpin->value();
-
     return settings;
+}
+
+void ExportDialog::updatePreviewRenderSize()
+{
+    // Calculate the render size that fits in the label while maintaining aspect ratio
+    QSize targetRes = getTargetResolution();
+    QSize labelSize = m_previewLabel->size();
+    if (labelSize.isEmpty()) return; // Not visible yet
+
+    QSize renderSize = targetRes;
+    renderSize.scale(labelSize, Qt::KeepAspectRatio);
+    
+    if (renderSize != m_lastRenderSize) {
+        m_lastRenderSize = renderSize;
+        // Send the new size to the worker
+        QMetaObject::invokeMethod(m_previewWorker, "updateSize", Qt::QueuedConnection,
+                                  Q_ARG(QSize, m_lastRenderSize));
+    }
 }
 
 void ExportDialog::updatePreviewSettings()
 {
-    m_renderer->setSecondsVisible(m_scaleSpinBox->value());
-    m_renderer->setRenderSettings(getCurrentRenderSettings());
+    // Send all settings to the worker thread
     
+    QMetaObject::invokeMethod(m_previewWorker, "updateSettings", Qt::QueuedConnection,
+                              Q_ARG(VideoRenderer::RenderSettings, getCurrentRenderSettings()));
+                              
+    QMetaObject::invokeMethod(m_previewWorker, "updateScale", Qt::QueuedConnection,
+                              Q_ARG(double, m_scaleSpinBox->value()));
+
+    // Update the size (resolution might have changed)
+    updatePreviewRenderSize();
+    
+    // If not playing, also send a time update to redraw
     if (!m_engine->isPlaying()) {
-        onPlaybackTickChanged(m_engine->getProject()->getCurrentTick());
+        QMetaObject::invokeMethod(m_previewWorker, "updateTime", Qt::QueuedConnection,
+                                  Q_ARG(double, m_currentTime));
     }
 }
 
 void ExportDialog::onParticleTypeChanged(int index)
 {
+    // ... (this function is unchanged, just calls updatePreviewSettings at the end) ...
     bool isCustom = (index == (int)VideoRenderer::RenderSettings::Custom);
     m_particleFileButton->setVisible(isCustom);
     m_particlePreviewLabel->setVisible(isCustom);
@@ -451,6 +502,7 @@ void ExportDialog::onParticleTypeChanged(int index)
 
 void ExportDialog::onSelectParticleFile()
 {
+    // ... (unchanged) ...
     QString path = QFileDialog::getOpenFileName(this, tr("Select Particle Image"), "", tr("Images (*.png *.jpg *.bmp)"));
     if (!path.isEmpty()) {
         m_particleFilePath = path;
@@ -463,6 +515,7 @@ void ExportDialog::onSelectParticleFile()
 
 void ExportDialog::onSelectBgColor()
 {
+    // ... (unchanged) ...
     QColor color = QColorDialog::getColor(m_backgroundColor, this, tr("Select Background Color"));
     if (color.isValid()) {
         m_backgroundColor = color;
@@ -474,6 +527,7 @@ void ExportDialog::onSelectBgColor()
 
 void ExportDialog::onSelectBgImage()
 {
+    // ... (unchanged) ...
     QString path = QFileDialog::getOpenFileName(this, tr("Select Background Image"), "", tr("Images (*.png *.jpg *.bmp)"));
     if (!path.isEmpty()) {
         m_backgroundImagePath = path;
@@ -484,23 +538,25 @@ void ExportDialog::onSelectBgImage()
 
 void ExportDialog::onClearBg()
 {
+    // ... (unchanged) ...
     m_backgroundImagePath.clear();
-    m_backgroundColor = QColor(25, 25, 35); // Výchozí tmavá barva
+    m_backgroundColor = QColor(25, 25, 35); // Default dark color
     updateBgLabels();
     updatePreviewSettings();
 }
 
 void ExportDialog::updateBgLabels()
 {
+    // ... (unchanged) ...
     m_bgColorPreview->setStyleSheet(QString("background-color: %1; border: 1px solid #555;").arg(m_backgroundColor.name()));
     
     if (!m_backgroundImagePath.isEmpty()) {
         QFileInfo info(m_backgroundImagePath);
         m_bgImagePreview->setText(info.fileName());
-        m_bgImagePreview->setStyleSheet("color: #DDD;"); // Světlejší text pro soubor
+        m_bgImagePreview->setStyleSheet("color: #DDD;");
     } else {
         m_bgImagePreview->setText(tr("None"));
-        m_bgImagePreview->setStyleSheet("color: #888;"); // Tmavší text pro "None"
+        m_bgImagePreview->setStyleSheet("color: #888;");
     }
 }
 
@@ -520,6 +576,7 @@ void ExportDialog::onExportClicked()
     setControlsEnabled(false);
 
     m_exportThread = new QThread;
+    // Create the exporter and pass VALUES only, no renderer
     m_exporter = new VideoExporter(m_sequence, outputPath, resolution, fps, this->m_engine, secondsVisible, settings);
     
     m_exporter->moveToThread(m_exportThread);
@@ -574,6 +631,12 @@ void ExportDialog::setControlsEnabled(bool enabled)
     m_exportButton->setEnabled(enabled);
     m_progressWidget->setVisible(!enabled);
 
+    // Reactivate the preview
+    m_previewThread->setPriority(enabled ? QThread::InheritPriority : QThread::IdlePriority);
+    if(enabled) {
+        updatePreviewSettings();
+    }
+
     if (enabled)
     {
         m_audioProgressBar->setValue(0);
@@ -587,33 +650,32 @@ void ExportDialog::setControlsEnabled(bool enabled)
 void ExportDialog::onPlaybackTickChanged(int tick) {
     m_currentTime = nn_ticks_to_seconds(tick, m_sequence->getPPQ(), m_sequence->getTempo());
 
-    // --- Logika pro správný poměr stran náhledu ---
-    QSize targetRes = getTargetResolution();
-    QSize labelSize = m_previewLabel->size();
-
-    // Vypočítáme velikost renderu, která se vejde do labelu při zachování poměru stran
-    QSize renderSize = targetRes;
-    renderSize.scale(labelSize, Qt::KeepAspectRatio);
+    // --- GUI thread no longer renders ---
+    // Instead, it sends a time update request to the worker thread
     
-    // Vykreslíme frame v této vypočítané velikosti
-    QImage frame = m_renderer->renderFrame(m_currentTime, renderSize);
-    QPixmap pixmap = QPixmap::fromImage(frame);
+    QMetaObject::invokeMethod(m_previewWorker, "updateTime", Qt::QueuedConnection,
+                              Q_ARG(double, m_currentTime));
 
-    // Vytvoříme finální pixmapu o velikosti labelu a vyplníme ji černě (pro letterbox)
-    QPixmap scaledPixmap(labelSize);
-    scaledPixmap.fill(Qt::black);
-
-    // Vykreslíme náš vyrenderovaný frame doprostřed
-    QPainter p(&scaledPixmap);
-    int x = (labelSize.width() - renderSize.width()) / 2;
-    int y = (labelSize.height() - renderSize.height()) / 2;
-    p.drawPixmap(x, y, pixmap);
-    p.end();
-    
-    m_previewLabel->setPixmap(scaledPixmap);
-
-    // --- Aktualizace progress baru ---
+    // --- Update progress bar (this is in the GUI, so it's fine) ---
     m_progressBar->blockSignals(true);
     m_progressBar->setCurrentTime(m_currentTime);
     m_progressBar->blockSignals(false);
+}
+
+void ExportDialog::onPreviewFrameReady(const QImage& frame)
+{
+    // --- This is the slot called from the PreviewWorker thread ---
+    
+    // Create the final pixmap (sized to the label) and fill with black (for letterboxing)
+    QPixmap scaledPixmap(m_previewLabel->size());
+    scaledPixmap.fill(Qt::black);
+
+    // Draw our rendered frame (which already has the correct aspect ratio) in the center
+    QPainter p(&scaledPixmap);
+    int x = (scaledPixmap.width() - frame.width()) / 2;
+    int y = (scaledPixmap.height() - frame.height()) / 2;
+    p.drawPixmap(x, y, QPixmap::fromImage(frame));
+    p.end();
+    
+    m_previewLabel->setPixmap(scaledPixmap);
 }

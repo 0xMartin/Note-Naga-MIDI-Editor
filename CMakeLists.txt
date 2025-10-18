@@ -33,6 +33,7 @@ set(HEADER_FILES
     src/gui/main_window.h
     src/gui/nn_gui_utils.h
     # video export
+    src/video_export/preview_worker.h
     src/video_export/export_dialog.h
     src/video_export/video_exporter.h
     src/video_export/video_renderer.h
@@ -77,6 +78,7 @@ set(SOURCE_FILES
     # src
     src/main.cpp
     # video export
+    src/video_export/preview_worker.cpp
     src/video_export/export_dialog.cpp
     src/video_export/video_exporter.cpp
     src/video_export/video_renderer.cpp

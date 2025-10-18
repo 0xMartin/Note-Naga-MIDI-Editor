@@ -8,8 +8,11 @@
 #include <QFileInfo>
 #include <QtConcurrent>
 #include <QFuture>
+#include <QTextStream> // For filelist
 #include <numeric>
 
+// This guard class ensures that the engine is in manual audio rendering mode
+// during the audio export and switches back automatically when done.
 class ManualModeGuard
 {
 public:
@@ -42,6 +45,7 @@ private:
     NoteNagaEngine *m_engine;
 };
 
+
 VideoExporter::VideoExporter(NoteNagaMidiSeq *sequence, QString outputPath,
                              QSize resolution, int fps, NoteNagaEngine *engine,
                              double secondsVisible,
@@ -49,7 +53,8 @@ VideoExporter::VideoExporter(NoteNagaMidiSeq *sequence, QString outputPath,
                              QObject *parent)
     : QObject(parent), m_sequence(sequence), m_outputPath(outputPath),
       m_resolution(resolution), m_fps(fps), m_engine(engine),
-      m_secondsVisible(secondsVisible), m_settings(settings)
+      m_secondsVisible(secondsVisible), m_settings(settings), // Store the settings
+      m_framesRendered(0), m_totalFrames(0)
 {
     connect(&m_audioWatcher, &QFutureWatcher<bool>::finished, this, &VideoExporter::onTaskFinished);
     connect(&m_videoWatcher, &QFutureWatcher<bool>::finished, this, &VideoExporter::onTaskFinished);
@@ -63,7 +68,8 @@ VideoExporter::~VideoExporter()
 void VideoExporter::doExport()
 {
     m_tempAudioPath = m_outputPath + ".tmp.wav";
-    m_tempVideoPath = m_outputPath + ".tmp.mp4";
+    // This will be the final temporary video after joining batches
+    m_tempVideoPath = m_outputPath + ".tmp.video.mp4"; 
 
     emit statusTextChanged(tr("Rendering in progress..."));
 
@@ -72,8 +78,9 @@ void VideoExporter::doExport()
     QFuture<bool> audioFuture = QtConcurrent::run([this]()
                                                   { return this->exportAudio(m_tempAudioPath); });
 
+    // Run the new batched method for video
     QFuture<bool> videoFuture = QtConcurrent::run([this]()
-                                                  { return this->exportVideo(m_tempVideoPath); });
+                                                  { return this->exportVideoBatched(m_tempVideoPath); });
 
     m_audioWatcher.setFuture(audioFuture);
     m_videoWatcher.setFuture(videoFuture);
@@ -81,6 +88,7 @@ void VideoExporter::doExport()
 
 void VideoExporter::onTaskFinished()
 {
+    // Wait until both (audio + video) tasks are finished
     if (m_finishedTaskCount.fetchAndAddOrdered(1) + 1 != 2)
     {
         return;
@@ -122,10 +130,21 @@ void VideoExporter::cleanup()
         QFile::remove(m_tempAudioPath);
     if (!m_tempVideoPath.isEmpty())
         QFile::remove(m_tempVideoPath);
+        
+    // We must also delete temporary batches
+    QDir dir = QFileInfo(m_outputPath).dir();
+    QString baseName = QFileInfo(m_outputPath).fileName();
+    QStringList filters;
+    filters << baseName + ".tmp.batch.*.mp4";
+    for(const QString& tmpFile : dir.entryList(filters, QDir::Files)) {
+        QFile::remove(dir.filePath(tmpFile));
+    }
+    QFile::remove(dir.filePath("filelist.txt"));
 }
 
 bool VideoExporter::exportAudio(const QString &outputPath)
 {
+    // ... (this function is unchanged) ...
     ManualModeGuard manualMode(this->m_engine);
 
     const int sampleRate = 44100;
@@ -219,38 +238,171 @@ bool VideoExporter::exportAudio(const QString &outputPath)
     return true;
 }
 
-bool VideoExporter::exportVideo(const QString &outputPath)
+
+// --- NEW PARALLEL VIDEO METHOD ---
+
+bool VideoExporter::exportVideoBatched(const QString &outputPath)
 {
-    cv::VideoWriter videoWriter(outputPath.toStdString(), cv::VideoWriter::fourcc('m', 'p', '4', 'v'), m_fps, cv::Size(m_resolution.width(), m_resolution.height()));
-    if (!videoWriter.isOpened())
-        return false;
+    // === 1. PHASE: Simulation (Single-thread) ===
+    emit statusTextChanged(tr("Simulating effects..."));
+    
+    // Create one renderer ONLY for simulation
+    VideoRenderer simRenderer(m_sequence);
+    simRenderer.setSecondsVisible(m_secondsVisible);
+    simRenderer.setRenderSettings(m_settings);
+    simRenderer.prepareKeyboardLayout(m_resolution); // Important for positions!
 
-    VideoRenderer renderer(m_engine->getProject()->getActiveSequence());
-    renderer.setSecondsVisible(m_secondsVisible);
-    renderer.setRenderSettings(m_settings);
+    double totalDuration = nn_ticks_to_seconds(m_sequence->getMaxTick(), m_engine->getProject()->getPPQ(), m_engine->getProject()->getTempo()) + 1.0;
+    m_totalFrames = static_cast<int>(totalDuration * m_fps);
+    m_framesRendered = 0;
 
-    double totalDuration = nn_ticks_to_seconds(m_engine->getProject()->getActiveSequence()->getMaxTick(), m_engine->getProject()->getPPQ(), m_engine->getProject()->getTempo()) + 1.0;
-    const int totalFrames = static_cast<int>(totalDuration * m_fps);
+    std::vector<VideoRenderer::FrameState> allFrameStates;
+    allFrameStates.reserve(m_totalFrames);
 
-    for (int i = 0; i < totalFrames; ++i) {
+    // --- FIX 2: Correctly chain the simulation state ---
+    VideoRenderer::FrameState lastState; // Start with an empty state
+
+    for (int i = 0; i < m_totalFrames; ++i) {
         double currentTime = static_cast<double>(i) / m_fps;
-        QImage frame = renderer.renderFrame(currentTime, m_resolution);
-
-        cv::Mat cvFrame(frame.height(), frame.width(), CV_8UC4, (void*)frame.constBits(), frame.bytesPerLine());
-        cv::Mat cvFrameBGR;
-        cv::cvtColor(cvFrame, cvFrameBGR, cv::COLOR_BGRA2BGR);
-
-        videoWriter.write(cvFrameBGR);
-        emit videoProgressUpdated((i + 1) * 100 / totalFrames);
+        double deltaTime = 1.0 / m_fps;
+        
+        // Calculate the *next* state based on the *last* state
+        VideoRenderer::FrameState nextState = simRenderer.calculateNextState(lastState, currentTime, deltaTime);
+        
+        allFrameStates.push_back(nextState);
+        lastState = nextState; // Update lastState for the next iteration
+        
+        // Progress for simulation (0-10%)
+        emit videoProgressUpdated((i + 1) * 10 / m_totalFrames);
     }
+    
+    // === 2. PHASE: Parallel Rendering ===
+    emit statusTextChanged(tr("Rendering video frames..."));
+    
+    int numThreads = QThread::idealThreadCount();
+    // We want at least 10 batches, or one per thread
+    int numBatches = std::max(numThreads, 10); 
+    int framesPerBatch = (m_totalFrames + numBatches - 1) / numBatches; // Ceiling division
+
+    QFutureSynchronizer<QString> synchronizer;
+    QStringList tempBatchFiles;
+    
+    for (int i = 0; i < numBatches; ++i) {
+        int startFrame = i * framesPerBatch;
+        int endFrame = std::min(startFrame + framesPerBatch, m_totalFrames);
+        if (startFrame >= endFrame) continue;
+
+        // Run the batch render in QtConcurrent
+        synchronizer.addFuture(QtConcurrent::run([=]() {
+            // Pass 'allFrameStates' by value (copy) for thread safety
+            return this->renderVideoBatch(startFrame, endFrame, allFrameStates); 
+        }));
+    }
+
+    // Wait for all batches to finish rendering
+    synchronizer.waitForFinished();
+    
+    for(const auto& future : synchronizer.futures()) {
+        tempBatchFiles.append(future.result());
+    }
+    
     emit videoProgressUpdated(100);
 
-    videoWriter.release();
+    // === 3. PHASE: Concatenate ===
+    emit statusTextChanged(tr("Joining video files..."));
+    if (!concatenateVideos(tempBatchFiles, outputPath)) {
+        emit error(tr("Failed to join video batches. FFmpeg error."));
+        // Delete temporary batch files
+        for(const QString& f : tempBatchFiles) QFile::remove(f);
+        return false;
+    }
+    
+    // Delete temporary batch files
+    for(const QString& f : tempBatchFiles) QFile::remove(f);
+
     return true;
 }
 
+QString VideoExporter::renderVideoBatch(int startFrame, int endFrame, 
+                                        const std::vector<VideoRenderer::FrameState>& allFrameStates)
+{
+    // Each thread creates its own VideoRenderer
+    VideoRenderer renderer(m_sequence);
+    renderer.setSecondsVisible(m_secondsVisible);
+    renderer.setRenderSettings(m_settings);
+    
+    // Unique file name for this batch
+    QString tempFile = m_outputPath + QString(".tmp.batch.%1.mp4").arg(startFrame);
+    
+    cv::VideoWriter videoWriter(tempFile.toStdString(), cv::VideoWriter::fourcc('m', 'p', '4', 'v'), m_fps, cv::Size(m_resolution.width(), m_resolution.height()));
+    if (!videoWriter.isOpened()) {
+        // Can't return an error directly, so return an empty string
+        return QString(); 
+    }
+
+    for (int i = startFrame; i < endFrame; ++i) {
+        double currentTime = static_cast<double>(i) / m_fps;
+        
+        // Call the stateless renderFrame version
+        QImage frame = renderer.renderFrame(currentTime, m_resolution, allFrameStates[i]);
+
+        cv::Mat cvFrame(frame.height(), frame.width(), CV_8UC4, (void*)frame.constBits(), frame.bytesPerLine());
+        cv::Mat cvFrameBGR;
+        cv::cvtColor(cvFrame, cvFrameBGR, cv::COLOR_BGRA2BGR); // Color correction
+
+        videoWriter.write(cvFrameBGR);
+        
+        // Update progress (atomically)
+        int rendered = m_framesRendered.fetchAndAddOrdered(1);
+        // Progress for rendering (10-95%)
+        // Emit only occasionally to avoid flooding the GUI
+        if (rendered % 20 == 0) { 
+             emit videoProgressUpdated(10 + (rendered * 85 / m_totalFrames));
+        }
+    }
+
+    videoWriter.release();
+    return tempFile;
+}
+
+bool VideoExporter::concatenateVideos(const QStringList& videoFiles, const QString& finalPath)
+{
+    // 1. Create 'filelist.txt'
+    QString fileListPath = QFileInfo(m_outputPath).dir().filePath("filelist.txt");
+    QFile fileList(fileListPath);
+    if (!fileList.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        return false;
+    }
+    
+    QTextStream out(&fileList);
+    for (const QString& f : videoFiles) {
+        // FFmpeg needs ' and escaped backslashes
+        QString escapedPath = f;
+        escapedPath.replace("\\", "/");
+        out << "file '" << escapedPath << "'\n";
+    }
+    fileList.close();
+
+    // 2. Run FFmpeg
+    QProcess ffmpeg;
+    QStringList arguments;
+    arguments << "-y" << "-f" << "concat" << "-safe" << "0" << "-i" << fileListPath << "-c" << "copy" << finalPath;
+
+    ffmpeg.start("ffmpeg", arguments);
+    if (!ffmpeg.waitForStarted()) {
+        QFile::remove(fileListPath);
+        return false;
+    }
+    ffmpeg.waitForFinished(-1);
+    
+    QFile::remove(fileListPath);
+    return ffmpeg.exitCode() == 0;
+}
+
+
 bool VideoExporter::combineAudioVideo(const QString &videoPath, const QString &audioPath, const QString &finalPath)
 {
+    // ... (unchanged) ...
     QProcess ffmpeg;
     QStringList arguments;
     arguments << "-y" << "-i" << videoPath << "-i" << audioPath << "-c:v" << "copy" << "-c:a" << "aac" << "-b:a" << "192k" << "-shortest" << finalPath;
@@ -266,6 +418,7 @@ bool VideoExporter::combineAudioVideo(const QString &videoPath, const QString &a
 
 void VideoExporter::writeWavHeader(std::ofstream &file, int sampleRate, int numSamples)
 {
+    // ... (unchanged) ...
     int numChannels = 2;
     int bitsPerSample = 16;
     int byteRate = sampleRate * numChannels * bitsPerSample / 8;

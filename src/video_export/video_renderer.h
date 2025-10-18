@@ -9,7 +9,22 @@
 
 class VideoRenderer {
 public:
-    // Struktura pro všechna nastavení renderování
+    // Structure for particles (public so FrameState can use it)
+    struct Particle {
+        QPointF pos;
+        QPointF vel;
+        qreal lifetime;
+        qreal initial_lifetime;
+        QColor color;
+    };
+    
+    // Structure to hold the state for a single frame
+    struct FrameState {
+        std::vector<Particle> particles;
+        std::map<int, bool> activeNotes;
+    };
+
+    // Structure for all render settings
     struct RenderSettings {
        bool renderParticles = true;
         bool renderKeyboard = true;
@@ -35,55 +50,73 @@ public:
     };
 
     VideoRenderer(NoteNagaMidiSeq* sequence);
+    
+    /**
+     * @brief Renders a frame (Stateful version for preview).
+     * This version calculates its own simulation and stores its state.
+     */
     QImage renderFrame(double currentTime, const QSize& size);
-    
-    // Metoda pro nastavení vertikálního měřítka z UI
-    void setSecondsVisible(double seconds) { m_secondsVisible = seconds; }
-    
-    // Metoda pro nastavení všech ostatních voleb
-    void setRenderSettings(const RenderSettings& settings) { m_settings = settings; }
 
+    /**
+     * @brief Renders a frame (Stateless version for export).
+     * This version receives a pre-calculated state.
+     */
+    QImage renderFrame(double currentTime, const QSize& size, const FrameState& state);
+
+    /**
+     * @brief Calculates the state for the next frame based on the previous one. (Stateless)
+     * @param previousState The state of the previous frame.
+     * @param currentTime The current absolute time.
+     * @param deltaTime The time elapsed since the previous frame.
+     * @return The pre-calculated state for the current frame.
+     */
+    FrameState calculateNextState(const FrameState& previousState, double currentTime, double deltaTime);
+    
+    /**
+     * @brief Resets the internal simulation state (e.g., when scrubbing the timeline).
+     */
+    void resetSimulation();
+
+    void setSecondsVisible(double seconds) { m_secondsVisible = seconds; }
+    void setRenderSettings(const RenderSettings& settings);
+    void prepareKeyboardLayout(const QSize& size);
+    
 private:
-    // Struktura pro uchování informací o notě pro renderování
+    // Structure for holding note info for rendering
     struct NoteInfo {
         int note_val;
         double start_time;
         double end_time;
         QColor color;
     };
-    // Struktura pro uchování informací o klávese
+    // Structure for holding key info
     struct KeyInfo {
         QRectF rect;
         bool is_white;
     };
-    // Struktura pro částice
-    struct Particle {
-        QPointF pos;
-        QPointF vel;
-        qreal lifetime;
-        qreal initial_lifetime;
-        QColor color;
-    };
 
     void prepareNoteData();
-    void prepareKeyboardLayout(const QSize& size);
     
-    // Metody pro efekty
-    void updateAndDrawParticles(double deltaTime, QPainter& painter, double resolutionScale);
-    void spawnParticles(const NoteInfo& note, double resolutionScale);
+    // Simulation methods
+    void updateParticles(double deltaTime, std::vector<Particle>& particles);
+    void spawnParticles(const NoteInfo& note, double resolutionScale, std::vector<Particle>& particles);
+
+    // Drawing methods
+    void drawParticles(QPainter& painter, const std::vector<Particle>& particles, double resolutionScale);
+    void drawNotesAndKeyboard(QPainter& painter, double currentTime, const QSize& size, const std::map<int, bool>& activeNotes);
 
     RenderSettings m_settings;
     NoteNagaMidiSeq* m_sequence;
 
     std::vector<NoteInfo> m_notes;
     std::map<int, KeyInfo> m_keyboardLayout;
-
     QSize m_lastLayoutSize;
     double m_secondsVisible = 5.0;
 
-    QPixmap m_resourceParticlePixmapCache; // Cache pro výchozí obrázek
-    QPixmap m_customParticlePixmapCache;   // Cache pro vlastní obrázek
-    std::vector<Particle> m_particles;
-    std::map<int, bool> m_activeNotesState;
+    QPixmap m_resourceParticlePixmapCache; // Cache for default particle image
+    QPixmap m_customParticlePixmapCache;   // Cache for custom particle image
+    
+    // --- Internal state for stateful rendering (preview) ---
+    FrameState m_currentState;
     double m_lastFrameTime = -1.0;
 };
