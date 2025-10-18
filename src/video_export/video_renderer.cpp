@@ -131,7 +131,6 @@ void VideoRenderer::updateAndDrawParticles(double deltaTime, QPainter& painter, 
 
                 // --- ZMĚNĚNÁ LOGIKA VELIKOSTI ---
                 qreal radiusMultiplier = m_settings.particleStartSize + (m_settings.particleEndSize - m_settings.particleStartSize) * scale;
-                // Původní "2.0 + scale * 8.0" nahradíme flexibilnějším násobičem
                 qreal baseRadius = 10.0 * resolutionScale; 
                 qreal radius = baseRadius * radiusMultiplier;
                 if (radius < 1.0) radius = 1.0; // Zajistíme minimální velikost
@@ -167,22 +166,46 @@ void VideoRenderer::updateAndDrawParticles(double deltaTime, QPainter& painter, 
                 
                 QRectF targetRect(it->pos.x() - size/2, it->pos.y() - size/2, size, size);
                 
-                // --- NOVÁ LOGIKA TINTU (OVERLAY) ---
-
-                // 1. Vždy vykreslíme původní pixmapu (zachová alfu i barvy)
-                painter.drawPixmap(targetRect, *pixmap, pixmap->rect());
-
-                // 2. Pokud je povolen tint, překryjeme ji barvou
+                // =================================================================
+                // ---          FINÁLNÍ OPRAVENÁ LOGIKA TINTU (DESTINATION IN)     ---
+                // =================================================================
+                
                 if (m_settings.tintParticles) {
-                    // Overlay mód smíchá barvy a zachová světlost/tmavost originálu
-                    // a hlavně RESPEKTUJE ALFA KANÁL (nebude kreslit čtverec)
-                    painter.setCompositionMode(QPainter::CompositionMode_Overlay);
+                    // 1. Vytvoříme dočasný buffer (mimo obrazovku)
+                    // Musíme použít QImage pro podporu alfa kanálu při fill
+                    QSize bufferSize = targetRect.size().toSize();
+                    if (bufferSize.width() < 1 || bufferSize.height() < 1) {
+                        ++it;
+                        continue; 
+                    }
                     
-                    // Kreslíme barvu přes obrázek
-                    painter.fillRect(targetRect, it->color);
+                    // Vytvoříme buffer jako QImage pro správnou práci s alfou
+                    QImage bufferImage(bufferSize, QImage::Format_ARGB32);
+                    bufferImage.fill(Qt::transparent); // Začneme s průhledným plátnem
+
+                    // 2. Vytvoříme painter pro tento buffer
+                    QPainter p(&bufferImage);
+                    p.setRenderHint(QPainter::Antialiasing, true);
+
+                    // 3. Vykreslíme CÍL (Destination): plný obdélník v barvě noty
+                    p.fillRect(bufferImage.rect(), it->color); 
+
+                    // 4. Nastavíme režim "Cíl Dovnitř Zdroje"
+                    // (Zachová Cíl [barvu] pouze tam, kde Zdroj [pixmapa] má alfu)
+                    p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+
+                    // 5. Vykreslíme ZDROJ (Source): naši pixmapu jako masku
+                    p.drawPixmap(bufferImage.rect(), *pixmap, pixmap->rect());
                     
-                    // 3. Vrátíme režim prolnutí zpět na normální
-                    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+                    // 6. Ukončíme painter bufferu
+                    p.end();
+
+                    // 7. Vykreslíme finální (zabarvený) QImage na hlavní plátno
+                    painter.drawImage(targetRect, bufferImage, bufferImage.rect());
+
+                } else {
+                    // Pokud je tint vypnutý, kreslíme přímo originální pixmapu
+                    painter.drawPixmap(targetRect, *pixmap, pixmap->rect());
                 }
                 
                 painter.setOpacity(1.0); // Vrátíme opacitu pro další kreslení
