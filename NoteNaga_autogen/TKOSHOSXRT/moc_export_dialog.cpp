@@ -52,7 +52,11 @@ template <> constexpr inline auto ExportDialog::qt_create_metaobjectdata<qt_meta
         "percentage",
         "updateVideoProgress",
         "updateStatusText",
-        "status"
+        "status",
+        "onParticleTypeChanged",
+        "index",
+        "onSelectParticleFile",
+        "updatePreviewSettings"
     };
 
     QtMocHelpers::UintData qt_methods {
@@ -84,6 +88,14 @@ template <> constexpr inline auto ExportDialog::qt_create_metaobjectdata<qt_meta
         QtMocHelpers::SlotData<void(const QString &)>(13, 2, QMC::AccessPrivate, QMetaType::Void, {{
             { QMetaType::QString, 14 },
         }}),
+        // Slot 'onParticleTypeChanged'
+        QtMocHelpers::SlotData<void(int)>(15, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 16 },
+        }}),
+        // Slot 'onSelectParticleFile'
+        QtMocHelpers::SlotData<void()>(17, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'updatePreviewSettings'
+        QtMocHelpers::SlotData<void()>(18, 2, QMC::AccessPrivate, QMetaType::Void),
     };
     QtMocHelpers::UintData qt_properties {
     };
@@ -116,6 +128,9 @@ void ExportDialog::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         case 6: _t->updateAudioProgress((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
         case 7: _t->updateVideoProgress((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
         case 8: _t->updateStatusText((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 9: _t->onParticleTypeChanged((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 10: _t->onSelectParticleFile(); break;
+        case 11: _t->updatePreviewSettings(); break;
         default: ;
         }
     }
@@ -140,14 +155,14 @@ int ExportDialog::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 9)
+        if (_id < 12)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 9;
+        _id -= 12;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 9)
+        if (_id < 12)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 9;
+        _id -= 12;
     }
     return _id;
 }

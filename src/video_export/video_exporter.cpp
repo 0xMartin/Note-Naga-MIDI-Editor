@@ -10,35 +10,46 @@
 #include <QFuture>
 #include <numeric>
 
-class ManualModeGuard {
+class ManualModeGuard
+{
 public:
-    ManualModeGuard(NoteNagaEngine* engine) : m_engine(engine) {
-        if (m_engine) {
+    ManualModeGuard(NoteNagaEngine *engine) : m_engine(engine)
+    {
+        if (m_engine)
+        {
             m_engine->getMixer()->enterManualMode();
-            for (auto* synth : m_engine->getSynthesizers()) {
+            for (auto *synth : m_engine->getSynthesizers())
+            {
                 synth->enterManualMode();
             }
             m_engine->getAudioWorker()->mute();
         }
     }
-    ~ManualModeGuard() {
-        if (m_engine) {
+    ~ManualModeGuard()
+    {
+        if (m_engine)
+        {
             m_engine->getMixer()->exitManualMode();
-            for (auto* synth : m_engine->getSynthesizers()) {
+            for (auto *synth : m_engine->getSynthesizers())
+            {
                 synth->exitManualMode();
             }
             m_engine->getAudioWorker()->unmute();
         }
     }
+
 private:
-    NoteNagaEngine* m_engine;
+    NoteNagaEngine *m_engine;
 };
 
 VideoExporter::VideoExporter(NoteNagaMidiSeq *sequence, QString outputPath,
                              QSize resolution, int fps, NoteNagaEngine *engine,
-                             double secondsVisible, QObject *parent)
+                             double secondsVisible,
+                             const VideoRenderer::RenderSettings &settings,
+                             QObject *parent)
     : QObject(parent), m_sequence(sequence), m_outputPath(outputPath),
-      m_resolution(resolution), m_fps(fps), m_engine(engine), m_secondsVisible(secondsVisible)
+      m_resolution(resolution), m_fps(fps), m_engine(engine),
+      m_secondsVisible(secondsVisible), m_settings(settings)
 {
     connect(&m_audioWatcher, &QFutureWatcher<bool>::finished, this, &VideoExporter::onTaskFinished);
     connect(&m_videoWatcher, &QFutureWatcher<bool>::finished, this, &VideoExporter::onTaskFinished);
@@ -58,13 +69,11 @@ void VideoExporter::doExport()
 
     m_finishedTaskCount = 0;
 
-    QFuture<bool> audioFuture = QtConcurrent::run([this]() {
-        return this->exportAudio(m_tempAudioPath);
-    });
+    QFuture<bool> audioFuture = QtConcurrent::run([this]()
+                                                  { return this->exportAudio(m_tempAudioPath); });
 
-    QFuture<bool> videoFuture = QtConcurrent::run([this]() {
-        return this->exportVideo(m_tempVideoPath);
-    });
+    QFuture<bool> videoFuture = QtConcurrent::run([this]()
+                                                  { return this->exportVideo(m_tempVideoPath); });
 
     m_audioWatcher.setFuture(audioFuture);
     m_videoWatcher.setFuture(videoFuture);
@@ -72,21 +81,24 @@ void VideoExporter::doExport()
 
 void VideoExporter::onTaskFinished()
 {
-    if (m_finishedTaskCount.fetchAndAddOrdered(1) + 1 != 2) {
+    if (m_finishedTaskCount.fetchAndAddOrdered(1) + 1 != 2)
+    {
         return;
     }
 
     bool audioSuccess = m_audioWatcher.future().result();
     bool videoSuccess = m_videoWatcher.future().result();
 
-    if (!audioSuccess) {
+    if (!audioSuccess)
+    {
         emit error(tr("Failed to render audio."));
         cleanup();
         emit finished();
         return;
     }
 
-    if (!videoSuccess) {
+    if (!videoSuccess)
+    {
         emit error(tr("Failed to render video."));
         cleanup();
         emit finished();
@@ -106,8 +118,10 @@ void VideoExporter::onTaskFinished()
 
 void VideoExporter::cleanup()
 {
-    if (!m_tempAudioPath.isEmpty()) QFile::remove(m_tempAudioPath);
-    if (!m_tempVideoPath.isEmpty()) QFile::remove(m_tempVideoPath);
+    if (!m_tempAudioPath.isEmpty())
+        QFile::remove(m_tempAudioPath);
+    if (!m_tempVideoPath.isEmpty())
+        QFile::remove(m_tempVideoPath);
 }
 
 bool VideoExporter::exportAudio(const QString &outputPath)
@@ -127,50 +141,79 @@ bool VideoExporter::exportAudio(const QString &outputPath)
     NoteNagaDSPEngine *dspEngine = m_engine->getDSPEngine();
     auto synthesizers = m_engine->getSynthesizers();
 
-    struct MidiEvent { int tick; NN_Note_t note; bool isNoteOn; };
+    struct MidiEvent
+    {
+        int tick;
+        NN_Note_t note;
+        bool isNoteOn;
+    };
     std::vector<MidiEvent> allEvents;
-    for (auto *track : activeSequence->getTracks()) {
-        if (track->isMuted() || (activeSequence->getSoloTrack() && activeSequence->getSoloTrack() != track)) continue;
-        for (const auto &note : track->getNotes()) {
-            if (note.start.has_value() && note.length.has_value()) {
+    for (auto *track : activeSequence->getTracks())
+    {
+        if (track->isMuted() || (activeSequence->getSoloTrack() && activeSequence->getSoloTrack() != track))
+            continue;
+        for (const auto &note : track->getNotes())
+        {
+            if (note.start.has_value() && note.length.has_value())
+            {
                 allEvents.push_back({note.start.value(), note, true});
                 allEvents.push_back({note.start.value() + note.length.value(), note, false});
             }
         }
     }
-    std::sort(allEvents.begin(), allEvents.end(), [](const MidiEvent &a, const MidiEvent &b) { return a.tick < b.tick; });
+    std::sort(allEvents.begin(), allEvents.end(), [](const MidiEvent &a, const MidiEvent &b)
+              { return a.tick < b.tick; });
 
     mixer->stopAllNotes();
     int last_tick = 0;
     int totalSamplesRendered = 0;
 
-    for (const auto& event : allEvents) {
+    for (const auto &event : allEvents)
+    {
         int ticksToProcess = event.tick - last_tick;
-        if (ticksToProcess > 0) {
+        if (ticksToProcess > 0)
+        {
             double durationToRender = nn_ticks_to_seconds(ticksToProcess, project->getPPQ(), project->getTempo());
             int samplesToRender = static_cast<int>(durationToRender * sampleRate);
-            if (totalSamplesRendered + samplesToRender > totalSamples) { samplesToRender = totalSamples - totalSamplesRendered; }
-            if (samplesToRender > 0) {
+            if (totalSamplesRendered + samplesToRender > totalSamples)
+            {
+                samplesToRender = totalSamples - totalSamplesRendered;
+            }
+            if (samplesToRender > 0)
+            {
                 dspEngine->render(audioBuffer.data() + totalSamplesRendered * numChannels, samplesToRender, false);
                 totalSamplesRendered += samplesToRender;
             }
         }
-        if (event.isNoteOn) mixer->playNote(event.note); else mixer->stopNote(event.note);
+        if (event.isNoteOn)
+            mixer->playNote(event.note);
+        else
+            mixer->stopNote(event.note);
         mixer->flushNotes();
         mixer->processQueue();
-        for (auto* synth : synthesizers) { synth->processQueue(); }
+        for (auto *synth : synthesizers)
+        {
+            synth->processQueue();
+        }
         last_tick = event.tick;
         emit audioProgressUpdated((int)((double)totalSamplesRendered * 100 / totalSamples));
     }
     emit audioProgressUpdated(100);
 
     int remainingSamples = totalSamples - totalSamplesRendered;
-    if (remainingSamples > 0) { dspEngine->render(audioBuffer.data() + totalSamplesRendered * numChannels, remainingSamples, false); }
+    if (remainingSamples > 0)
+    {
+        dspEngine->render(audioBuffer.data() + totalSamplesRendered * numChannels, remainingSamples, false);
+    }
     std::ofstream file(outputPath.toStdString(), std::ios::binary);
-    if (!file.is_open()) return false;
+    if (!file.is_open())
+        return false;
     writeWavHeader(file, sampleRate, totalSamples);
     std::vector<int16_t> intBuffer(audioBuffer.size());
-    for (size_t i = 0; i < audioBuffer.size(); ++i) { intBuffer[i] = static_cast<int16_t>(std::clamp(audioBuffer[i], -1.0f, 1.0f) * 32767.0f); }
+    for (size_t i = 0; i < audioBuffer.size(); ++i)
+    {
+        intBuffer[i] = static_cast<int16_t>(std::clamp(audioBuffer[i], -1.0f, 1.0f) * 32767.0f);
+    }
     file.write(reinterpret_cast<const char *>(intBuffer.data()), intBuffer.size() * sizeof(int16_t));
 
     return true;
@@ -184,6 +227,7 @@ bool VideoExporter::exportVideo(const QString &outputPath)
 
     VideoRenderer renderer(m_engine->getProject()->getActiveSequence());
     renderer.setSecondsVisible(m_secondsVisible);
+    renderer.setRenderSettings(m_settings);
 
     double totalDuration = nn_ticks_to_seconds(m_engine->getProject()->getActiveSequence()->getMaxTick(), m_engine->getProject()->getPPQ(), m_engine->getProject()->getTempo()) + 1.0;
     const int totalFrames = static_cast<int>(totalDuration * m_fps);

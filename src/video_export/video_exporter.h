@@ -8,6 +8,7 @@
 #include <QAtomicInt>
 #include <note_naga_engine/core/types.h>
 #include <note_naga_engine/note_naga_engine.h>
+#include "video_renderer.h"
 
 class VideoExporter : public QObject
 {
@@ -17,6 +18,7 @@ public:
     explicit VideoExporter(NoteNagaMidiSeq *sequence, QString outputPath,
                            QSize resolution, int fps, NoteNagaEngine *m_engine,
                            double secondsVisible,
+                           const VideoRenderer::RenderSettings& settings,
                            QObject *parent = nullptr);
     ~VideoExporter();
 
@@ -24,7 +26,6 @@ public slots:
     void doExport();
 
 signals:
-    // ZMĚNA: Nové, specifické signály
     void audioProgressUpdated(int percentage);
     void videoProgressUpdated(int percentage);
     void statusTextChanged(const QString &status);
@@ -41,6 +42,8 @@ private:
     QSize m_resolution;
     int m_fps;
     double m_secondsVisible;
+
+    VideoRenderer::RenderSettings m_settings;
 
     QFutureWatcher<bool> m_audioWatcher;
     QFutureWatcher<bool> m_videoWatcher;

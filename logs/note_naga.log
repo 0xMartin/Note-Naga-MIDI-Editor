@@ -660,3 +660,243 @@
 2025-10-16 01:03:11 [INFO   ] async_queue_component: Engine Component thread killed
 2025-10-16 01:03:11 [INFO   ] async_queue_component: Engine Component thread killed
 2025-10-16 01:03:11 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-18 14:35:59 [INFO   ] note_naga_engine: Instance created. Version: 1.0.0
+2025-10-18 14:35:59 [INFO   ] soundfont_finder: Found SoundFont: /Users/martin/Library/Audio/Sounds/Banks/FluidR3_GM.sf2
+2025-10-18 14:35:59 [INFO   ] async_queue_component: Engine Component initialized with queue size: 1024
+2025-10-18 14:35:59 [INFO   ] synth_fluidsynth: FluidSynth loaded sfid=1
+2025-10-18 14:35:59 [INFO   ] async_queue_component: Engine Component initialized with queue size: 16
+2025-10-18 14:35:59 [INFO   ] project_data: Project manager initialized
+2025-10-18 14:35:59 [INFO   ] async_queue_component: Engine Component initialized with queue size: 1024
+2025-10-18 14:35:59 [INFO   ] mixer: Default output device set on: FluidSynth 1
+2025-10-18 14:35:59 [INFO   ] mixer: Initialized successfully
+2025-10-18 14:35:59 [INFO   ] playback_worker: Initialized successfully with timer interval: 30.000000 ms
+2025-10-18 14:35:59 [INFO   ] playback_worker: Added finished callback with ID: 1
+2025-10-18 14:35:59 [INFO   ] dsp_engine: DSP Engine initialized
+2025-10-18 14:35:59 [INFO   ] audio_worker: Audio worker initialized
+2025-10-18 14:35:59 [INFO   ] audio_worker: Audio worker started
+2025-10-18 14:35:59 [INFO   ] note_naga_engine: Initialized successfully
+2025-10-18 14:36:07 [WARNING] playback_worker: Playback worker not currently playing
+2025-10-18 14:36:07 [WARNING] note_naga_engine: Failed to stop playback
+2025-10-18 14:36:07 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-18 14:36:07 [INFO   ] types: Loading MIDI file from: /Users/martin/Downloads/midi/the-dream.mid
+2025-10-18 14:36:07 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-18 14:36:07 [INFO   ] types: Loading Type 1 MIDI tracks
+2025-10-18 14:36:07 [INFO   ] types: Created Track with ID: 0 and name: Track
+2025-10-18 14:36:07 [INFO   ] types: Channel changed for Track ID: 0 to: 0
+2025-10-18 14:36:07 [INFO   ] types: Instrument changed for Track ID: 0 to: 0
+2025-10-18 14:36:07 [INFO   ] types: Created Track with ID: 1 and name: Track
+2025-10-18 14:36:07 [INFO   ] types: Channel changed for Track ID: 1 to: 0
+2025-10-18 14:36:07 [INFO   ] types: Instrument changed for Track ID: 1 to: 0
+2025-10-18 14:36:07 [INFO   ] types: MIDI file loaded successfully. Num tracks: 2
+2025-10-18 14:36:07 [INFO   ] types: Track with ID: 0 set as active track for MIDI sequence ID: 1
+2025-10-18 14:36:07 [INFO   ] project_data: Added MIDI sequence with ID: 1
+2025-10-18 14:36:07 [INFO   ] mixer: Default routing created with 2 entries
+2025-10-18 14:36:07 [INFO   ] project_data: Project loaded from: /Users/martin/Downloads/midi/the-dream.mid
+2025-10-18 14:36:09 [INFO   ] types: Tempo changed to: 110.000110 for MIDI sequence ID: 1
+2025-10-18 14:36:09 [ERROR  ] playback_worker: Worker is not running, unable to recalculate tempo
+2025-10-18 14:36:18 [INFO   ] playback_worker: Playback worker started
+2025-10-18 14:36:18 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 14:36:36 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 14:36:36 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 14:36:36 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 14:36:48 [INFO   ] playback_worker: Playback worker started
+2025-10-18 14:36:48 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 14:37:01 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 14:37:01 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 14:37:01 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 14:37:06 [INFO   ] playback_worker: Playback worker started
+2025-10-18 14:37:06 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 14:37:41 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 14:37:41 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 14:37:41 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 14:38:20 [INFO   ] playback_worker: Playback worker started
+2025-10-18 14:38:20 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 14:38:23 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 14:38:23 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 14:38:23 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 14:39:09 [INFO   ] playback_worker: Playback worker started
+2025-10-18 14:39:09 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 14:39:10 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 14:39:10 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 14:39:10 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 14:39:14 [INFO   ] playback_worker: Playback worker started
+2025-10-18 14:39:14 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 14:39:40 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 14:39:40 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 14:39:40 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 14:42:23 [WARNING] playback_worker: Playback worker not currently playing
+2025-10-18 14:42:23 [INFO   ] audio_worker: Audio stream stopped
+2025-10-18 14:42:23 [INFO   ] audio_worker: Audio stream closed
+2025-10-18 14:42:23 [INFO   ] audio_worker: Audio worker stopped
+2025-10-18 14:42:23 [INFO   ] mixer: Closing and cleaning up mixer resources...
+2025-10-18 14:42:23 [INFO   ] mixer: Closed and cleaned up resources successfully
+2025-10-18 14:42:23 [INFO   ] async_queue_component: Engine Component thread killed
+2025-10-18 14:42:23 [INFO   ] async_queue_component: Engine Component thread killed
+2025-10-18 14:42:23 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-18 15:01:41 [INFO   ] note_naga_engine: Instance created. Version: 1.0.0
+2025-10-18 15:01:41 [INFO   ] soundfont_finder: Found SoundFont: /Users/martin/Library/Audio/Sounds/Banks/FluidR3_GM.sf2
+2025-10-18 15:01:41 [INFO   ] async_queue_component: Engine Component initialized with queue size: 1024
+2025-10-18 15:01:41 [INFO   ] synth_fluidsynth: FluidSynth loaded sfid=1
+2025-10-18 15:01:41 [INFO   ] async_queue_component: Engine Component initialized with queue size: 16
+2025-10-18 15:01:41 [INFO   ] project_data: Project manager initialized
+2025-10-18 15:01:41 [INFO   ] async_queue_component: Engine Component initialized with queue size: 1024
+2025-10-18 15:01:41 [INFO   ] mixer: Default output device set on: FluidSynth 1
+2025-10-18 15:01:41 [INFO   ] mixer: Initialized successfully
+2025-10-18 15:01:41 [INFO   ] playback_worker: Initialized successfully with timer interval: 30.000000 ms
+2025-10-18 15:01:41 [INFO   ] playback_worker: Added finished callback with ID: 1
+2025-10-18 15:01:41 [INFO   ] dsp_engine: DSP Engine initialized
+2025-10-18 15:01:41 [INFO   ] audio_worker: Audio worker initialized
+2025-10-18 15:01:42 [INFO   ] audio_worker: Audio worker started
+2025-10-18 15:01:42 [INFO   ] note_naga_engine: Initialized successfully
+2025-10-18 15:01:51 [WARNING] playback_worker: Playback worker not currently playing
+2025-10-18 15:01:51 [WARNING] note_naga_engine: Failed to stop playback
+2025-10-18 15:01:51 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-18 15:01:51 [INFO   ] types: Loading MIDI file from: /Users/martin/Downloads/midi/the-dream.mid
+2025-10-18 15:01:51 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-18 15:01:51 [INFO   ] types: Loading Type 1 MIDI tracks
+2025-10-18 15:01:51 [INFO   ] types: Created Track with ID: 0 and name: Track
+2025-10-18 15:01:51 [INFO   ] types: Channel changed for Track ID: 0 to: 0
+2025-10-18 15:01:51 [INFO   ] types: Instrument changed for Track ID: 0 to: 0
+2025-10-18 15:01:51 [INFO   ] types: Created Track with ID: 1 and name: Track
+2025-10-18 15:01:51 [INFO   ] types: Channel changed for Track ID: 1 to: 0
+2025-10-18 15:01:51 [INFO   ] types: Instrument changed for Track ID: 1 to: 0
+2025-10-18 15:01:51 [INFO   ] types: MIDI file loaded successfully. Num tracks: 2
+2025-10-18 15:01:51 [INFO   ] types: Track with ID: 0 set as active track for MIDI sequence ID: 1
+2025-10-18 15:01:51 [INFO   ] project_data: Added MIDI sequence with ID: 1
+2025-10-18 15:01:51 [INFO   ] mixer: Default routing created with 2 entries
+2025-10-18 15:01:51 [INFO   ] project_data: Project loaded from: /Users/martin/Downloads/midi/the-dream.mid
+2025-10-18 15:01:56 [INFO   ] playback_worker: Playback worker started
+2025-10-18 15:01:56 [INFO   ] playback_worker: Recalculated tempo: 52.500007 BPM, PPQ: 480, ms per tick: 2.380952
+2025-10-18 15:01:59 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 15:01:59 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 15:01:59 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 15:02:02 [INFO   ] types: Tempo changed to: 110.000110 for MIDI sequence ID: 1
+2025-10-18 15:02:02 [ERROR  ] playback_worker: Worker is not running, unable to recalculate tempo
+2025-10-18 15:02:05 [INFO   ] playback_worker: Playback worker started
+2025-10-18 15:02:05 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 15:04:08 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 15:04:08 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 15:04:08 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 15:04:08 [INFO   ] playback_worker: Playback worker started
+2025-10-18 15:04:08 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 15:04:57 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 15:04:57 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 15:04:57 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 15:04:57 [INFO   ] audio_worker: Audio stream stopped
+2025-10-18 15:04:57 [INFO   ] audio_worker: Audio stream closed
+2025-10-18 15:04:57 [INFO   ] audio_worker: Audio worker stopped
+2025-10-18 15:04:57 [INFO   ] mixer: Closing and cleaning up mixer resources...
+2025-10-18 15:04:57 [INFO   ] mixer: Closed and cleaned up resources successfully
+2025-10-18 15:04:57 [INFO   ] async_queue_component: Engine Component thread killed
+2025-10-18 15:04:57 [INFO   ] async_queue_component: Engine Component thread killed
+2025-10-18 15:04:57 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-18 15:07:46 [INFO   ] note_naga_engine: Instance created. Version: 1.0.0
+2025-10-18 15:07:46 [INFO   ] soundfont_finder: Found SoundFont: /Users/martin/Library/Audio/Sounds/Banks/FluidR3_GM.sf2
+2025-10-18 15:07:46 [INFO   ] async_queue_component: Engine Component initialized with queue size: 1024
+2025-10-18 15:07:46 [INFO   ] synth_fluidsynth: FluidSynth loaded sfid=1
+2025-10-18 15:07:46 [INFO   ] async_queue_component: Engine Component initialized with queue size: 16
+2025-10-18 15:07:46 [INFO   ] project_data: Project manager initialized
+2025-10-18 15:07:46 [INFO   ] async_queue_component: Engine Component initialized with queue size: 1024
+2025-10-18 15:07:46 [INFO   ] mixer: Default output device set on: FluidSynth 1
+2025-10-18 15:07:46 [INFO   ] mixer: Initialized successfully
+2025-10-18 15:07:46 [INFO   ] playback_worker: Initialized successfully with timer interval: 30.000000 ms
+2025-10-18 15:07:46 [INFO   ] playback_worker: Added finished callback with ID: 1
+2025-10-18 15:07:46 [INFO   ] dsp_engine: DSP Engine initialized
+2025-10-18 15:07:46 [INFO   ] audio_worker: Audio worker initialized
+2025-10-18 15:07:46 [INFO   ] audio_worker: Audio worker started
+2025-10-18 15:07:46 [INFO   ] note_naga_engine: Initialized successfully
+2025-10-18 15:07:52 [WARNING] playback_worker: Playback worker not currently playing
+2025-10-18 15:07:52 [WARNING] note_naga_engine: Failed to stop playback
+2025-10-18 15:07:52 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-18 15:07:52 [INFO   ] types: Loading MIDI file from: /Users/martin/Downloads/midi/the-dream.mid
+2025-10-18 15:07:52 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-18 15:07:52 [INFO   ] types: Loading Type 1 MIDI tracks
+2025-10-18 15:07:52 [INFO   ] types: Created Track with ID: 0 and name: Track
+2025-10-18 15:07:52 [INFO   ] types: Channel changed for Track ID: 0 to: 0
+2025-10-18 15:07:52 [INFO   ] types: Instrument changed for Track ID: 0 to: 0
+2025-10-18 15:07:52 [INFO   ] types: Created Track with ID: 1 and name: Track
+2025-10-18 15:07:52 [INFO   ] types: Channel changed for Track ID: 1 to: 0
+2025-10-18 15:07:52 [INFO   ] types: Instrument changed for Track ID: 1 to: 0
+2025-10-18 15:07:52 [INFO   ] types: MIDI file loaded successfully. Num tracks: 2
+2025-10-18 15:07:52 [INFO   ] types: Track with ID: 0 set as active track for MIDI sequence ID: 1
+2025-10-18 15:07:52 [INFO   ] project_data: Added MIDI sequence with ID: 1
+2025-10-18 15:07:52 [INFO   ] mixer: Default routing created with 2 entries
+2025-10-18 15:07:52 [INFO   ] project_data: Project loaded from: /Users/martin/Downloads/midi/the-dream.mid
+2025-10-18 15:07:55 [INFO   ] types: Tempo changed to: 110.000110 for MIDI sequence ID: 1
+2025-10-18 15:07:55 [ERROR  ] playback_worker: Worker is not running, unable to recalculate tempo
+2025-10-18 15:07:58 [INFO   ] playback_worker: Playback worker started
+2025-10-18 15:07:58 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 15:08:05 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 15:08:05 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 15:08:05 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 15:08:21 [INFO   ] playback_worker: Playback worker started
+2025-10-18 15:08:21 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 15:08:25 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 15:08:25 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 15:08:25 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 15:08:29 [WARNING] playback_worker: Playback worker not currently playing
+2025-10-18 15:08:29 [INFO   ] audio_worker: Audio stream stopped
+2025-10-18 15:08:29 [INFO   ] audio_worker: Audio stream closed
+2025-10-18 15:08:29 [INFO   ] audio_worker: Audio worker stopped
+2025-10-18 15:08:29 [INFO   ] mixer: Closing and cleaning up mixer resources...
+2025-10-18 15:08:29 [INFO   ] mixer: Closed and cleaned up resources successfully
+2025-10-18 15:08:29 [INFO   ] async_queue_component: Engine Component thread killed
+2025-10-18 15:08:29 [INFO   ] async_queue_component: Engine Component thread killed
+2025-10-18 15:08:29 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-18 15:20:49 [INFO   ] note_naga_engine: Instance created. Version: 1.0.0
+2025-10-18 15:20:49 [INFO   ] soundfont_finder: Found SoundFont: /Users/martin/Library/Audio/Sounds/Banks/FluidR3_GM.sf2
+2025-10-18 15:20:49 [INFO   ] async_queue_component: Engine Component initialized with queue size: 1024
+2025-10-18 15:20:49 [INFO   ] synth_fluidsynth: FluidSynth loaded sfid=1
+2025-10-18 15:20:49 [INFO   ] async_queue_component: Engine Component initialized with queue size: 16
+2025-10-18 15:20:49 [INFO   ] project_data: Project manager initialized
+2025-10-18 15:20:49 [INFO   ] async_queue_component: Engine Component initialized with queue size: 1024
+2025-10-18 15:20:49 [INFO   ] mixer: Default output device set on: FluidSynth 1
+2025-10-18 15:20:49 [INFO   ] mixer: Initialized successfully
+2025-10-18 15:20:49 [INFO   ] playback_worker: Initialized successfully with timer interval: 30.000000 ms
+2025-10-18 15:20:49 [INFO   ] playback_worker: Added finished callback with ID: 1
+2025-10-18 15:20:49 [INFO   ] dsp_engine: DSP Engine initialized
+2025-10-18 15:20:49 [INFO   ] audio_worker: Audio worker initialized
+2025-10-18 15:20:50 [INFO   ] audio_worker: Audio worker started
+2025-10-18 15:20:50 [INFO   ] note_naga_engine: Initialized successfully
+2025-10-18 15:20:56 [WARNING] playback_worker: Playback worker not currently playing
+2025-10-18 15:20:56 [WARNING] note_naga_engine: Failed to stop playback
+2025-10-18 15:20:56 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-18 15:20:56 [INFO   ] types: Loading MIDI file from: /Users/martin/Downloads/midi/the-dream.mid
+2025-10-18 15:20:56 [INFO   ] types: Clearing MIDI sequence with ID: 1
+2025-10-18 15:20:56 [INFO   ] types: Loading Type 1 MIDI tracks
+2025-10-18 15:20:56 [INFO   ] types: Created Track with ID: 0 and name: Track
+2025-10-18 15:20:56 [INFO   ] types: Channel changed for Track ID: 0 to: 0
+2025-10-18 15:20:56 [INFO   ] types: Instrument changed for Track ID: 0 to: 0
+2025-10-18 15:20:56 [INFO   ] types: Created Track with ID: 1 and name: Track
+2025-10-18 15:20:56 [INFO   ] types: Channel changed for Track ID: 1 to: 0
+2025-10-18 15:20:56 [INFO   ] types: Instrument changed for Track ID: 1 to: 0
+2025-10-18 15:20:56 [INFO   ] types: MIDI file loaded successfully. Num tracks: 2
+2025-10-18 15:20:57 [INFO   ] types: Track with ID: 0 set as active track for MIDI sequence ID: 1
+2025-10-18 15:20:57 [INFO   ] project_data: Added MIDI sequence with ID: 1
+2025-10-18 15:20:57 [INFO   ] mixer: Default routing created with 2 entries
+2025-10-18 15:20:57 [INFO   ] project_data: Project loaded from: /Users/martin/Downloads/midi/the-dream.mid
+2025-10-18 15:20:59 [INFO   ] types: Tempo changed to: 110.000110 for MIDI sequence ID: 1
+2025-10-18 15:20:59 [ERROR  ] playback_worker: Worker is not running, unable to recalculate tempo
+2025-10-18 15:21:06 [INFO   ] playback_worker: Playback worker started
+2025-10-18 15:21:06 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 15:23:12 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 15:23:17 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 15:23:17 [INFO   ] playback_worker: Playback worker started
+2025-10-18 15:23:17 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 15:25:04 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 15:25:04 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 15:25:04 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 15:25:06 [INFO   ] playback_worker: Playback worker started
+2025-10-18 15:25:06 [INFO   ] playback_worker: Recalculated tempo: 110.000110 BPM, PPQ: 480, ms per tick: 1.136362
+2025-10-18 15:26:04 [INFO   ] playback_worker: Playback thread finished
+2025-10-18 15:26:04 [INFO   ] playback_worker: Playback thread resources cleaned up
+2025-10-18 15:26:04 [INFO   ] playback_worker: Playback worker stopped
+2025-10-18 15:26:06 [WARNING] playback_worker: Playback worker not currently playing
+2025-10-18 15:26:06 [INFO   ] audio_worker: Audio stream stopped
+2025-10-18 15:26:06 [INFO   ] audio_worker: Audio stream closed
+2025-10-18 15:26:06 [INFO   ] audio_worker: Audio worker stopped
+2025-10-18 15:26:06 [INFO   ] mixer: Closing and cleaning up mixer resources...
+2025-10-18 15:26:06 [INFO   ] mixer: Closed and cleaned up resources successfully
+2025-10-18 15:26:06 [INFO   ] async_queue_component: Engine Component thread killed
+2025-10-18 15:26:06 [INFO   ] async_queue_component: Engine Component thread killed
+2025-10-18 15:26:06 [INFO   ] types: Clearing MIDI sequence with ID: 1

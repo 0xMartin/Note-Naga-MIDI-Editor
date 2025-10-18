@@ -149,6 +149,8 @@ target_link_libraries(NoteNaga PRIVATE
     note_naga_engine
 )
 
+target_include_directories(NoteNaga PRIVATE ${OpenCV_INCLUDE_DIRS})
+
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 if(${QT_VERSION} VERSION_LESS 6.1.0)
   set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.saucom.stork)

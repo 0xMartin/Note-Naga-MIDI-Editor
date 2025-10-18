@@ -9,11 +9,36 @@
 
 class VideoRenderer {
 public:
+    // Struktura pro všechna nastavení renderování
+    struct RenderSettings {
+        bool renderParticles = true;
+        bool renderKeyboard = true;
+        bool renderNotes = true;
+        
+        enum ParticleType { Resource, Circle, Custom };
+        ParticleType particleType = Resource;
+        
+        QImage customParticleImage; // Používáme QImage pro bezpečnost ve vláknech
+        int particleCount = 15;
+        double particleLifetime = 0.75; 
+        double particleSpeed = 75.0; 
+        double particleGravity = 200.0;
+
+        // --- PŘIDANÁ NASTAVENÍ ---
+        bool tintParticles = true;        // Pro zapnutí/vypnutí tintu
+        double particleStartSize = 0.5; // Násobitel velikosti na začátku
+        double particleEndSize = 1.0;   // Násobitel velikosti na konci
+        // --- KONEC PŘIDANÝCH NASTAVENÍ ---
+    };
+
     VideoRenderer(NoteNagaMidiSeq* sequence);
     QImage renderFrame(double currentTime, const QSize& size);
     
     // Metoda pro nastavení vertikálního měřítka z UI
     void setSecondsVisible(double seconds) { m_secondsVisible = seconds; }
+    
+    // Metoda pro nastavení všech ostatních voleb
+    void setRenderSettings(const RenderSettings& settings) { m_settings = settings; }
 
 private:
     // Struktura pro uchování informací o notě pro renderování
@@ -39,19 +64,23 @@ private:
 
     void prepareNoteData();
     void prepareKeyboardLayout(const QSize& size);
+    
     // Metody pro efekty
-    void updateAndDrawParticles(double deltaTime, QPainter& painter);
-    void spawnParticles(const NoteInfo& note);
+    void updateAndDrawParticles(double deltaTime, QPainter& painter, double resolutionScale);
+    void spawnParticles(const NoteInfo& note, double resolutionScale);
 
+    RenderSettings m_settings;
     NoteNagaMidiSeq* m_sequence;
+
     std::vector<NoteInfo> m_notes;
     std::map<int, KeyInfo> m_keyboardLayout;
+
     QSize m_lastLayoutSize;
-    
-    // Proměnné pro efekty a nastavení
     double m_secondsVisible = 5.0;
-    QPixmap m_particlePixmap;
+
+    QPixmap m_resourceParticlePixmapCache; // Cache pro výchozí obrázek
+    QPixmap m_customParticlePixmapCache;   // Cache pro vlastní obrázek
     std::vector<Particle> m_particles;
-    std::map<int, bool> m_activeNotesState; // Pro detekci stisknutí nových not
+    std::map<int, bool> m_activeNotesState;
     double m_lastFrameTime = -1.0;
 };
