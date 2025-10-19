@@ -1,4 +1,4 @@
-#include "video_renderer.h"
+#include "media_renderer.h"
 
 #include <QPainter>
 #include <cmath>
@@ -8,7 +8,7 @@
 const int FIRST_MIDI_NOTE = 21; // A0
 const int LAST_MIDI_NOTE = 108; // C8
 
-VideoRenderer::VideoRenderer(NoteNagaMidiSeq *sequence)
+MediaRenderer::MediaRenderer(NoteNagaMidiSeq *sequence)
     : m_sequence(sequence), m_lastLayoutSize(0, 0)
 {
     prepareNoteData();
@@ -16,7 +16,7 @@ VideoRenderer::VideoRenderer(NoteNagaMidiSeq *sequence)
     m_resourceParticlePixmapCache.load(":/images/sparkle.png");
 }
 
-void VideoRenderer::setRenderSettings(const RenderSettings &settings)
+void MediaRenderer::setRenderSettings(const RenderSettings &settings)
 {
     // If the custom particle image changes, we must invalidate the cache
     if (m_settings.customParticleImage.cacheKey() != settings.customParticleImage.cacheKey())
@@ -26,7 +26,7 @@ void VideoRenderer::setRenderSettings(const RenderSettings &settings)
     m_settings = settings;
 }
 
-void VideoRenderer::prepareNoteData()
+void MediaRenderer::prepareNoteData()
 {
     // ... (unchanged) ...
     for (const auto &track : m_sequence->getTracks())
@@ -45,7 +45,7 @@ void VideoRenderer::prepareNoteData()
     }
 }
 
-void VideoRenderer::prepareKeyboardLayout(const QSize &size)
+void MediaRenderer::prepareKeyboardLayout(const QSize &size)
 {
     // ... (unchanged) ...
     if (size == m_lastLayoutSize)
@@ -90,7 +90,7 @@ void VideoRenderer::prepareKeyboardLayout(const QSize &size)
     m_lastLayoutSize = size;
 }
 
-void VideoRenderer::resetSimulation()
+void MediaRenderer::resetSimulation()
 {
     m_currentState.particles.clear();
     m_currentState.activeNotes.clear();
@@ -101,7 +101,7 @@ void VideoRenderer::resetSimulation()
 // Stateful version for PREVIEW
 // =========================================================================
 
-QImage VideoRenderer::renderFrame(double currentTime, const QSize &size)
+QImage MediaRenderer::renderFrame(double currentTime, const QSize &size)
 {
     // Detect backward time travel (scrubbing)
     if (m_lastFrameTime >= 0 && currentTime < m_lastFrameTime)
@@ -124,7 +124,7 @@ QImage VideoRenderer::renderFrame(double currentTime, const QSize &size)
 // Simulation Logic (Stateless)
 // =========================================================================
 
-VideoRenderer::FrameState VideoRenderer::calculateNextState(const FrameState &previousState, double currentTime, double deltaTime)
+MediaRenderer::FrameState MediaRenderer::calculateNextState(const FrameState &previousState, double currentTime, double deltaTime)
 {
     // Create a copy of the *previous* state to modify
     FrameState newState = previousState;
@@ -187,7 +187,7 @@ VideoRenderer::FrameState VideoRenderer::calculateNextState(const FrameState &pr
 // Stateless version for EXPORT
 // =========================================================================
 
-QImage VideoRenderer::renderFrame(double currentTime, const QSize &size, const FrameState &state)
+QImage MediaRenderer::renderFrame(double currentTime, const QSize &size, const FrameState &state)
 {
 
     prepareKeyboardLayout(size);
@@ -249,7 +249,7 @@ QImage VideoRenderer::renderFrame(double currentTime, const QSize &size, const F
 // Helper Methods (Simulation)
 // =========================================================================
 
-void VideoRenderer::spawnParticles(const NoteInfo &note, double resolutionScale, std::vector<Particle> &particles)
+void MediaRenderer::spawnParticles(const NoteInfo &note, double resolutionScale, std::vector<Particle> &particles)
 {
     if (m_keyboardLayout.find(note.note_val) == m_keyboardLayout.end())
         return;
@@ -277,7 +277,7 @@ void VideoRenderer::spawnParticles(const NoteInfo &note, double resolutionScale,
     }
 }
 
-void VideoRenderer::updateParticles(double deltaTime, std::vector<Particle> &particles)
+void MediaRenderer::updateParticles(double deltaTime, std::vector<Particle> &particles)
 {
     double resolutionScale = (double)m_lastLayoutSize.height() / 720.0;
 
@@ -303,7 +303,7 @@ void VideoRenderer::updateParticles(double deltaTime, std::vector<Particle> &par
 // Helper Methods (Drawing)
 // =========================================================================
 
-void VideoRenderer::drawNotesAndKeyboard(QPainter &painter, double currentTime,
+void MediaRenderer::drawNotesAndKeyboard(QPainter &painter, double currentTime,
                                          const QSize &size, const std::map<int, bool> &activeNotes)
 {
     double resolutionScale = (double)size.height() / 720.0;
@@ -453,7 +453,7 @@ void VideoRenderer::drawNotesAndKeyboard(QPainter &painter, double currentTime,
     }
 }
 
-void VideoRenderer::drawParticles(QPainter &painter, const std::vector<Particle> &particles, double resolutionScale)
+void MediaRenderer::drawParticles(QPainter &painter, const std::vector<Particle> &particles, double resolutionScale)
 {
     painter.setRenderHint(QPainter::Antialiasing, true);
 

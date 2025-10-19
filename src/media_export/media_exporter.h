@@ -5,23 +5,23 @@
 #include <QString>
 #include <QFuture>
 #include <QFutureWatcher>
-#include <QFutureSynchronizer> // For waiting on batches
+#include <QFutureSynchronizer> 
 #include <QAtomicInt>
 #include <note_naga_engine/core/types.h>
 #include <note_naga_engine/note_naga_engine.h>
-#include "video_renderer.h"
+#include "media_renderer.h"
 
-class VideoExporter : public QObject
+class MediaExporter : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit VideoExporter(NoteNagaMidiSeq *sequence, QString outputPath,
+    explicit MediaExporter(NoteNagaMidiSeq *sequence, QString outputPath,
                            QSize resolution, int fps, NoteNagaEngine *m_engine,
                            double secondsVisible,
-                           const VideoRenderer::RenderSettings& settings, // We receive settings, not a renderer
+                           const MediaRenderer::RenderSettings& settings,
                            QObject *parent = nullptr);
-    ~VideoExporter();
+    ~MediaExporter();
 
 public slots:
     void doExport();
@@ -45,7 +45,7 @@ private:
     
     // --- Stored settings ---
     double m_secondsVisible;
-    VideoRenderer::RenderSettings m_settings;
+    MediaRenderer::RenderSettings m_settings;
 
     QFutureWatcher<bool> m_audioWatcher;
     QFutureWatcher<bool> m_videoWatcher;
@@ -69,9 +69,9 @@ private:
      * @brief Renders one batch of frames (runs in its own thread).
      * @return Path to the temporary .mp4 file for this batch.
      */
-    QString renderVideoBatch(int startFrame, int endFrame, 
-                             const std::vector<VideoRenderer::FrameState>& allFrameStates);
-    
+    QString renderVideoBatch(int startFrame, int endFrame,
+                             const std::vector<MediaRenderer::FrameState>& allFrameStates);
+
     /**
      * @brief Joins multiple video files into one using FFmpeg concat.
      */

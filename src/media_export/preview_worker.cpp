@@ -22,7 +22,7 @@ void PreviewWorker::init()
     // This method is called via signal after the object is moved to its thread.
     
     // m_renderer is owned and used only by this thread
-    m_renderer = new VideoRenderer(m_sequence); 
+    m_renderer = new MediaRenderer(m_sequence); 
     
     // A timer that runs in the same thread as this worker
     m_renderTimer = new QTimer(this);
@@ -45,7 +45,7 @@ void PreviewWorker::updateTime(double time)
     m_renderTimer->start(); // Restarts/starts the timer
 }
 
-void PreviewWorker::updateSettings(const VideoRenderer::RenderSettings& settings)
+void PreviewWorker::updateSettings(const MediaRenderer::RenderSettings& settings)
 {
     QMutexLocker locker(&m_mutex);
     m_settings = settings;
@@ -78,7 +78,7 @@ void PreviewWorker::doRender()
     // Local copy of data for rendering (under lock)
     double time;
     QSize size;
-    VideoRenderer::RenderSettings settings;
+    MediaRenderer::RenderSettings settings;
     double scale;
     
     {

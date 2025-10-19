@@ -32,11 +32,11 @@ set(HEADER_FILES
     # gui
     src/gui/main_window.h
     src/gui/nn_gui_utils.h
-    # video export
-    src/video_export/preview_worker.h
-    src/video_export/export_dialog.h
-    src/video_export/video_exporter.h
-    src/video_export/video_renderer.h
+    # media export
+    src/media_export/preview_worker.h
+    src/media_export/export_dialog.h
+    src/media_export/media_exporter.h
+    src/media_export/media_renderer.h
     # gui/components
     src/gui/components/audio_dial.h
     src/gui/components/audio_dial_centered.h
@@ -77,11 +77,11 @@ set(HEADER_FILES
 set(SOURCE_FILES
     # src
     src/main.cpp
-    # video export
-    src/video_export/preview_worker.cpp
-    src/video_export/export_dialog.cpp
-    src/video_export/video_exporter.cpp
-    src/video_export/video_renderer.cpp
+    # media export
+    src/media_export/preview_worker.cpp
+    src/media_export/export_dialog.cpp
+    src/media_export/media_exporter.cpp
+    src/media_export/media_renderer.cpp
     # gui
     src/gui/main_window.cpp
     src/gui/nn_gui_utils.cpp

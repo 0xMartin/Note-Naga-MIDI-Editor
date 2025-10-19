@@ -4,7 +4,7 @@
 #include <QSize>
 #include <QTimer>
 #include <QMutex>
-#include "video_renderer.h"
+#include "media_renderer.h"
 
 class NoteNagaMidiSeq;
 
@@ -41,7 +41,7 @@ public slots:
     /**
      * @brief Updates the rendering settings.
      */
-    void updateSettings(const VideoRenderer::RenderSettings& settings);
+    void updateSettings(const MediaRenderer::RenderSettings& settings);
     
     /**
      * @brief Updates the visible time range (scale).
@@ -61,7 +61,7 @@ private slots:
     void doRender();
 
 private:
-    VideoRenderer* m_renderer;
+    MediaRenderer* m_renderer;
     NoteNagaMidiSeq* m_sequence;
     QTimer* m_renderTimer;
 
@@ -71,7 +71,7 @@ private:
     // Last requested values
     double m_time;
     QSize m_size;
-    VideoRenderer::RenderSettings m_settings;
+    MediaRenderer::RenderSettings m_settings;
     double m_scale;
     bool m_pendingRender;
 };

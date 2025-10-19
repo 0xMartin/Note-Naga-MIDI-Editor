@@ -1,19 +1,16 @@
 ## TODO -----------------------------------------------------
 
+potrebuji pridat nasledujici funkce:
+-> pridat moznost exportu ciste jen audio (bude mozne si i vybrat format: wav, mp3, ogg, a dalsi audio nastaveni).. pro volbe teto moznosti se i nahled skryje a vypise se tam neco ve stylu "audio only"
+-> chci aby se na predelu mezi klavirem a mistem kde z horni casti prichazeji noty (na tom predelu) vykresloval nejaky efekt blesku.. proste to bude nejaky cara s leveho az k pravemu rohu obrazovky a bude se nejaky modifikovat (deformace v ose X a mirne i v ose Y pro kazdy bod teto cary.. to se bude pocitat pomoci klasickych funkci jako sin, cos.. a bude to zavyset na akutalnim case aby se to jednoduse dalo renderovat ve vice vlaknech).. tato cara bude mit jako kdyby vice instanci.. treba 3-5 takovych car.. a kazda bude mit mirne jiny offset pro pocitani tech funkci (sin, cos).. aby to nevypadalo vsechno stejne a pripominalo to blesk.. barva blesku pujde nastavit (pak i kazda cara bude mit i mirne odlisnou barvu aby to nevypadalo vsechno stejne i napriklad mirne odlisne tlousky car.. tlousku bude mozne taky nastavit).. v dialogu nastaveni bude dalsi samostatna sekce pro toto nastaveni.. bude ho i mozne deaktivovat..
+
 fix: nove pridane noty se neprehravaji
 
-video export desing: particle settings sekce se nemusi nachazet interne v sekci render.. chtel bych aby byla pod ni 
-    -> moznost nastavit opacity (start + end) pro noty, moznost nastavit bg image / barvu
-    -> predelovy efekt na hrane klaviru (nejaky blesk)
-    -> spliter pro oddleneni leve a prave casti
-    -> asspect ration nahledu bude presne odpovidat zvolene vystupni velikosti videa
-
-1. pridat moznost exportu ciste audia (dialog)
-2. pridat moznost exportovat jako midi
-3. project load / save
-4. velocity editor
-5. moznost nahravani not z externiho midi zarizeni
-6. jednoducha historie (...)
+1. pridat moznost exportovat jako midi
+2. project load / save
+3. velocity editor
+4. moznost nahravani not z externiho midi zarizeni
+5. jednoducha historie (...)
 
 
 

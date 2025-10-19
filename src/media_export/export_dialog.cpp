@@ -1,5 +1,5 @@
 #include "export_dialog.h"
-#include "video_exporter.h"
+
 #include <QtWidgets>
 #include <QScrollArea> 
 #include <QColorDialog>
@@ -421,9 +421,9 @@ void ExportDialog::seek(float seconds) {
     onPlaybackTickChanged(tick); 
 }
 
-VideoRenderer::RenderSettings ExportDialog::getCurrentRenderSettings()
+MediaRenderer::RenderSettings ExportDialog::getCurrentRenderSettings()
 {
-    VideoRenderer::RenderSettings settings;
+    MediaRenderer::RenderSettings settings;
     settings.backgroundColor = m_backgroundColor;
     if (!m_backgroundImagePath.isEmpty()) {
         settings.backgroundImage = QImage(m_backgroundImagePath);
@@ -436,8 +436,8 @@ VideoRenderer::RenderSettings ExportDialog::getCurrentRenderSettings()
     settings.renderPianoGlow = m_pianoGlowCheck->isChecked();
     settings.noteStartOpacity = m_noteStartOpacitySpin->value();
     settings.noteEndOpacity = m_noteEndOpacitySpin->value();
-    settings.particleType = (VideoRenderer::RenderSettings::ParticleType)m_particleTypeCombo->currentIndex();
-    if (settings.particleType == VideoRenderer::RenderSettings::Custom && !m_particleFilePath.isEmpty()) {
+    settings.particleType = (MediaRenderer::RenderSettings::ParticleType)m_particleTypeCombo->currentIndex();
+    if (settings.particleType == MediaRenderer::RenderSettings::Custom && !m_particleFilePath.isEmpty()) {
         settings.customParticleImage = QImage(m_particleFilePath);
     }
     settings.particleCount = m_particleCountSpin->value();
@@ -473,7 +473,7 @@ void ExportDialog::updatePreviewSettings()
     // Send all settings to the worker thread
     
     QMetaObject::invokeMethod(m_previewWorker, "updateSettings", Qt::QueuedConnection,
-                              Q_ARG(VideoRenderer::RenderSettings, getCurrentRenderSettings()));
+                              Q_ARG(MediaRenderer::RenderSettings, getCurrentRenderSettings()));
                               
     QMetaObject::invokeMethod(m_previewWorker, "updateScale", Qt::QueuedConnection,
                               Q_ARG(double, m_scaleSpinBox->value()));
@@ -491,11 +491,11 @@ void ExportDialog::updatePreviewSettings()
 void ExportDialog::onParticleTypeChanged(int index)
 {
     // ... (this function is unchanged, just calls updatePreviewSettings at the end) ...
-    bool isCustom = (index == (int)VideoRenderer::RenderSettings::Custom);
+    bool isCustom = (index == (int)MediaRenderer::RenderSettings::Custom);
     m_particleFileButton->setVisible(isCustom);
     m_particlePreviewLabel->setVisible(isCustom);
 
-    bool isPixmap = (index == (int)VideoRenderer::RenderSettings::Resource || isCustom);
+    bool isPixmap = (index == (int)MediaRenderer::RenderSettings::Resource || isCustom);
     m_particleTintCheck->setVisible(isPixmap);
     m_particleStartSizeSpin->setVisible(isPixmap);
     m_particleEndSizeSpin->setVisible(isPixmap);
@@ -503,7 +503,7 @@ void ExportDialog::onParticleTypeChanged(int index)
     if (isCustom && !m_particleFilePath.isEmpty()) {
         QPixmap pixmap(m_particleFilePath);
         m_particlePreviewLabel->setPixmap(pixmap.scaled(m_particlePreviewLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    } else if (index == (int)VideoRenderer::RenderSettings::Resource) {
+    } else if (index == (int)MediaRenderer::RenderSettings::Resource) {
         QPixmap pixmap(":/images/sparkle.png"); 
         m_particlePreviewLabel->setPixmap(pixmap.scaled(m_particlePreviewLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
         m_particlePreviewLabel->setVisible(true); 
@@ -586,29 +586,29 @@ void ExportDialog::onExportClicked()
     int fps = (m_fpsCombo->currentIndex() == 0) ? 30 : 60;
     double secondsVisible = m_scaleSpinBox->value();
 
-    VideoRenderer::RenderSettings settings = getCurrentRenderSettings();
+    MediaRenderer::RenderSettings settings = getCurrentRenderSettings();
 
     setControlsEnabled(false);
 
     m_exportThread = new QThread;
     // Create the exporter and pass VALUES only, no renderer
-    m_exporter = new VideoExporter(m_sequence, outputPath, resolution, fps, this->m_engine, secondsVisible, settings);
+    m_exporter = new MediaExporter(m_sequence, outputPath, resolution, fps, this->m_engine, secondsVisible, settings);
     
     m_exporter->moveToThread(m_exportThread);
 
-    connect(m_exportThread, &QThread::started, m_exporter, &VideoExporter::doExport);
-    connect(m_exporter, &VideoExporter::finished, this, &ExportDialog::onExportFinished);
-    connect(m_exporter, &VideoExporter::error, this, [this](const QString &msg) {
+    connect(m_exportThread, &QThread::started, m_exporter, &MediaExporter::doExport);
+    connect(m_exporter, &MediaExporter::finished, this, &ExportDialog::onExportFinished);
+    connect(m_exporter, &MediaExporter::error, this, [this](const QString &msg) {
         QMessageBox::critical(this, tr("Error"), msg);
         onExportFinished();
     });
 
-    connect(m_exporter, &VideoExporter::audioProgressUpdated, this, &ExportDialog::updateAudioProgress);
-    connect(m_exporter, &VideoExporter::videoProgressUpdated, this, &ExportDialog::updateVideoProgress);
-    connect(m_exporter, &VideoExporter::statusTextChanged, this, &ExportDialog::updateStatusText);
+    connect(m_exporter, &MediaExporter::audioProgressUpdated, this, &ExportDialog::updateAudioProgress);
+    connect(m_exporter, &MediaExporter::videoProgressUpdated, this, &ExportDialog::updateVideoProgress);
+    connect(m_exporter, &MediaExporter::statusTextChanged, this, &ExportDialog::updateStatusText);
 
-    connect(m_exporter, &VideoExporter::finished, m_exportThread, &QThread::quit);
-    connect(m_exporter, &VideoExporter::finished, m_exporter, &VideoExporter::deleteLater);
+    connect(m_exporter, &MediaExporter::finished, m_exportThread, &QThread::quit);
+    connect(m_exporter, &MediaExporter::finished, m_exporter, &MediaExporter::deleteLater);
     connect(m_exportThread, &QThread::finished, m_exportThread, &QThread::deleteLater);
 
     m_exportThread->start();

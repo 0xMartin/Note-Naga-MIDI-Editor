@@ -7,7 +7,7 @@
 #include <vector>
 #include <note_naga_engine/core/types.h>
 
-class VideoRenderer {
+class MediaRenderer {
 public:
     // Structure for particles (public so FrameState can use it)
     struct Particle {
@@ -52,7 +52,7 @@ public:
         double bgShakeIntensity = 5.0;
     };
 
-    VideoRenderer(NoteNagaMidiSeq* sequence);
+    MediaRenderer(NoteNagaMidiSeq* sequence);
     
     /**
      * @brief Renders a frame (Stateful version for preview).

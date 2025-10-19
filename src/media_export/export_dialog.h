@@ -4,10 +4,10 @@
 #include <QColor>
 #include <note_naga_engine/core/types.h>
 #include <note_naga_engine/note_naga_engine.h>
-#include "video_renderer.h" 
-#include "../gui/components/midi_seq_progress_bar.h" 
 
-// --- New include ---
+#include "../gui/components/midi_seq_progress_bar.h" 
+#include "media_exporter.h" 
+#include "media_renderer.h" 
 #include "preview_worker.h" 
 
 QT_BEGIN_NAMESPACE
@@ -23,8 +23,6 @@ class QSpinBox;
 class QScrollArea;
 class QSplitter;
 QT_END_NAMESPACE
-
-class VideoExporter;
 
 /**
  * @brief Dialog for configuring and exporting a video rendering of a MIDI sequence.
@@ -61,29 +59,16 @@ private slots:
     void onClearBg();
     void updateBgLabels();
     
-    // --- New slot to receive the finished preview frame ---
     /**
      * @brief Receives the finished frame from the PreviewWorker thread and displays it.
      */
     void onPreviewFrameReady(const QImage& frame);
 
 private:
-    VideoRenderer::RenderSettings getCurrentRenderSettings();
-    void setupUi();
-    void connectEngineSignals();
-    void setControlsEnabled(bool enabled);
-    QSize getTargetResolution();
-    
-    // --- New method to update the preview render size ---
-    void updatePreviewRenderSize();
-
     // Engine and data
     NoteNagaEngine *m_engine;
     NoteNagaMidiSeq *m_sequence;
     
-    // --- Removed ---
-    // VideoRenderer *m_renderer; (Now in PreviewWorker)
-
     // --- Added for Preview thread ---
     QThread* m_previewThread;
     PreviewWorker* m_previewWorker;
@@ -158,7 +143,14 @@ private:
 
     // Export threading
     QThread *m_exportThread;
-    VideoExporter *m_exporter;
+    MediaExporter *m_exporter;
+
+    MediaRenderer::RenderSettings getCurrentRenderSettings();
+    void setupUi();
+    void connectEngineSignals();
+    void setControlsEnabled(bool enabled);
+    QSize getTargetResolution();
+    void updatePreviewRenderSize();
     
 protected:
     // --- Catching resize events ---

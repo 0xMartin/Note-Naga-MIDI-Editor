@@ -16,7 +16,7 @@
 #include "widgets/track_list_widget.h"
 #include "widgets/track_mixer_widget.h"
 #include "widgets/dsp_engine_widget.h"
-#include "../video_export/export_dialog.h"
+#include "../media_export/export_dialog.h"
 
 
 class MainWindow : public QMainWindow {
