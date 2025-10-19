@@ -34,6 +34,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), auto_follow(true)
     connect_signals();
 }
 
+MainWindow::~MainWindow() {
+    if (this->engine) {
+        delete this->engine;
+        this->engine = nullptr; 
+    }
+}
+
 void MainWindow::setup_actions() {
     action_open = new QAction(QIcon(":/icons/open.svg"), "Open MIDI", this);
     connect(action_open, &QAction::triggered, this, &MainWindow::open_midi);
@@ -488,10 +495,6 @@ void MainWindow::about_dialog() {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
-    if (this->engine) {
-        delete this->engine;
-        this->engine = nullptr;
-    }
     event->accept();
 }
 
