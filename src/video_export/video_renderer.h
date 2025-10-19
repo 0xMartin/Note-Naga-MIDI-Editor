@@ -42,11 +42,14 @@ public:
         double particleStartSize = 0.5;
         double particleEndSize = 1.0;
 
-        QColor backgroundColor = QColor(25, 25, 35);
-        QImage backgroundImage;
         bool renderPianoGlow = true;
         double noteStartOpacity = 1.0; 
         double noteEndOpacity = 1.0; 
+
+        QColor backgroundColor = QColor(25, 25, 35);
+        QImage backgroundImage;
+        bool renderBgShake = false;
+        double bgShakeIntensity = 5.0;
     };
 
     VideoRenderer(NoteNagaMidiSeq* sequence);

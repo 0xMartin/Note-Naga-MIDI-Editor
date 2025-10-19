@@ -8,52 +8,58 @@
 const int FIRST_MIDI_NOTE = 21; // A0
 const int LAST_MIDI_NOTE = 108; // C8
 
-VideoRenderer::VideoRenderer(NoteNagaMidiSeq* sequence) 
-    : m_sequence(sequence), m_lastLayoutSize(0, 0) 
+VideoRenderer::VideoRenderer(NoteNagaMidiSeq *sequence)
+    : m_sequence(sequence), m_lastLayoutSize(0, 0)
 {
     prepareNoteData();
     // Load the default particle pixmap
     m_resourceParticlePixmapCache.load(":/images/sparkle.png");
 }
 
-void VideoRenderer::setRenderSettings(const RenderSettings& settings)
+void VideoRenderer::setRenderSettings(const RenderSettings &settings)
 {
     // If the custom particle image changes, we must invalidate the cache
-    if (m_settings.customParticleImage.cacheKey() != settings.customParticleImage.cacheKey()) {
+    if (m_settings.customParticleImage.cacheKey() != settings.customParticleImage.cacheKey())
+    {
         m_customParticlePixmapCache = QPixmap(); // Invalidates cache
     }
     m_settings = settings;
 }
 
-
-void VideoRenderer::prepareNoteData() {
+void VideoRenderer::prepareNoteData()
+{
     // ... (unchanged) ...
-    for (const auto& track : m_sequence->getTracks()) {
+    for (const auto &track : m_sequence->getTracks())
+    {
         QColor trackColor = track->getColor().toQColor();
-        for (const auto& note : track->getNotes()) {
-            if (note.start.has_value() && note.length.has_value()) {
-                m_notes.push_back({
-                    note.note,
-                    nn_ticks_to_seconds(note.start.value(), m_sequence->getPPQ(), m_sequence->getTempo()),
-                    nn_ticks_to_seconds(note.start.value() + note.length.value(), m_sequence->getPPQ(), m_sequence->getTempo()),
-                    trackColor
-                });
+        for (const auto &note : track->getNotes())
+        {
+            if (note.start.has_value() && note.length.has_value())
+            {
+                m_notes.push_back({note.note,
+                                   nn_ticks_to_seconds(note.start.value(), m_sequence->getPPQ(), m_sequence->getTempo()),
+                                   nn_ticks_to_seconds(note.start.value() + note.length.value(), m_sequence->getPPQ(), m_sequence->getTempo()),
+                                   trackColor});
             }
         }
     }
 }
 
-void VideoRenderer::prepareKeyboardLayout(const QSize& size) {
+void VideoRenderer::prepareKeyboardLayout(const QSize &size)
+{
     // ... (unchanged) ...
-    if (size == m_lastLayoutSize) return;
+    if (size == m_lastLayoutSize)
+        return;
 
     m_keyboardLayout.clear();
     const float keyboardHeight = size.height() * 0.25f;
 
     std::vector<bool> is_white_key = {true, false, true, false, true, true, false, true, false, true, false, true};
     int white_key_count = 0;
-    for (int i = FIRST_MIDI_NOTE; i <= LAST_MIDI_NOTE; ++i) {
-        if (is_white_key[i % 12]) white_key_count++;
+    for (int i = FIRST_MIDI_NOTE; i <= LAST_MIDI_NOTE; ++i)
+    {
+        if (is_white_key[i % 12])
+            white_key_count++;
     }
 
     float white_key_width = (float)size.width() / white_key_count;
@@ -61,22 +67,24 @@ void VideoRenderer::prepareKeyboardLayout(const QSize& size) {
     float black_key_height = keyboardHeight * 0.6f;
 
     int current_white_key = 0;
-    for (int i = FIRST_MIDI_NOTE; i <= LAST_MIDI_NOTE; ++i) {
-        if (is_white_key[i % 12]) {
+    for (int i = FIRST_MIDI_NOTE; i <= LAST_MIDI_NOTE; ++i)
+    {
+        if (is_white_key[i % 12])
+        {
             m_keyboardLayout[i] = {
                 QRectF(current_white_key * white_key_width, size.height() - keyboardHeight, white_key_width, keyboardHeight),
-                true
-            };
+                true};
             current_white_key++;
         }
     }
-    for (int i = FIRST_MIDI_NOTE; i <= LAST_MIDI_NOTE; ++i) {
-        if (!is_white_key[i % 12]) {
+    for (int i = FIRST_MIDI_NOTE; i <= LAST_MIDI_NOTE; ++i)
+    {
+        if (!is_white_key[i % 12])
+        {
             float center_x = m_keyboardLayout[i - 1].rect.right();
             m_keyboardLayout[i] = {
                 QRectF(center_x - black_key_width / 2, size.height() - keyboardHeight, black_key_width, black_key_height),
-                false
-            };
+                false};
         }
     }
     m_lastLayoutSize = size;
@@ -93,98 +101,131 @@ void VideoRenderer::resetSimulation()
 // Stateful version for PREVIEW
 // =========================================================================
 
-QImage VideoRenderer::renderFrame(double currentTime, const QSize& size) 
+QImage VideoRenderer::renderFrame(double currentTime, const QSize &size)
 {
     // Detect backward time travel (scrubbing)
-    if (m_lastFrameTime >= 0 && currentTime < m_lastFrameTime) {
+    if (m_lastFrameTime >= 0 && currentTime < m_lastFrameTime)
+    {
         resetSimulation();
     }
-    
+
     double deltaTime = (m_lastFrameTime < 0) ? 0.0 : currentTime - m_lastFrameTime;
     m_lastFrameTime = currentTime;
 
     // 1. Calculate the new state
     FrameState nextState = calculateNextState(m_currentState, currentTime, deltaTime);
     m_currentState = nextState; // Store the new state
-    
+
     // 2. Render the state
     return renderFrame(currentTime, size, m_currentState);
 }
-
 
 // =========================================================================
 // Simulation Logic (Stateless)
 // =========================================================================
 
-VideoRenderer::FrameState VideoRenderer::calculateNextState(const FrameState& previousState, double currentTime, double deltaTime)
+VideoRenderer::FrameState VideoRenderer::calculateNextState(const FrameState &previousState, double currentTime, double deltaTime)
 {
     // Create a copy of the *previous* state to modify
     FrameState newState = previousState;
-    
+
     std::map<int, bool> currentActiveNotes;
-    
+
     // 1. Find active notes (for keyboard and particles)
-    for (const auto& note : m_notes) {
-        if (currentTime >= note.start_time && currentTime < note.end_time) {
-             currentActiveNotes[note.note_val] = true;
+    for (const auto &note : m_notes)
+    {
+        if (currentTime >= note.start_time && currentTime < note.end_time)
+        {
+            currentActiveNotes[note.note_val] = true;
         }
     }
-    
+
     // 2. Spawn new particles (if enabled)
-    if (m_settings.renderParticles) {
+    if (m_settings.renderParticles)
+    {
         double resolutionScale = (double)m_lastLayoutSize.height() / 720.0;
-        
-        for(const auto& pair : currentActiveNotes) {
+
+        for (const auto &pair : currentActiveNotes)
+        {
             // Was this note active in the previous state?
             bool wasActive = previousState.activeNotes.find(pair.first) != previousState.activeNotes.end();
-            if (!wasActive) 
+            if (!wasActive)
             {
                 // Note just started playing, find its data
-                for(const auto& noteInfo : m_notes) {
-                    if(noteInfo.note_val == pair.first) {
-                         // Check if it's the "real" start of the note
-                         if (std::abs(noteInfo.start_time - currentTime) < (deltaTime + 0.01)) {
-                             if (m_keyboardLayout.find(noteInfo.note_val) != m_keyboardLayout.end()) {
+                for (const auto &noteInfo : m_notes)
+                {
+                    if (noteInfo.note_val == pair.first)
+                    {
+                        // Check if it's the "real" start of the note
+                        if (std::abs(noteInfo.start_time - currentTime) < (deltaTime + 0.01))
+                        {
+                            if (m_keyboardLayout.find(noteInfo.note_val) != m_keyboardLayout.end())
+                            {
                                 // Add particles to the *new* state
                                 spawnParticles(noteInfo, resolutionScale, newState.particles);
-                             }
+                            }
                             break;
-                         }
+                        }
                     }
                 }
             }
         }
     }
-    
+
     // 3. Update existing particles
-    if (m_settings.renderParticles) {
+    if (m_settings.renderParticles)
+    {
         updateParticles(deltaTime, newState.particles);
     }
-    
+
     // 4. Store active notes for the next frame
     newState.activeNotes = currentActiveNotes;
     return newState;
 }
 
-
 // =========================================================================
 // Stateless version for EXPORT
 // =========================================================================
 
-QImage VideoRenderer::renderFrame(double currentTime, const QSize& size, const FrameState& state) {
-    
+QImage VideoRenderer::renderFrame(double currentTime, const QSize &size, const FrameState &state)
+{
+
     prepareKeyboardLayout(size);
     QImage frame(size, QImage::Format_ARGB32);
 
     // 1. Draw background
-    if (!m_settings.backgroundImage.isNull()) {
+    if (!m_settings.backgroundImage.isNull())
+    {
         QPainter bgPainter(&frame);
-        bgPainter.drawImage(frame.rect(), m_settings.backgroundImage);
+
+        QRectF targetRect = frame.rect();
+
+        // Aplikujeme "třesení" pozadí, pokud je povoleno
+        if (m_settings.renderBgShake)
+        {
+            // Výpočet posunu pomocí sin/cos pro plynulý, pomalý a náhodně vypadající pohyb
+            double shakeX = sin(currentTime * 0.15) * m_settings.bgShakeIntensity + cos(currentTime * 0.4) * (m_settings.bgShakeIntensity * 0.5);
+            double shakeY = cos(currentTime * 0.2) * m_settings.bgShakeIntensity + sin(currentTime * 0.3) * (m_settings.bgShakeIntensity * 0.5);
+
+            // Obrázek mírně zvětšíme, abychom při posunu neviděli černé okraje
+            double expansion = m_settings.bgShakeIntensity * 1.5;
+            targetRect = frame.rect().adjusted(-expansion, -expansion, expansion, expansion);
+            targetRect.translate(shakeX, shakeY);
+        }
+
+        // Vykreslíme pozadí s ořezem na původní velikost framu
+        bgPainter.save();
+        bgPainter.setClipRect(frame.rect());
+        bgPainter.drawImage(targetRect, m_settings.backgroundImage);
+        bgPainter.restore();
+
         bgPainter.end();
-    } else {
-        frame.fill(m_settings.backgroundColor);
     }
-    
+    else
+    {
+        frame.fill(m_settings.backgroundColor); // Jednolitá barva se "třást" nemůže
+    }
+
     QPainter painter(&frame);
     painter.setRenderHint(QPainter::Antialiasing);
 
@@ -193,7 +234,8 @@ QImage VideoRenderer::renderFrame(double currentTime, const QSize& size, const F
     drawNotesAndKeyboard(painter, currentTime, size, state.activeNotes);
 
     // 3. Draw particles
-    if (m_settings.renderParticles) {
+    if (m_settings.renderParticles)
+    {
         double resolutionScale = (double)size.height() / 720.0;
         // Use the particle state from 'state'
         drawParticles(painter, state.particles, resolutionScale);
@@ -207,107 +249,123 @@ QImage VideoRenderer::renderFrame(double currentTime, const QSize& size, const F
 // Helper Methods (Simulation)
 // =========================================================================
 
-void VideoRenderer::spawnParticles(const NoteInfo& note, double resolutionScale, std::vector<Particle>& particles) {
-    if (m_keyboardLayout.find(note.note_val) == m_keyboardLayout.end()) return;
-    const KeyInfo& key = m_keyboardLayout.at(note.note_val);
+void VideoRenderer::spawnParticles(const NoteInfo &note, double resolutionScale, std::vector<Particle> &particles)
+{
+    if (m_keyboardLayout.find(note.note_val) == m_keyboardLayout.end())
+        return;
+    const KeyInfo &key = m_keyboardLayout.at(note.note_val);
     QPointF spawn_pos = QPointF(key.rect.center().x(), key.rect.top());
 
     int particle_count = m_settings.particleCount;
-    
-    for (int i = 0; i < particle_count; ++i) {
+
+    for (int i = 0; i < particle_count; ++i)
+    {
         double angle_deg = (rand() % 160) + 10; // Between 10 and 170 degrees (upwards)
         double angle_rad = angle_deg * M_PI / 180.0;
         double speed_base = m_settings.particleSpeed * resolutionScale;
         double speed_rand = speed_base * 0.5;
-        double speed = speed_base - (speed_rand / 2) + (rand() % (int)(speed_rand + 1)); 
+        double speed = speed_base - (speed_rand / 2) + (rand() % (int)(speed_rand + 1));
         qreal lifetime = m_settings.particleLifetime + (rand() % 50) / 100.0 - 0.25; // +/- 0.25s
-        if (lifetime < 0.1) lifetime = 0.1;
+        if (lifetime < 0.1)
+            lifetime = 0.1;
 
-        particles.push_back({
-            spawn_pos,
-            QPointF(cos(angle_rad) * speed, -sin(angle_rad) * speed),
-            lifetime,
-            lifetime,
-            note.color
-        });
+        particles.push_back({spawn_pos,
+                             QPointF(cos(angle_rad) * speed, -sin(angle_rad) * speed),
+                             lifetime,
+                             lifetime,
+                             note.color});
     }
 }
 
-void VideoRenderer::updateParticles(double deltaTime, std::vector<Particle>& particles) 
+void VideoRenderer::updateParticles(double deltaTime, std::vector<Particle> &particles)
 {
     double resolutionScale = (double)m_lastLayoutSize.height() / 720.0;
-    
-    for (auto it = particles.begin(); it != particles.end(); ) {
+
+    for (auto it = particles.begin(); it != particles.end();)
+    {
         it->pos += it->vel * deltaTime;
         // Scale gravity
-        it->vel.ry() += m_settings.particleGravity * resolutionScale * deltaTime; 
+        it->vel.ry() += m_settings.particleGravity * resolutionScale * deltaTime;
         it->lifetime -= deltaTime;
 
-        if (it->lifetime <= 0) {
+        if (it->lifetime <= 0)
+        {
             it = particles.erase(it);
-        } else {
+        }
+        else
+        {
             ++it;
         }
     }
 }
 
-
 // =========================================================================
 // Helper Methods (Drawing)
 // =========================================================================
 
-void VideoRenderer::drawNotesAndKeyboard(QPainter& painter, double currentTime, const QSize& size, const std::map<int, bool>& activeNotes)
+void VideoRenderer::drawNotesAndKeyboard(QPainter &painter, double currentTime,
+                                         const QSize &size, const std::map<int, bool> &activeNotes)
 {
     double resolutionScale = (double)size.height() / 720.0;
     const float keyboardHeight = size.height() * 0.25f;
     const float render_area_height = size.height() - keyboardHeight;
     const float pixels_per_second = render_area_height / m_secondsVisible;
-    
-    // --- Draw falling notes ---
-    if (m_settings.renderNotes) {
-        for (const auto& note : m_notes) {
-            if (note.end_time < currentTime - 1.0 || note.start_time > currentTime + m_secondsVisible) continue;
-            
-            bool isActive = (activeNotes.find(note.note_val) != activeNotes.end());
 
-            if (m_keyboardLayout.find(note.note_val) == m_keyboardLayout.end()) continue;
-            const KeyInfo& key = m_keyboardLayout.at(note.note_val);
-            
+    // --- Draw falling notes ---
+    if (m_settings.renderNotes)
+    {
+        for (const auto &note : m_notes)
+        {
+            if (note.end_time < currentTime - 1.0 || note.start_time > currentTime + m_secondsVisible)
+                continue;
+
+            //bool isActive = (activeNotes.find(note.note_val) != activeNotes.end());
+            bool isCurrentlyPlaying = (currentTime >= note.start_time && currentTime < note.end_time);
+
+            if (m_keyboardLayout.find(note.note_val) == m_keyboardLayout.end())
+                continue;
+            const KeyInfo &key = m_keyboardLayout.at(note.note_val);
+
             float y_start = render_area_height - (float)(note.start_time - currentTime) * pixels_per_second;
             float y_end = render_area_height - (float)(note.end_time - currentTime) * pixels_per_second;
             QRectF note_rect(key.rect.x(), y_end, key.rect.width(), y_start - y_end);
-            
+
             // Clip drawing to the area above the keyboard
             note_rect = note_rect.intersected(QRectF(0, 0, size.width(), render_area_height));
-            if (note_rect.isEmpty()) continue;
+            if (note_rect.isEmpty())
+                continue;
 
             QColor note_color = note.color;
             // Calculate opacity
-            float progress = std::clamp(y_start / render_area_height, 0.0f, 1.0f); 
+            float progress = std::clamp(y_start / render_area_height, 0.0f, 1.0f);
             qreal opacity = m_settings.noteStartOpacity + (m_settings.noteEndOpacity - m_settings.noteStartOpacity) * progress;
             note_color.setAlphaF(std::clamp(opacity, 0.0, 1.0));
 
-            // --- FIX 1: Note Glow ---
             // Define a "glow zone" just above the keyboard
             float glow_zone_height = 30.0f * resolutionScale;
             float glow_zone_top = render_area_height - glow_zone_height;
             QRectF glow_zone_rect(0, glow_zone_top, size.width(), glow_zone_height);
-            
+
             // The glow is the intersection of the note and the glow zone
             QRectF glow_rect = note_rect.intersected(glow_zone_rect);
 
-            if (isActive && !glow_rect.isEmpty()) {
+            if (isCurrentlyPlaying)
+            {
                 painter.setPen(Qt::NoPen);
-                for (int i = 0; i < 10; ++i) {
+                // Vykreslíme několik zvětšených obdélníků s nízkou opacitou
+                // pro simulaci "záře" za notou.
+                for (int i = 0; i < 10; ++i)
+                {
                     QColor glow_color = note_color;
-                    // Glow opacity depends on note opacity
-                    glow_color.setAlphaF(note_color.alphaF() * 0.05); 
+                    // Opacita záře je závislá na opacitě noty
+                    glow_color.setAlphaF(note_color.alphaF() * 0.05);
                     painter.setBrush(glow_color);
-                    // Apply glow ONLY to the intersected rectangle
-                    painter.drawRect(glow_rect.adjusted(-i, -i, i, i));
+
+                    // Aplikujeme záři na celý obdélník noty, mírně zvětšený
+                    painter.drawRect(note_rect.adjusted(-i, -i, i, i));
                 }
             }
-            
+
             // Draw the note rectangle
             painter.setBrush(note_color);
             QColor penColor = note_color.darker(120);
@@ -318,22 +376,30 @@ void VideoRenderer::drawNotesAndKeyboard(QPainter& painter, double currentTime, 
     }
 
     // --- Draw Keyboard ---
-    if (m_settings.renderKeyboard) {
+    if (m_settings.renderKeyboard)
+    {
         // Draw white keys
-        for (const auto& pair : m_keyboardLayout) {
-            if (pair.second.is_white) {
+        for (const auto &pair : m_keyboardLayout)
+        {
+            if (pair.second.is_white)
+            {
                 bool isActive = (activeNotes.find(pair.first) != activeNotes.end());
-                if (isActive) {
+                if (isActive)
+                {
                     QColor activeColor = QColor(150, 150, 255);
-                    for (const auto& note : m_notes) {
-                        if (note.note_val == pair.first && currentTime >= note.start_time && currentTime < note.end_time) {
+                    for (const auto &note : m_notes)
+                    {
+                        if (note.note_val == pair.first && currentTime >= note.start_time && currentTime < note.end_time)
+                        {
                             activeColor = note.color;
                             break;
                         }
                     }
                     painter.setBrush(activeColor.lighter(120));
                     painter.setPen(activeColor);
-                } else {
+                }
+                else
+                {
                     painter.setBrush(QColor(245, 245, 245));
                     painter.setPen(QColor(200, 200, 200));
                 }
@@ -341,37 +407,45 @@ void VideoRenderer::drawNotesAndKeyboard(QPainter& painter, double currentTime, 
             }
         }
         // Draw black keys
-        for (const auto& pair : m_keyboardLayout) {
-            if (!pair.second.is_white) {
-                 bool isActive = (activeNotes.find(pair.first) != activeNotes.end());
-                 if (isActive) {
+        for (const auto &pair : m_keyboardLayout)
+        {
+            if (!pair.second.is_white)
+            {
+                bool isActive = (activeNotes.find(pair.first) != activeNotes.end());
+                if (isActive)
+                {
                     QColor activeColor = QColor(150, 150, 255);
-                    for (const auto& note : m_notes) {
-                        if (note.note_val == pair.first && currentTime >= note.start_time && currentTime < note.end_time) {
+                    for (const auto &note : m_notes)
+                    {
+                        if (note.note_val == pair.first && currentTime >= note.start_time && currentTime < note.end_time)
+                        {
                             activeColor = note.color;
                             break;
                         }
                     }
                     painter.setBrush(activeColor.lighter(120));
                     painter.setPen(activeColor);
-                 } else {
-                    painter.setBrush(QColor(40, 40, 40)); 
+                }
+                else
+                {
+                    painter.setBrush(QColor(40, 40, 40));
                     painter.setPen(Qt::black);
-                 }
-                 painter.drawRect(pair.second.rect);
+                }
+                painter.drawRect(pair.second.rect);
             }
         }
 
         // --- Draw "Piano Glow" effect ---
-        if (m_settings.renderPianoGlow) {
+        if (m_settings.renderPianoGlow)
+        {
             float glowHeight = 25.0f * resolutionScale; // Glow height
             QRectF glowRect(0, render_area_height - glowHeight, size.width(), glowHeight);
-            
+
             QLinearGradient glow(0, render_area_height - glowHeight, 0, render_area_height);
             glow.setColorAt(0.0, QColor(255, 255, 255, 0));
             glow.setColorAt(0.8, QColor(255, 255, 255, 70));
             glow.setColorAt(1.0, QColor(255, 255, 255, 100));
-            
+
             painter.setCompositionMode(QPainter::CompositionMode_Plus); // Additive blending
             painter.fillRect(glowRect, glow);
             painter.setCompositionMode(QPainter::CompositionMode_SourceOver); // Reset
@@ -379,13 +453,13 @@ void VideoRenderer::drawNotesAndKeyboard(QPainter& painter, double currentTime, 
     }
 }
 
-
-void VideoRenderer::drawParticles(QPainter& painter, const std::vector<Particle>& particles, double resolutionScale)
+void VideoRenderer::drawParticles(QPainter &painter, const std::vector<Particle> &particles, double resolutionScale)
 {
-    painter.setRenderHint(QPainter::Antialiasing, true); 
-    
-    for (const auto& particle : particles) {
-        
+    painter.setRenderHint(QPainter::Antialiasing, true);
+
+    for (const auto &particle : particles)
+    {
+
         qreal opacity = particle.lifetime / particle.initial_lifetime;
         qreal scale = 1.0 - opacity; // 0 (start of life) -> 1 (end of life)
 
@@ -399,28 +473,32 @@ void VideoRenderer::drawParticles(QPainter& painter, const std::vector<Particle>
 
             // --- Size logic ---
             qreal radiusMultiplier = m_settings.particleStartSize + (m_settings.particleEndSize - m_settings.particleStartSize) * scale;
-            qreal baseRadius = 10.0 * resolutionScale; 
+            qreal baseRadius = 10.0 * resolutionScale;
             qreal radius = baseRadius * radiusMultiplier;
-            if (radius < 1.0) radius = 1.0; // Ensure minimum size
-            
+            if (radius < 1.0)
+                radius = 1.0; // Ensure minimum size
+
             painter.drawEllipse(particle.pos, radius, radius);
         }
         else // Resource or Custom
         {
             // --- Thread-safe pixmap caching ---
-            QPixmap* pixmap = &m_resourceParticlePixmapCache;
+            QPixmap *pixmap = &m_resourceParticlePixmapCache;
 
-            if (m_settings.particleType == RenderSettings::Custom && !m_settings.customParticleImage.isNull()) {
-                if (m_customParticlePixmapCache.isNull()) {
-                     m_customParticlePixmapCache = QPixmap::fromImage(m_settings.customParticleImage);
+            if (m_settings.particleType == RenderSettings::Custom && !m_settings.customParticleImage.isNull())
+            {
+                if (m_customParticlePixmapCache.isNull())
+                {
+                    m_customParticlePixmapCache = QPixmap::fromImage(m_settings.customParticleImage);
                 }
                 pixmap = &m_customParticlePixmapCache;
             }
 
-            if (!pixmap || pixmap->isNull()) {
+            if (!pixmap || pixmap->isNull())
+            {
                 continue; // Skip drawing if pixmap isn't valid
             }
-            
+
             // Set global opacity for fade-out
             painter.setOpacity(opacity);
 
@@ -429,21 +507,24 @@ void VideoRenderer::drawParticles(QPainter& painter, const std::vector<Particle>
             // Linear size interpolation
             qreal sizeMultiplier = m_settings.particleStartSize + (m_settings.particleEndSize - m_settings.particleStartSize) * scale;
             qreal size = baseSize * sizeMultiplier;
-            if (size < 1.0) size = 1.0; // Minimum size
-            
-            QRectF targetRect(particle.pos.x() - size/2, particle.pos.y() - size/2, size, size);
-            
+            if (size < 1.0)
+                size = 1.0; // Minimum size
+
+            QRectF targetRect(particle.pos.x() - size / 2, particle.pos.y() - size / 2, size, size);
+
             // =================================================================
             // ---          Tinting Logic (Destination In)                   ---
             // =================================================================
-            
-            if (m_settings.tintParticles) {
+
+            if (m_settings.tintParticles)
+            {
                 // 1. Create a temporary buffer (off-screen)
                 QSize bufferSize = targetRect.size().toSize();
-                if (bufferSize.width() < 1 || bufferSize.height() < 1) {
-                    continue; 
+                if (bufferSize.width() < 1 || bufferSize.height() < 1)
+                {
+                    continue;
                 }
-                
+
                 // Use QImage for buffer to support alpha fill
                 QImage bufferImage(bufferSize, QImage::Format_ARGB32);
                 bufferImage.fill(Qt::transparent); // Start with a transparent canvas
@@ -453,7 +534,7 @@ void VideoRenderer::drawParticles(QPainter& painter, const std::vector<Particle>
                 p.setRenderHint(QPainter::Antialiasing, true);
 
                 // 3. Draw the DESTINATION: a solid rectangle of the note color
-                p.fillRect(bufferImage.rect(), particle.color); 
+                p.fillRect(bufferImage.rect(), particle.color);
 
                 // 4. Set "Destination In" mode
                 // (Keeps the Destination [color] only where the Source [pixmap] has alpha)
@@ -461,18 +542,19 @@ void VideoRenderer::drawParticles(QPainter& painter, const std::vector<Particle>
 
                 // 5. Draw the SOURCE: our pixmap as a mask
                 p.drawPixmap(bufferImage.rect(), *pixmap, pixmap->rect());
-                
+
                 // 6. End the buffer painter
                 p.end();
 
                 // 7. Draw the final (tinted) QImage onto the main canvas
                 painter.drawImage(targetRect, bufferImage, bufferImage.rect());
-
-            } else {
+            }
+            else
+            {
                 // If tint is off, just draw the original pixmap
                 painter.drawPixmap(targetRect, *pixmap, pixmap->rect());
             }
-            
+
             painter.setOpacity(1.0); // Reset opacity for other drawing
         }
     }

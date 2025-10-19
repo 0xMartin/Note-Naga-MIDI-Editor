@@ -53,6 +53,9 @@ ExportDialog::ExportDialog(NoteNagaMidiSeq* sequence, NoteNagaEngine* engine, QW
     connect(m_bgColorButton, &QPushButton::clicked, this, &ExportDialog::onSelectBgColor);
     connect(m_bgImageButton, &QPushButton::clicked, this, &ExportDialog::onSelectBgImage);
     connect(m_bgClearButton, &QPushButton::clicked, this, &ExportDialog::onClearBg);
+    connect(m_bgShakeCheck, &QCheckBox::toggled, m_bgShakeSpin, &QWidget::setEnabled);
+    connect(m_bgShakeCheck, &QCheckBox::checkStateChanged, this, &ExportDialog::updatePreviewSettings);
+    connect(m_bgShakeSpin, &QDoubleSpinBox::valueChanged, this, &ExportDialog::updatePreviewSettings);
 
     // Render
     connect(m_renderNotesCheck, &QCheckBox::checkStateChanged, this, &ExportDialog::updatePreviewSettings);
@@ -230,7 +233,17 @@ void ExportDialog::setupUi()
     bgLayout->addWidget(m_bgImageButton, 1, 0);
     bgLayout->addWidget(m_bgImagePreview, 1, 1);
     bgLayout->addWidget(m_bgClearButton, 2, 0, 1, 2);
-    
+    m_bgShakeCheck = new QCheckBox(tr("Enable background shake"));
+    m_bgShakeSpin = new QDoubleSpinBox;
+    m_bgShakeSpin->setRange(1.0, 50.0);
+    m_bgShakeSpin->setValue(5.0);
+    m_bgShakeSpin->setSuffix(tr(" px"));
+    m_bgShakeSpin->setToolTip(tr("Max pixel distance for background shake"));
+    m_bgShakeSpin->setEnabled(false);
+
+    bgLayout->addWidget(m_bgShakeCheck, 3, 0);
+    bgLayout->addWidget(m_bgShakeSpin, 3, 1);
+
     settingsLayout->addWidget(bgGroup);
 
 
@@ -415,6 +428,8 @@ VideoRenderer::RenderSettings ExportDialog::getCurrentRenderSettings()
     if (!m_backgroundImagePath.isEmpty()) {
         settings.backgroundImage = QImage(m_backgroundImagePath);
     }
+    settings.renderBgShake = m_bgShakeCheck->isChecked();
+    settings.bgShakeIntensity = m_bgShakeSpin->value();
     settings.renderNotes = m_renderNotesCheck->isChecked();
     settings.renderKeyboard = m_renderKeyboardCheck->isChecked();
     settings.renderParticles = m_renderParticlesCheck->isChecked();

@@ -124,6 +124,8 @@ private:
     QPushButton *m_bgClearButton;
     QLabel *m_bgColorPreview;
     QLabel *m_bgImagePreview;
+    QCheckBox *m_bgShakeCheck;
+    QDoubleSpinBox *m_bgShakeSpin;
 
     // Render settings 
     QCheckBox *m_renderNotesCheck;
