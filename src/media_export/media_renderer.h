@@ -26,13 +26,15 @@ public:
 
     // Structure for all render settings
     struct RenderSettings {
-       bool renderParticles = true;
+        // General settings
+        bool renderParticles = true;
         bool renderKeyboard = true;
         bool renderNotes = true;
+        bool renderLightning = false;
         
+        // Particle settings
         enum ParticleType { Resource, Circle, Custom };
         ParticleType particleType = Resource;
-        
         QImage customParticleImage; 
         int particleCount = 15;
         double particleLifetime = 0.75; 
@@ -42,14 +44,23 @@ public:
         double particleStartSize = 0.5;
         double particleEndSize = 1.0;
 
+        // Note appearance settings
         bool renderPianoGlow = true;
         double noteStartOpacity = 1.0; 
         double noteEndOpacity = 1.0; 
 
+        // Background settings
         QColor backgroundColor = QColor(25, 25, 35);
         QImage backgroundImage;
         bool renderBgShake = false;
         double bgShakeIntensity = 5.0;
+
+        // Lightning settings
+        QColor lightningColor = QColor(100, 200, 255);
+        double lightningThickness = 2.0;
+        int lightningLines = 3;
+        double lightningJitterY = 3.0; 
+        double lightningJitterX = 2.0;
     };
 
     MediaRenderer(NoteNagaMidiSeq* sequence);

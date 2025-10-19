@@ -11,6 +11,7 @@ ExportDialog::ExportDialog(NoteNagaMidiSeq* sequence, NoteNagaEngine* engine, QW
     : QDialog(parent), m_engine(engine), m_sequence(sequence),
       m_previewThread(new QThread(this)),
       m_backgroundColor(QColor(25, 25, 35)),
+      m_lightningColor(QColor(100, 200, 255)), // <-- Nová inicializace barvy blesku
       m_currentTime(0.0), m_exportThread(nullptr), m_exporter(nullptr)
 {
     setupUi();
@@ -38,16 +39,39 @@ ExportDialog::ExportDialog(NoteNagaMidiSeq* sequence, NoteNagaEngine* engine, QW
 
     // --- Connect Signals ---
     connect(m_playPauseButton, &QPushButton::clicked, this, &ExportDialog::onPlayPauseClicked);
-    
     connect(m_progressBar, &MidiSequenceProgressBar::positionPressed, this, &ExportDialog::seek);
     connect(m_progressBar, &MidiSequenceProgressBar::positionDragged, this, &ExportDialog::seek);
     connect(m_progressBar, &MidiSequenceProgressBar::positionReleased, this, &ExportDialog::seek);
-    
     connect(m_exportButton, &QPushButton::clicked, this, &ExportDialog::onExportClicked);
+    connect(m_exportTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ExportDialog::onExportTypeChanged);
     
     // Settings (now call updatePreviewSettings)
     connect(m_resolutionCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ExportDialog::updatePreviewSettings);
     connect(m_scaleSpinBox, &QDoubleSpinBox::valueChanged, this, &ExportDialog::updatePreviewSettings);
+    
+    // <-- Nová logika pro suffix bitrate u audia -->
+    connect(m_audioBitrateSpin, &QSpinBox::valueChanged, this, [this](int val){
+        // Malá úprava pro OGG - bitrate se mění na kvalitu
+        if(m_audioFormatCombo->currentText().toLower() == "ogg") {
+            int q_val = (val - 64) / 32 + 1;
+            if (val < 64) q_val = 0;
+            if (val > 320) q_val = 10;
+            m_audioBitrateSpin->setSuffix(QString(" kbps (q: %1)").arg(q_val));
+        } else {
+            m_audioBitrateSpin->setSuffix(tr(" kbps"));
+        }
+    });
+    connect(m_audioFormatCombo, &QComboBox::currentTextChanged, this, [this](const QString& text){
+        if (text.toLower() == "ogg") {
+            m_audioBitrateSpin->setSuffix(tr(" kbps (q: ...)"));
+            m_audioBitrateSpin->setToolTip(tr("Pro OGG je bitrate převeden na škálu kvality (q) 0-10."));
+        } else {
+            m_audioBitrateSpin->setSuffix(tr(" kbps"));
+            m_audioBitrateSpin->setToolTip(tr("Typický bitrate pro MP3 je 192 nebo 256 kbps."));
+        }
+        // Trigger update suffixu
+        m_audioBitrateSpin->setValue(m_audioBitrateSpin->value());
+    });
 
     // Background
     connect(m_bgColorButton, &QPushButton::clicked, this, &ExportDialog::onSelectBgColor);
@@ -77,10 +101,22 @@ ExportDialog::ExportDialog(NoteNagaMidiSeq* sequence, NoteNagaEngine* engine, QW
     connect(m_particleEndSizeSpin, &QDoubleSpinBox::valueChanged, this, &ExportDialog::updatePreviewSettings);
     connect(m_particleTintCheck, &QCheckBox::checkStateChanged, this, &ExportDialog::updatePreviewSettings);
 
-    // --- Initial State ---
+    // Lightning efekt
+    connect(m_lightningEnableCheck, &QCheckBox::toggled, m_lightningGroup, &QWidget::setEnabled);
+    connect(m_lightningEnableCheck, &QCheckBox::checkStateChanged, this, &ExportDialog::updatePreviewSettings);
+    connect(m_lightningColorButton, &QPushButton::clicked, this, &ExportDialog::onSelectLightningColor);
+    connect(m_lightningThicknessSpin, &QDoubleSpinBox::valueChanged, this, &ExportDialog::updatePreviewSettings);
+    connect(m_lightningLinesSpin, &QSpinBox::valueChanged, this, &ExportDialog::updatePreviewSettings);
+    connect(m_lightningJitterYSpin, &QDoubleSpinBox::valueChanged, this, &ExportDialog::updatePreviewSettings);
+    connect(m_lightningJitterXSpin, &QDoubleSpinBox::valueChanged, this, &ExportDialog::updatePreviewSettings);
+
+    // Initial State
     onParticleTypeChanged(m_particleTypeCombo->currentIndex());
     updateBgLabels();
-    
+    m_lightningColorPreview->setStyleSheet(QString("background-color: %1; border: 1px solid #555;").arg(m_lightningColor.name()));
+    m_lightningGroup->setEnabled(false);
+    onExportTypeChanged(m_exportTypeCombo->currentIndex());
+
     // Initial settings are sent after a short delay to allow the worker to initialize
     QTimer::singleShot(10, this, &ExportDialog::updatePreviewSettings);
     onPlaybackTickChanged(m_engine->getProject()->getCurrentTick());
@@ -125,16 +161,38 @@ void ExportDialog::setupUi()
     // --- Left Side (Preview) ---
     m_leftWidget = new QWidget;
     QVBoxLayout *leftLayout = new QVBoxLayout(m_leftWidget);
-    leftLayout->setContentsMargins(0,0,0,0);
+    leftLayout->setContentsMargins(5, 5, 5, 5); 
 
-    m_previewGroup = new QGroupBox(tr("Preview"));
+    QHBoxLayout *previewHeaderLayout = new QHBoxLayout;
+    previewHeaderLayout->setContentsMargins(0, 0, 0, 5);
+    QLabel* previewIcon = new QLabel;
+    previewIcon->setPixmap(QIcon(":/icons/video.svg").pixmap(16, 16));
+    QLabel* previewTitle = new QLabel(tr("Preview"));
+    previewTitle->setStyleSheet("font-weight: bold;");
+    previewHeaderLayout->addWidget(previewIcon);
+    previewHeaderLayout->addWidget(previewTitle);
+    previewHeaderLayout->addStretch();
+    leftLayout->addLayout(previewHeaderLayout);
+
+    m_previewGroup = new QGroupBox; 
     QVBoxLayout* previewLayout = new QVBoxLayout;
+    previewLayout->setContentsMargins(0, 0, 0, 0); 
+
+    QStackedWidget* previewStack = new QStackedWidget;
     m_previewLabel = new QLabel;
     m_previewLabel->setAlignment(Qt::AlignCenter);
     m_previewLabel->setStyleSheet("background-color: black; border: 1px solid #444;");
     m_previewLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
-    previewLayout->addWidget(m_previewLabel, 1); // 1 = stretch vertically
+    m_audioOnlyLabel = new QLabel(tr("Audio Only Mode")); // <-- Nový label
+    m_audioOnlyLabel->setAlignment(Qt::AlignCenter);
+    m_audioOnlyLabel->setStyleSheet("background-color: black; border: 1px solid #444; color: #888; font-size: 20px; font-weight: bold;");
+    m_audioOnlyLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    previewStack->addWidget(m_previewLabel); // index 0
+    previewStack->addWidget(m_audioOnlyLabel); // index 1
+    
+    previewLayout->addWidget(previewStack, 1); // 1 = stretch vertically
     
     QHBoxLayout *timelineLayout = new QHBoxLayout;
     timelineLayout->setSpacing(6);
@@ -173,14 +231,26 @@ void ExportDialog::setupUi()
 
     previewLayout->addLayout(timelineLayout); 
     m_previewGroup->setLayout(previewLayout);
-    leftLayout->addWidget(m_previewGroup);
+    leftLayout->addWidget(m_previewGroup, 1);
     
     m_mainSplitter->addWidget(m_leftWidget);
 
     // --- Right Side (Settings and Export) ---
     m_rightWidget = new QWidget;
     QGridLayout *rightLayout = new QGridLayout(m_rightWidget);
-    rightLayout->setContentsMargins(0,0,0,0);
+    rightLayout->setContentsMargins(5, 5, 5, 5); 
+
+    // Záhlaví pro Nastavení s ikonou
+    QHBoxLayout *settingsHeaderLayout = new QHBoxLayout;
+    settingsHeaderLayout->setContentsMargins(0, 0, 0, 5);
+    QLabel* settingsIcon = new QLabel;
+    settingsIcon->setPixmap(QIcon(":/icons/settings.svg").pixmap(16, 16));
+    QLabel* settingsTitle = new QLabel(tr("Settings"));
+    settingsTitle->setStyleSheet("font-weight: bold;");
+    settingsHeaderLayout->addWidget(settingsIcon);
+    settingsHeaderLayout->addWidget(settingsTitle);
+    settingsHeaderLayout->addStretch();
+    rightLayout->addLayout(settingsHeaderLayout, 0, 0); // řádek 0
 
     // --- ScrollArea for settings ---
     m_settingsScrollArea = new QScrollArea;
@@ -193,8 +263,20 @@ void ExportDialog::setupUi()
     settingsLayout->setContentsMargins(5, 5, 5, 5); 
     
     // --- Group 1: Export Settings ---
-    QGroupBox *exportGroup = new QGroupBox(tr("Export Settings"));
-    QFormLayout *exportFormLayout = new QFormLayout(exportGroup);
+    m_exportSettingsGroup = new QGroupBox(tr("Export Settings")); 
+    QFormLayout *exportFormLayout = new QFormLayout(m_exportSettingsGroup);
+    exportFormLayout->setContentsMargins(5, 5, 5, 5); 
+    
+    m_exportTypeCombo = new QComboBox; // <-- Nový widget
+    m_exportTypeCombo->addItems({tr("Video (MP4)"), tr("Audio Only")});
+    exportFormLayout->addRow(tr("Export Type:"), m_exportTypeCombo);
+    
+    settingsLayout->addWidget(m_exportSettingsGroup);
+
+    // --- Group 1.A: Video Settings ---
+    m_videoSettingsGroup = new QGroupBox(tr("Video Settings")); 
+    QFormLayout *videoFormLayout = new QFormLayout(m_videoSettingsGroup);
+    videoFormLayout->setContentsMargins(5, 5, 5, 5); 
     
     m_resolutionCombo = new QComboBox;
     m_resolutionCombo->addItems({"1280x720 (720p)", "1920x1080 (1080p)"});
@@ -206,15 +288,34 @@ void ExportDialog::setupUi()
     m_scaleSpinBox->setSuffix(tr(" s"));
     m_scaleSpinBox->setToolTip(tr("How many seconds of notes are visible on screen at once."));
 
-    exportFormLayout->addRow(tr("Resolution:"), m_resolutionCombo);
-    exportFormLayout->addRow(tr("Framerate:"), m_fpsCombo);
-    exportFormLayout->addRow(tr("Vertical Scale:"), m_scaleSpinBox);
+    videoFormLayout->addRow(tr("Resolution:"), m_resolutionCombo);
+    videoFormLayout->addRow(tr("Framerate:"), m_fpsCombo);
+    videoFormLayout->addRow(tr("Vertical Scale:"), m_scaleSpinBox);
 
-    settingsLayout->addWidget(exportGroup);
+    settingsLayout->addWidget(m_videoSettingsGroup);
+
+    // --- Group 1.B: Audio Settings ---
+    m_audioSettingsGroup = new QGroupBox(tr("Audio Settings")); // <-- Nová skupina
+    QFormLayout *audioFormLayout = new QFormLayout(m_audioSettingsGroup);
+    audioFormLayout->setContentsMargins(5, 5, 5, 5);
+
+    m_audioFormatCombo = new QComboBox; // <-- Nový widget
+    m_audioFormatCombo->addItems({"WAV", "MP3", "OGG"});
+    m_audioBitrateSpin = new QSpinBox; // <-- Nový widget
+    m_audioBitrateSpin->setRange(64, 320);
+    m_audioBitrateSpin->setValue(192);
+    m_audioBitrateSpin->setSuffix(tr(" kbps"));
+    
+    audioFormLayout->addRow(tr("Format:"), m_audioFormatCombo);
+    audioFormLayout->addRow(tr("Bitrate:"), m_audioBitrateSpin);
+    
+    settingsLayout->addWidget(m_audioSettingsGroup);
+    // <-- Konec nových audio/video skupin -->
 
     // --- Group 2: Background Settings ---
-    QGroupBox *bgGroup = new QGroupBox(tr("Background Settings"));
-    QGridLayout *bgLayout = new QGridLayout(bgGroup);
+    m_bgGroup = new QGroupBox(tr("Background Settings"));
+    QGridLayout *bgLayout = new QGridLayout(m_bgGroup);
+    bgLayout->setContentsMargins(5, 5, 5, 5); 
     
     m_bgColorButton = new QPushButton(tr("Select Color..."));
     m_bgColorPreview = new QLabel;
@@ -244,12 +345,13 @@ void ExportDialog::setupUi()
     bgLayout->addWidget(m_bgShakeCheck, 3, 0);
     bgLayout->addWidget(m_bgShakeSpin, 3, 1);
 
-    settingsLayout->addWidget(bgGroup);
+    settingsLayout->addWidget(m_bgGroup);
 
 
     // --- Group 3: Render Settings ---
-    QGroupBox *renderGroup = new QGroupBox(tr("Render Settings"));
-    QVBoxLayout *renderLayout = new QVBoxLayout(renderGroup);
+    m_renderGroup = new QGroupBox(tr("Render Settings"));
+    QVBoxLayout *renderLayout = new QVBoxLayout(m_renderGroup);
+    renderLayout->setContentsMargins(5, 5, 5, 5); 
     
     m_renderNotesCheck = new QCheckBox(tr("Render falling notes"));
     m_renderNotesCheck->setChecked(true);
@@ -259,7 +361,11 @@ void ExportDialog::setupUi()
     m_renderParticlesCheck->setChecked(true);
     m_pianoGlowCheck = new QCheckBox(tr("Render piano glow effect"));
     m_pianoGlowCheck->setChecked(true);
-    
+
+    m_lightningEnableCheck = new QCheckBox(tr("Enable Lightning Effect"));
+    m_lightningEnableCheck->setChecked(false);
+
+    renderLayout->addWidget(m_lightningEnableCheck); 
     renderLayout->addWidget(m_renderNotesCheck);
     renderLayout->addWidget(m_renderKeyboardCheck);
     renderLayout->addWidget(m_renderParticlesCheck);
@@ -279,11 +385,12 @@ void ExportDialog::setupUi()
     noteOpacityLayout->addRow(tr("Note Opacity (Bottom):"), m_noteEndOpacitySpin);
     renderLayout->addLayout(noteOpacityLayout);
 
-    settingsLayout->addWidget(renderGroup); 
+    settingsLayout->addWidget(m_renderGroup); 
 
     // --- Group 4: Particle Settings ---
     m_particleSettingsGroup = new QGroupBox(tr("Particle Settings"));
     QFormLayout *particleForm = new QFormLayout(m_particleSettingsGroup);
+    particleForm->setContentsMargins(5, 5, 5, 5); 
     
     m_particleTypeCombo = new QComboBox;
     m_particleTypeCombo->addItems({tr("Default (Sparkle)"), tr("Circle"), tr("Custom Image")});
@@ -343,17 +450,64 @@ void ExportDialog::setupUi()
     particleForm->addRow(m_particleTintCheck);
 
     settingsLayout->addWidget(m_particleSettingsGroup);
+
+    // --- Group 5: Lightning Settings ---
+    m_lightningGroup = new QGroupBox(tr("Lightning Effect")); 
+    
+    QFormLayout *lightningForm = new QFormLayout;
+    lightningForm->setContentsMargins(5, 5, 5, 5);
+    
+    QHBoxLayout* colorLayout = new QHBoxLayout;
+    m_lightningColorButton = new QPushButton(tr("Select Color...")); 
+    m_lightningColorPreview = new QLabel; 
+    m_lightningColorPreview->setFixedSize(32, 32);
+    colorLayout->addWidget(m_lightningColorButton);
+    colorLayout->addWidget(m_lightningColorPreview);
+    colorLayout->addStretch();
+    lightningForm->addRow(tr("Color:"), colorLayout);
+
+    m_lightningThicknessSpin = new QDoubleSpinBox;
+    m_lightningThicknessSpin->setRange(1.0, 10.0);
+    m_lightningThicknessSpin->setValue(2.0);
+    m_lightningThicknessSpin->setSuffix(" px");
+    m_lightningThicknessSpin->setSingleStep(0.1);
+    lightningForm->addRow(tr("Base Thickness:"), m_lightningThicknessSpin);
+
+    m_lightningLinesSpin = new QSpinBox; 
+    m_lightningLinesSpin->setRange(1, 10);
+    m_lightningLinesSpin->setValue(3);
+    lightningForm->addRow(tr("Number of Lines:"), m_lightningLinesSpin);
+
+    m_lightningJitterYSpin = new QDoubleSpinBox;
+    m_lightningJitterYSpin->setRange(0.0, 20.0);
+    m_lightningJitterYSpin->setValue(3.0);
+    m_lightningJitterYSpin->setSuffix(" px");
+    m_lightningJitterYSpin->setSingleStep(0.5);
+    lightningForm->addRow(tr("Vertical Jitter:"), m_lightningJitterYSpin);
+
+    m_lightningJitterXSpin = new QDoubleSpinBox;
+    m_lightningJitterXSpin->setRange(0.0, 20.0);
+    m_lightningJitterXSpin->setValue(2.0);
+    m_lightningJitterXSpin->setSuffix(" px");
+    m_lightningJitterXSpin->setSingleStep(0.5);
+    lightningForm->addRow(tr("Horizontal Jitter:"), m_lightningJitterXSpin);
+
+    QVBoxLayout *lightningVLayout = new QVBoxLayout(m_lightningGroup);
+    lightningVLayout->setContentsMargins(5, 5, 5, 5);
+    lightningVLayout->addLayout(lightningForm);
+    
+    settingsLayout->addWidget(m_lightningGroup);
     settingsLayout->addStretch(1); 
 
     m_settingsScrollArea->setWidget(m_settingsWidget); 
-    rightLayout->addWidget(m_settingsScrollArea, 0, 0); // (row 0, col 0)
+    rightLayout->addWidget(m_settingsScrollArea, 1, 0);
 
     // --- Section for export and progress (bottom right) ---
     QVBoxLayout* exportLayout = new QVBoxLayout;
     exportLayout->setContentsMargins(10, 10, 10, 10);
     
     QHBoxLayout *buttonLayout = new QHBoxLayout;
-    m_exportButton = new QPushButton(tr("Export to MP4"));
+    m_exportButton = new QPushButton(tr("Export...")); // <-- Změna: Výchozí text
     m_exportButton->setIcon(QIcon(":/icons/video.svg")); 
     m_exportButton->setFixedHeight(40);
     m_exportButton->setMinimumWidth(200); 
@@ -378,10 +532,10 @@ void ExportDialog::setupUi()
     exportLayout->addWidget(m_statusLabel);
     exportLayout->addStretch(1); 
 
-    rightLayout->addLayout(exportLayout, 1, 0); // (row 1, col 0)
-
-    rightLayout->setRowStretch(0, 1); // ScrollArea stretches
-    rightLayout->setRowStretch(1, 0); // Export section does not
+    rightLayout->addLayout(exportLayout, 2, 0); // (row 2, col 0)
+    rightLayout->setRowStretch(0, 0); 
+    rightLayout->setRowStretch(1, 1); 
+    rightLayout->setRowStretch(2, 0); 
 
     m_mainSplitter->addWidget(m_rightWidget);
     m_mainSplitter->setSizes({600, 300}); // Initial split
@@ -421,6 +575,37 @@ void ExportDialog::seek(float seconds) {
     onPlaybackTickChanged(tick); 
 }
 
+// --- Nový slot pro změnu typu exportu ---
+void ExportDialog::onExportTypeChanged(int index)
+{
+    bool isVideo = (index == 0);
+    
+    // Zobrazit/skrýt náhled
+    QStackedWidget* stack = m_previewLabel->parentWidget()->findChild<QStackedWidget*>();
+    if (stack) {
+        stack->setCurrentIndex(isVideo ? 0 : 1);
+    }
+    
+    // Změnit text tlačítka a ikonu
+    m_exportButton->setText(isVideo ? tr("Export to MP4") : tr("Export Audio..."));
+    m_exportButton->setIcon(isVideo ? QIcon(":/icons/video.svg") : QIcon(":/icons/audio-signal.svg"));
+
+    // Zobrazit/skrýt relevantní nastavení
+    m_videoSettingsGroup->setVisible(isVideo);
+    m_audioSettingsGroup->setVisible(!isVideo);
+    m_bgGroup->setVisible(isVideo);
+    m_renderGroup->setVisible(isVideo);
+    m_particleSettingsGroup->setVisible(isVideo);
+    m_lightningGroup->setVisible(isVideo);
+
+    // Povolit/zakázat náhled (pokud se nepřehrává)
+    if (!m_engine->isPlaying()) {
+        if (isVideo) {
+            updatePreviewSettings(); // Znovu vykreslit náhled
+        }
+    }
+}
+
 MediaRenderer::RenderSettings ExportDialog::getCurrentRenderSettings()
 {
     MediaRenderer::RenderSettings settings;
@@ -447,6 +632,15 @@ MediaRenderer::RenderSettings ExportDialog::getCurrentRenderSettings()
     settings.tintParticles = m_particleTintCheck->isChecked();
     settings.particleStartSize = m_particleStartSizeSpin->value();
     settings.particleEndSize = m_particleEndSizeSpin->value();
+    
+    // nastavení blesku
+    settings.renderLightning = m_lightningEnableCheck->isChecked();
+    settings.lightningColor = m_lightningColor;
+    settings.lightningThickness = m_lightningThicknessSpin->value();
+    settings.lightningLines = m_lightningLinesSpin->value();
+    settings.lightningJitterY = m_lightningJitterYSpin->value(); 
+    settings.lightningJitterX = m_lightningJitterXSpin->value();
+
     return settings;
 }
 
@@ -470,6 +664,10 @@ void ExportDialog::updatePreviewRenderSize()
 
 void ExportDialog::updatePreviewSettings()
 {
+    if (m_exportTypeCombo->currentIndex() != 0) {
+        return;
+    }
+    
     // Send all settings to the worker thread
     
     QMetaObject::invokeMethod(m_previewWorker, "updateSettings", Qt::QueuedConnection,
@@ -575,12 +773,51 @@ void ExportDialog::updateBgLabels()
     }
 }
 
+void ExportDialog::onSelectLightningColor()
+{
+    QColor color = QColorDialog::getColor(m_lightningColor, this, tr("Select Lightning Color"));
+    if (color.isValid()) {
+        m_lightningColor = color;
+        m_lightningColorPreview->setStyleSheet(QString("background-color: %1; border: 1px solid #555;").arg(m_lightningColor.name()));
+        updatePreviewSettings();
+    }
+}
 
 void ExportDialog::onExportClicked()
 {
-    QString outputPath = QFileDialog::getSaveFileName(this, tr("Save Video"), "", tr("MPEG-4 Video (*.mp4)"));
+    MediaExporter::ExportMode mode = (m_exportTypeCombo->currentIndex() == 0) 
+                                     ? MediaExporter::Video 
+                                     : MediaExporter::AudioOnly;
+    
+    QString audioFormat = m_audioFormatCombo->currentText().toLower();
+    int audioBitrate = m_audioBitrateSpin->value();
+    
+    QString filter;
+    QString defaultSuffix;
+    
+    if (mode == MediaExporter::AudioOnly) {
+        if (audioFormat == "mp3") {
+            filter = tr("MP3 Audio (*.mp3)");
+            defaultSuffix = ".mp3";
+        } else if (audioFormat == "ogg") {
+            filter = tr("OGG Vorbis Audio (*.ogg)");
+            defaultSuffix = ".ogg";
+        } else {
+            filter = tr("WAV Audio (*.wav)");
+            defaultSuffix = ".wav";
+        }
+    } else {
+        filter = tr("MPEG-4 Video (*.mp4)");
+        defaultSuffix = ".mp4";
+    }
+
+    QString outputPath = QFileDialog::getSaveFileName(this, tr("Save File"), "", filter);
     if (outputPath.isEmpty())
         return;
+        
+    if (!outputPath.endsWith(defaultSuffix, Qt::CaseInsensitive)) {
+        outputPath += defaultSuffix;
+    }
 
     QSize resolution = getTargetResolution();
     int fps = (m_fpsCombo->currentIndex() == 0) ? 30 : 60;
@@ -591,8 +828,10 @@ void ExportDialog::onExportClicked()
     setControlsEnabled(false);
 
     m_exportThread = new QThread;
-    // Create the exporter and pass VALUES only, no renderer
-    m_exporter = new MediaExporter(m_sequence, outputPath, resolution, fps, this->m_engine, secondsVisible, settings);
+    
+    m_exporter = new MediaExporter(m_sequence, outputPath, resolution, fps, this->m_engine, 
+                                   secondsVisible, settings, 
+                                   mode, audioFormat, audioBitrate);
     
     m_exporter->moveToThread(m_exportThread);
 
@@ -632,8 +871,13 @@ void ExportDialog::updateStatusText(const QString &status)
 void ExportDialog::onExportFinished()
 {
     setControlsEnabled(true);
+    
     if (!m_statusLabel->text().contains(tr("Error"), Qt::CaseInsensitive)) {
-        QMessageBox::information(this, tr("Success"), tr("Video export finished successfully."));
+        if (m_exportTypeCombo->currentIndex() == 0) {
+            QMessageBox::information(this, tr("Success"), tr("Video export finished successfully."));
+        } else {
+            QMessageBox::information(this, tr("Success"), tr("Audio export finished successfully."));
+        }
     }
     m_exportThread = nullptr;
     m_exporter = nullptr;
@@ -646,9 +890,20 @@ void ExportDialog::setControlsEnabled(bool enabled)
     m_exportButton->setEnabled(enabled);
     m_progressWidget->setVisible(!enabled);
 
+    bool isAudioOnly = (m_exportTypeCombo->currentIndex() == 1);
+
+    // Skrýt/zobrazit progress bary podle režimu
+    m_videoProgressLabel->setVisible(!enabled && !isAudioOnly);
+    m_videoProgressBar->setVisible(!enabled && !isAudioOnly);
+    
+    // Přejmenovat audio progress bar v režimu AudioOnly
+    m_audioProgressLabel->setText((!enabled && isAudioOnly) ? tr("Progress:") : tr("Audio Rendering:"));
+
     // Reactivate the preview
     m_previewThread->setPriority(enabled ? QThread::InheritPriority : QThread::IdlePriority);
-    if(enabled) {
+
+    // Reaktivace náhledu jen pro video
+    if(enabled && !isAudioOnly) {
         updatePreviewSettings();
     }
 
@@ -667,9 +922,10 @@ void ExportDialog::onPlaybackTickChanged(int tick) {
 
     // --- GUI thread no longer renders ---
     // Instead, it sends a time update request to the worker thread
-    
-    QMetaObject::invokeMethod(m_previewWorker, "updateTime", Qt::QueuedConnection,
-                              Q_ARG(double, m_currentTime));
+    if (m_exportTypeCombo->currentIndex() == 0) {
+        QMetaObject::invokeMethod(m_previewWorker, "updateTime", Qt::QueuedConnection,
+                                  Q_ARG(double, m_currentTime));
+    }
 
     // --- Update progress bar (this is in the GUI, so it's fine) ---
     m_progressBar->blockSignals(true);
@@ -680,6 +936,9 @@ void ExportDialog::onPlaybackTickChanged(int tick) {
 void ExportDialog::onPreviewFrameReady(const QImage& frame)
 {
     // --- This is the slot called from the PreviewWorker thread ---
+    if (m_exportTypeCombo->currentIndex() != 0) {
+        return;
+    }
     
     // Create the final pixmap (sized to the label) and fill with black (for letterboxing)
     QPixmap scaledPixmap(m_previewLabel->size());

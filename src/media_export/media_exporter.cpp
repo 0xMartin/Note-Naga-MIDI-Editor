@@ -51,10 +51,16 @@ MediaExporter::MediaExporter(NoteNagaMidiSeq *sequence, QString outputPath,
                              QSize resolution, int fps, NoteNagaEngine *engine,
                              double secondsVisible,
                              const MediaRenderer::RenderSettings &settings,
+                             ExportMode exportMode, 
+                             const QString& audioFormat, 
+                             int audioBitrate, 
                              QObject *parent)
     : QObject(parent), m_sequence(sequence), m_outputPath(outputPath),
       m_resolution(resolution), m_fps(fps), m_engine(engine),
-      m_secondsVisible(secondsVisible), m_settings(settings), // Store the settings
+      m_secondsVisible(secondsVisible), m_settings(settings), 
+      m_exportMode(exportMode), 
+      m_audioFormat(audioFormat), 
+      m_audioBitrate(audioBitrate), 
       m_framesRendered(0), m_totalFrames(0)
 {
     connect(&m_audioWatcher, &QFutureWatcher<bool>::finished, this, &MediaExporter::onTaskFinished);
@@ -69,83 +75,127 @@ MediaExporter::~MediaExporter()
 void MediaExporter::doExport()
 {
     m_tempAudioPath = m_outputPath + ".tmp.wav";
-    // This will be the final temporary video after joining batches
-    m_tempVideoPath = m_outputPath + ".tmp.video.mp4"; 
 
-    emit statusTextChanged(tr("Rendering in progress..."));
+    if (m_exportMode == Video)
+    {
+        // This will be the final temporary video after joining batches
+        m_tempVideoPath = m_outputPath + ".tmp.video.mp4"; 
 
-    m_finishedTaskCount = 0;
+        emit statusTextChanged(tr("Rendering in progress..."));
 
-    QFuture<bool> audioFuture = QtConcurrent::run([this]()
-                                                  { return this->exportAudio(m_tempAudioPath); });
+        m_finishedTaskCount = 0;
 
-    // Run the new batched method for video
-    QFuture<bool> videoFuture = QtConcurrent::run([this]()
-                                                  { return this->exportVideoBatched(m_tempVideoPath); });
+        QFuture<bool> audioFuture = QtConcurrent::run([this]()
+                                                      { return this->exportAudio(m_tempAudioPath); });
 
-    m_audioWatcher.setFuture(audioFuture);
-    m_videoWatcher.setFuture(videoFuture);
+        // Run the new batched method for video
+        QFuture<bool> videoFuture = QtConcurrent::run([this]()
+                                                      { return this->exportVideoBatched(m_tempVideoPath); });
+
+        m_audioWatcher.setFuture(audioFuture);
+        m_videoWatcher.setFuture(videoFuture);
+    }
+    else // AudioOnly
+    {
+        emit statusTextChanged(tr("Rendering audio..."));
+        
+        // Only export audio
+        QFuture<bool> audioFuture = QtConcurrent::run([this]()
+                                                      { return this->exportAudio(m_tempAudioPath); });
+        
+        m_audioWatcher.setFuture(audioFuture);
+        // Video watcher will not be started
+    }
 }
 
 void MediaExporter::onTaskFinished()
 {
-    // Wait until both (audio + video) tasks are finished
-    if (m_finishedTaskCount.fetchAndAddOrdered(1) + 1 != 2)
+    if (m_exportMode == Video)
     {
-        return;
+        // Video mode: Waiting for 2 tasks (audio + video)
+        if (m_finishedTaskCount.fetchAndAddOrdered(1) + 1 != 2)
+        {
+            return;
+        }
+
+        bool audioSuccess = m_audioWatcher.future().result();
+        bool videoSuccess = m_videoWatcher.future().result();
+
+        if (!audioSuccess)
+        {
+            emit error(tr("Failed to render audio."));
+            cleanup();
+            emit finished();
+            return;
+        }
+
+        if (!videoSuccess)
+        {
+            emit error(tr("Failed to render video."));
+            cleanup();
+            emit finished();
+            return;
+        }
+
+        emit statusTextChanged(tr("Combining files (muxing)..."));
+
+        if (!combineAudioVideo(m_tempVideoPath, m_tempAudioPath, m_outputPath))
+        {
+            emit error(tr("Failed to combine video and audio. Is FFmpeg installed and in the system PATH?"));
+        }
+    }
+    else // AudioOnly
+    {
+        // Waiting only for audio task
+        bool audioSuccess = m_audioWatcher.future().result();
+        if (!audioSuccess)
+        {
+            emit error(tr("Failed to render audio."));
+            cleanup();
+            emit finished();
+            return;
+        }
+
+        emit statusTextChanged(tr("Converting audio format..."));
+        
+        // Transcode to desired format
+        if (!transcodeAudio(m_tempAudioPath, m_outputPath, m_audioFormat, m_audioBitrate))
+        {
+            emit error(tr("Failed to convert audio. Is FFmpeg installed and in the system PATH?"));
+        }
     }
 
-    bool audioSuccess = m_audioWatcher.future().result();
-    bool videoSuccess = m_videoWatcher.future().result();
-
-    if (!audioSuccess)
-    {
-        emit error(tr("Failed to render audio."));
-        cleanup();
-        emit finished();
-        return;
-    }
-
-    if (!videoSuccess)
-    {
-        emit error(tr("Failed to render video."));
-        cleanup();
-        emit finished();
-        return;
-    }
-
-    emit statusTextChanged(tr("Combining files (muxing)..."));
-
-    if (!combineAudioVideo(m_tempVideoPath, m_tempAudioPath, m_outputPath))
-    {
-        emit error(tr("Failed to combine video and audio. Is FFmpeg installed and in the system PATH?"));
-    }
-
+    // Common cleanup and finishing
     cleanup();
     emit finished();
 }
 
 void MediaExporter::cleanup()
 {
+    // Delete temporary files for audio
     if (!m_tempAudioPath.isEmpty())
         QFile::remove(m_tempAudioPath);
-    if (!m_tempVideoPath.isEmpty())
-        QFile::remove(m_tempVideoPath);
-        
-    // We must also delete temporary batches
-    QDir dir = QFileInfo(m_outputPath).dir();
-    QString baseName = QFileInfo(m_outputPath).fileName();
-    QStringList filters;
-    filters << baseName + ".tmp.batch.*.mp4";
-    for(const QString& tmpFile : dir.entryList(filters, QDir::Files)) {
-        QFile::remove(dir.filePath(tmpFile));
+
+    // Temporary data for video are deleted only in Video mode
+    if (m_exportMode == Video)
+    {
+        if (!m_tempVideoPath.isEmpty())
+            QFile::remove(m_tempVideoPath);
+            
+        // We must also delete temporary batches
+        QDir dir = QFileInfo(m_outputPath).dir();
+        QString baseName = QFileInfo(m_outputPath).fileName();
+        QStringList filters;
+        filters << baseName + ".tmp.batch.*.mp4";
+        for(const QString& tmpFile : dir.entryList(filters, QDir::Files)) {
+            QFile::remove(dir.filePath(tmpFile));
+        }
+        QFile::remove(dir.filePath("filelist.txt"));
     }
-    QFile::remove(dir.filePath("filelist.txt"));
 }
 
 bool MediaExporter::exportAudio(const QString &outputPath)
 {
-    // ... (this function is unchanged) ...
     ManualModeGuard manualMode(this->m_engine);
 
     const int sampleRate = 44100;
@@ -216,6 +266,8 @@ bool MediaExporter::exportAudio(const QString &outputPath)
             synth->processQueue();
         }
         last_tick = event.tick;
+
+        // In audio-only mode, we want this signal to drive the main progress bar
         emit audioProgressUpdated((int)((double)totalSamplesRendered * 100 / totalSamples));
     }
     emit audioProgressUpdated(100);
@@ -436,4 +488,44 @@ void MediaExporter::writeWavHeader(std::ofstream &file, int sampleRate, int numS
     file.write(reinterpret_cast<const char *>(&bitsPerSample), 2);
     file.write("data", 4);
     file.write(reinterpret_cast<const char *>(&subchunk2Size), 4);
+}
+
+bool MediaExporter::transcodeAudio(const QString &inputWavPath, const QString &finalPath, const QString &format, int bitrate)
+{
+    // When the target format is WAV, simply rename the file
+    if (format.toLower() == "wav") {
+        QFile::remove(finalPath); 
+        return QFile::rename(inputWavPath, finalPath);
+    }
+    
+    QProcess ffmpeg;
+    QStringList arguments;
+    arguments << "-y" << "-i" << inputWavPath;
+    
+    if (format.toLower() == "mp3") {
+        arguments << "-c:a" << "libmp3lame";
+        arguments << "-b:a" << QString::number(bitrate) + "k";
+    } else if (format.toLower() == "ogg") {
+        arguments << "-c:a" << "libvorbis";
+        arguments << "-q:a" << QString::number(bitrate); // For Vorbis, quality is 0-10
+        // Recalculation from bitrate (kbps) to quality (q) - rough estimate
+        // 64k -> 0, 80k -> 1, 96k -> 2, 112k -> 3, 128k -> 4, 160k -> 5, 192k -> 6, 224k -> 7, 256k -> 8, 320k -> 9
+        int q_val = (bitrate - 64) / 32 + 1;
+        if (bitrate < 64) q_val = 0;
+        if (bitrate > 320) q_val = 10;
+        arguments << "-q:a" << QString::number(q_val);
+    } else {
+        // Fallback for unknown formats (although this shouldn't happen)
+        emit error(tr("Unknown audio format: %1").arg(format));
+        return false;
+    }
+    
+    arguments << finalPath;
+
+    ffmpeg.start("ffmpeg", arguments);
+    if (!ffmpeg.waitForStarted()) {
+        return false;
+    }
+    ffmpeg.waitForFinished(-1);
+    return ffmpeg.exitCode() == 0;
 }

@@ -1,8 +1,9 @@
 #include "media_renderer.h"
 
-#include <QPainter>
 #include <cmath>
+#include <QPainter>
 #include <QLinearGradient>
+#include <QPainterPath>
 
 // Constants for keyboard range
 const int FIRST_MIDI_NOTE = 21; // A0
@@ -448,6 +449,79 @@ void MediaRenderer::drawNotesAndKeyboard(QPainter &painter, double currentTime,
 
             painter.setCompositionMode(QPainter::CompositionMode_Plus); // Additive blending
             painter.fillRect(glowRect, glow);
+            painter.setCompositionMode(QPainter::CompositionMode_SourceOver); // Reset
+        }
+
+        // --- Draw "Lightning" effect ---
+        if (m_settings.renderLightning)
+        {
+            painter.setRenderHint(QPainter::Antialiasing, true);
+            painter.setCompositionMode(QPainter::CompositionMode_Plus); // Additive glow
+
+            float y_base = render_area_height; // The seam
+            int numPoints = size.width() / 10; // A point every 10 pixels
+            if (numPoints < 2) numPoints = 2;
+
+            // Základní frekvence
+            const double baseFreqTimeY = 15.0; // Rychlost v čase pro Y
+            const double baseFreqTimeX = 8.0;  // Rychlost v čase pro X
+            const double baseFreqPosX = 0.05; // Jak moc se tvar mění podél X osy (pro X jitter)
+            const double baseFreqPosY = 0.02; // Jak moc se tvar mění podél X osy (pro Y jitter)
+
+            for (int i = 0; i < m_settings.lightningLines; ++i)
+            {
+                // --- De-synchronizace ---
+                // Vytvoříme unikátní, ale deterministické modifikátory pro každou čáru (i)
+                // aby se každá hýbala trochu jinak (jiná rychlost, jiná "nervozita")
+                float freqModTimeY = 1.0f + (i % 5) * 0.15f;    // 1.0, 1.15, 1.30, 1.45, 1.60...
+                float freqModTimeX = 1.0f + ((i + 2) % 5) * 0.2f; // 1.4, 1.6, 1.0, 1.2, 1.4...
+                float freqModPosX = 1.0f + (i % 3) * 0.2f;       // 1.0, 1.2, 1.4...
+                float freqModPosY = 1.0f + ((i+1) % 3) * 0.15f;  // 1.15, 1.3, 1.0...
+                
+                // Unikátní fázový posun pro tuto čáru
+                float timeOffset = i * 1.345f;
+                
+                // Aplikujeme modifikátory na základní frekvence
+                double freqTimeY = baseFreqTimeY * freqModTimeY;
+                double freqTimeX = baseFreqTimeX * freqModTimeX;
+                double freqPosX = baseFreqPosX * freqModPosX;
+                double freqPosY = baseFreqPosY * freqModPosY;
+
+                // Variace pro každou čáru
+                float thickness = std::max(0.5, m_settings.lightningThickness + (i - m_settings.lightningLines / 2.0) * 0.5 * resolutionScale);
+                
+                // Mírná variace barvy a alfa
+                QColor color = m_settings.lightningColor;
+                color.setHsv(color.hue() + (i - m_settings.lightningLines / 2.0) * 5, 
+                            std::clamp(color.saturation() + i * 10, 0, 255), 
+                            color.value());
+                color.setAlphaF(std::clamp(0.4 + (rand() % 100) / 500.0, 0.2, 0.7));
+
+                painter.setPen(QPen(color, thickness, Qt::SolidLine, Qt::RoundCap));
+                
+                QPainterPath path;
+                
+                // Počáteční bod
+                // Použijeme JitterY pro mírnou vertikální variaci na začátku
+                float y_start = y_base + sin(currentTime * (freqTimeY * 0.8) + timeOffset) * (m_settings.lightningJitterY * 0.5) * resolutionScale;
+                path.moveTo(0, y_start);
+
+                // Kreslení segmentů
+                for (int seg = 1; seg <= numPoints; ++seg)
+                {
+                    float x = (float)seg / numPoints * size.width();
+                    
+                    // Deformace v Y (hlavní "blesk") - řízená novým parametrem lightningJitterY
+                    float y_warp = sin(currentTime * freqTimeY + timeOffset + x * freqPosY) * m_settings.lightningJitterY * resolutionScale;
+                    
+                    // Menší deformace v X (křivení) - řízená novým parametrem lightningJitterX
+                    float x_warp = cos(currentTime * freqTimeX + timeOffset + x * freqPosX) * m_settings.lightningJitterX * resolutionScale;
+                    
+                    path.lineTo(x + x_warp, y_base + y_warp);
+                }
+                painter.drawPath(path);
+            }
+            
             painter.setCompositionMode(QPainter::CompositionMode_SourceOver); // Reset
         }
     }

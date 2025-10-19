@@ -51,6 +51,7 @@ private slots:
     void updateStatusText(const QString &status);
     
     // Settings changes
+    void onExportTypeChanged(int index); 
     void onParticleTypeChanged(int index);
     void onSelectParticleFile();
     void updatePreviewSettings(); 
@@ -58,6 +59,7 @@ private slots:
     void onSelectBgImage();
     void onClearBg();
     void updateBgLabels();
+    void onSelectLightningColor(); 
     
     /**
      * @brief Receives the finished frame from the PreviewWorker thread and displays it.
@@ -80,6 +82,7 @@ private:
 
     // Preview components
     QLabel *m_previewLabel;
+    QLabel *m_audioOnlyLabel;
     QPushButton *m_playPauseButton;
     MidiSequenceProgressBar *m_progressBar; 
     QPushButton *m_exportButton;
@@ -98,12 +101,23 @@ private:
     QScrollArea *m_settingsScrollArea;
     QWidget *m_settingsWidget; 
     
-    // Export settings
+    // Export settings (Hlavní)
+    QGroupBox *m_exportSettingsGroup;
+    QComboBox *m_exportTypeCombo;
+    
+    // Video-specific settings
+    QGroupBox *m_videoSettingsGroup;
     QComboBox *m_resolutionCombo;
     QComboBox *m_fpsCombo;
     QDoubleSpinBox *m_scaleSpinBox;
 
+    // Audio-specific settings
+    QGroupBox *m_audioSettingsGroup;
+    QComboBox *m_audioFormatCombo;
+    QSpinBox *m_audioBitrateSpin;
+
     // Background settings
+    QGroupBox *m_bgGroup;
     QPushButton *m_bgColorButton;
     QPushButton *m_bgImageButton;
     QPushButton *m_bgClearButton;
@@ -113,10 +127,12 @@ private:
     QDoubleSpinBox *m_bgShakeSpin;
 
     // Render settings 
+    QGroupBox *m_renderGroup;
     QCheckBox *m_renderNotesCheck;
     QCheckBox *m_renderKeyboardCheck;
     QCheckBox *m_renderParticlesCheck;
     QCheckBox *m_pianoGlowCheck;
+    QCheckBox *m_lightningEnableCheck;
     QDoubleSpinBox *m_noteStartOpacitySpin;
     QDoubleSpinBox *m_noteEndOpacitySpin;
     
@@ -133,13 +149,23 @@ private:
     QDoubleSpinBox *m_particleStartSizeSpin;
     QDoubleSpinBox *m_particleEndSizeSpin;
 
+    // Lightning settings
+    QGroupBox *m_lightningGroup;
+    QPushButton *m_lightningColorButton;
+    QLabel *m_lightningColorPreview;
+    QDoubleSpinBox *m_lightningThicknessSpin;
+    QSpinBox *m_lightningLinesSpin;
+    QDoubleSpinBox *m_lightningJitterYSpin;
+    QDoubleSpinBox *m_lightningJitterXSpin; 
+
     // State variables
     QString m_particleFilePath; 
     QColor m_backgroundColor;
     QString m_backgroundImagePath;
+    QColor m_lightningColor; 
     double m_currentTime;
     double m_totalDuration;
-    QSize m_lastRenderSize; // Size for rendering the preview
+    QSize m_lastRenderSize; 
 
     // Export threading
     QThread *m_exportThread;
