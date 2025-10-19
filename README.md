@@ -1,9 +1,9 @@
 ## TODO -----------------------------------------------------
 
-fix: nove pridane noty se neprehravaji
+1. fix: nove pridane noty se neprehravaji
 
-1. pridat moznost exportovat jako midi
-2. project load / save
+2. pridat moznost exportovat jako midi
+3. project load / save
 
 ##  -----------------------------------------------------
 
@@ -23,9 +23,9 @@ Export: only media export dialog
 ## INFO -----------------------------------------------------
 
 project data:
-- midi data
-- konfigurace: mixer, dsp efekty, synth, ...
-
+1 - midi data
+2 - konfigurace: mixer entry list
+3 - dsp block data
 
 
 

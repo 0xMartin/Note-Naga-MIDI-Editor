@@ -45,6 +45,9 @@
     <file>icons/right.svg</file>
     <file>icons/reassign.svg</file>
     <file>icons/video.svg</file>
+    <file>icons/app_section_dsp.svg</file>
+    <file>icons/app_section_media.svg</file>
+    <file>icons/app_section_midi.svg</file>
   </qresource>
   <qresource prefix="/">
     <file>instruments_icons/accordion.svg</file>
