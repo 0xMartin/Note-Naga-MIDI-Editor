@@ -98,8 +98,10 @@ The engine includes **18 professional DSP effects**:
 ### Main Editor Interface
 ![Note Naga Editor](img/img1.png)
 
-### Mixer and DSP View
+### Audio Export Interface
 ![Mixer View](img/img2.png)
+
+> Video export example: [https://youtu.be/78l0hsS38Ow](https://youtu.be/78l0hsS38Ow)
 
 </div>
 
